@@ -1,7 +1,6 @@
 # Twitch Chat To Subtitles
 
-Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitle file.\
-The program doesn't download the JSON file itself, the JSON file must be retrieved beforehand.
+Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitle file.
 
 The program provides 3 types of subtitles:
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
@@ -14,7 +13,7 @@ Twitch Chat To Subtitles requires .NET 8 Runtime.
 
 ## Download Twitch Chat
 
-There are a few programs for downloading Twitch chat JSON file. [Twitch Downloader](https://github.com/lay295/TwitchDownloader "Twitch Downloader") seems to be the best choice to start with.
+Twitch Chat To Subtitles doesn't download the JSON file itself, the JSON file must be retrieved beforehand. There are a few programs for downloading Twitch chat JSON file. [Twitch Downloader](https://github.com/lay295/TwitchDownloader "Twitch Downloader") seems to be the best choice to start with.
 
 - [Twitch Downloader](https://github.com/lay295/TwitchDownloader "Twitch Downloader"). Has GUI and CLI. Supports Windows, Linux & Mac.
 - Chrome Extension [Twitch Chat Downloader](https://chromewebstore.google.com/detail/twitch-chat-downloader/fkcglcjlhbfbechmbmcajldcfkcpklng "Twitch Chat Downloader"). Make sure to download the .json file, not the .csv file.
