@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35521.163
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchChatToSubtitles", "TwitchChatToSubtitles\TwitchChatToSubtitles.csproj", "{EBC211C0-B722-4DBD-BE77-FDFC420840B6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0E87DD70-61E6-4DFD-919B-259D02BF8386}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchChatToSubtitles.Library", "TwitchChatToSubtitles.Library\TwitchChatToSubtitles.Library.csproj", "{B124FFF8-57D4-48A6-814E-9057479ACA2E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{E5306A00-E19C-4334-8A9C-CF3CF514E89E}"
+	ProjectSection(SolutionItems) = preProject
+		Solution Items\Icons\Icon Link.txt = Solution Items\Icons\Icon Link.txt
+		Solution Items\Icons\TwitchChatToSubtitles.ico = Solution Items\Icons\TwitchChatToSubtitles.ico
+		Solution Items\Icons\TwitchChatToSubtitles.png = Solution Items\Icons\TwitchChatToSubtitles.png
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EBC211C0-B722-4DBD-BE77-FDFC420840B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBC211C0-B722-4DBD-BE77-FDFC420840B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBC211C0-B722-4DBD-BE77-FDFC420840B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBC211C0-B722-4DBD-BE77-FDFC420840B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E5306A00-E19C-4334-8A9C-CF3CF514E89E} = {0E87DD70-61E6-4DFD-919B-259D02BF8386}
+	EndGlobalSection
+EndGlobal
