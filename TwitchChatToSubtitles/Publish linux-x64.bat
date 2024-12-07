@@ -1,1 +1,0 @@
-dotnet publish -p:PublishProfile=linux-x64 -p:DebugType=None -p:DebugSymbols=false
