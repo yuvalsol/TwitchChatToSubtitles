@@ -52,17 +52,26 @@ try
 catch (ArgumentException ex)
 {
     returnCode = -1;
+    Console.Error.WriteLine();
     Console.Error.WriteLine(HandledArgumentException(ex));
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
 }
 catch (FileNotFoundException ex)
 {
     returnCode = -1;
+    Console.Error.WriteLine();
     Console.Error.WriteLine(HandledArgumentException(ex));
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
 }
 catch (Exception ex)
 {
     returnCode = -1;
+    Console.Error.WriteLine();
     Console.Error.WriteLine(UnhandledException(ex));
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
 }
 finally
 {
@@ -87,16 +96,97 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     twitchSubtitles.Start += (object sender, EventArgs e) =>
     {
         Console.WriteLine(GetVersion());
-        Console.WriteLine("Writing subtitles...");
     };
 
-    twitchSubtitles.Finish += (object sender, EventArgs e) =>
+    twitchSubtitles.StartLoadingJsonFile += (object sender, EventArgs e) =>
     {
+        Console.WriteLine("Loading Json file...");
+    };
+
+    twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
+    {
+        Console.WriteLine("Json file loaded successfully.");
+        Console.WriteLine("Json file " + e.JsonFile);
+    };
+
+    twitchSubtitles.StartWritingPreparations += (object sender, EventArgs e) =>
+    {
+        Console.WriteLine("Begin writing preparations (emoticons, user colors)...");
+    };
+
+    twitchSubtitles.FinishWritingPreparations += (object sender, EventArgs e) =>
+    {
+        Console.WriteLine("Writing preparations finished successfully.");
+    };
+
+    int leftMessages = 0;
+    int topMessages = 0;
+
+    int leftSubtitles = 0;
+    int topSubtitles = 0;
+
+    int leftFinish = 0;
+    int topFinish = 0;
+
+    twitchSubtitles.StartWritingSubtitles += (object sender, EventArgs e) =>
+    {
+        Console.Write("Chat Messages: ");
+        leftMessages = Console.CursorLeft;
+        topMessages = Console.CursorTop;
+        Console.WriteLine("0 / 0");
+
+        Console.Write("Subtitles: ");
+        leftSubtitles = Console.CursorLeft;
+        topSubtitles = Console.CursorTop;
+        Console.WriteLine("0");
+
+        leftFinish = Console.CursorLeft;
+        topFinish = Console.CursorTop;
+
+        Console.CursorVisible = false;
+    };
+
+    var lineLength = 45;
+    var lockObj = new object();
+
+    void PrintProgress(object sender, ProgressEventArgs e)
+    {
+        var strMessages = $"{e.MessagesCount:N0} / {e.TotalMessages:N0}";
+        if (e.DiscardedMessagesCount > 0)
+            strMessages += $" (discarded messages {e.DiscardedMessagesCount:N0})";
+        strMessages += new string(' ', lineLength - strMessages.Length);
+
+        var strSubtitles = $"{e.SubtitlesCount:N0}";
+        strSubtitles += new string(' ', lineLength - strSubtitles.Length);
+
+        lock (lockObj)
+        {
+            Console.SetCursorPosition(leftMessages, topMessages);
+            Console.Write(strMessages);
+
+            Console.SetCursorPosition(leftSubtitles, topSubtitles);
+            Console.Write(strSubtitles);
+        }
+    }
+
+    twitchSubtitles.ProgressAsync += PrintProgress;
+    twitchSubtitles.FinishWritingSubtitles += PrintProgress;
+
+    twitchSubtitles.Finish += (object sender, FinishEventArgs e) =>
+    {
+        Console.CursorVisible = true;
+
+        Console.SetCursorPosition(leftFinish, topFinish);
         Console.WriteLine("Finished successfully.");
-        Console.WriteLine("Subtitles file " + TwitchSubtitles.GetSubtitlesFileName(options.JsonFile));
+        Console.WriteLine("Subtitles file " + e.SrtFile);
     };
 
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);
+
+#if DEBUG
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
+#endif
 }
 
 #if DEBUG
@@ -106,7 +196,10 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.JsonFile = @"";
     //options.RegularSubtitles = false;
     //options.RollingChatSubtitles = false;
-    //options.StaticChatSubtitles = false;
+    //options.StaticChatSubtitles = true;
+    //options.ColorUserNames = true;
+    //options.RemoveEmoticonNames = true;
+    //options.SubtitlesFontSize = SubtitlesFontSize.Bigger;
 }
 #endif
 
