@@ -899,7 +899,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             if (found)
                 continue;
 
-            if (endIndex + 1 < body.Length)
+            if (endIndex + 1 <= body.Length)
             {
                 body.Insert(endIndex + 1, '\n');
                 startIndex = endIndex + 2;
