@@ -71,7 +71,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         Finish.Raise(this, () => new FinishEventArgs(srtFile));
     }
 
-    #region Json
+    #region Load Json File
 
     private static JToken LoadJsonFile(string jsonFile)
     {
@@ -88,38 +88,111 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
     }
 
-    private void ReadJsonComment(
-        JToken comment,
-        Regex[] regexEmbeddedEmoticons,
-        Dictionary<string, UserColor> userColors,
-        out TimeSpan timestamp,
-        out string user,
-        out string body,
-        out bool isBrailleArt,
-        out Color color)
+    #endregion
+
+    #region Embedded Emoticons
+
+    private Regex[] GetEmbeddedEmoticons(JToken root)
     {
-        int content_offset_seconds = comment.SelectToken("content_offset_seconds").Value<int>();
-        timestamp = TimeSpan.FromSeconds(content_offset_seconds);
+        if (settings.RemoveEmoticonNames == false)
+            return null;
 
-        JToken commenter = comment.SelectToken("commenter");
-        user = commenter.SelectToken("display_name").Value<string>();
+        IEnumerable<string> thirdPartyEmoticons = GetThirdPartyEmoticons(root);
+        IEnumerable<string> firstPartyEmoticons = GetFirstPartyEmoticons(root);
 
-        JToken message = comment.SelectToken("message");
-        body = GetMessageBody(
-            message,
-            user,
-            regexEmbeddedEmoticons,
-            userColors,
-            timestamp,
-            out isBrailleArt
-        );
+        IEnumerable<string> embeddedEmoticons = [];
 
-        color = null;
-        if (settings.ColorUserNames)
+        if (thirdPartyEmoticons != null && firstPartyEmoticons != null)
         {
-            if (userColors.TryGetValue(user, out var userColor))
-                color = userColor.Color;
+            embeddedEmoticons = thirdPartyEmoticons.Concat(firstPartyEmoticons)
+                .Distinct()
+                .OrderBy(name => name);
         }
+        else if (thirdPartyEmoticons != null && firstPartyEmoticons == null)
+        {
+            embeddedEmoticons = thirdPartyEmoticons;
+        }
+        else if (thirdPartyEmoticons == null && firstPartyEmoticons != null)
+        {
+            embeddedEmoticons = firstPartyEmoticons;
+        }
+
+        return embeddedEmoticons
+            .Select(emoticon => new Regex(@"\b" + emoticon + @"\b", RegexOptions.Compiled))
+            .ToArray();
+    }
+
+    private static IEnumerable<string> GetThirdPartyEmoticons(JToken root)
+    {
+        try
+        {
+            return root.SelectTokens("embeddedData.thirdParty[*].name")
+                .Cast<JValue>()
+                .Select(x => x.Value<string>())
+                .Where(name => string.IsNullOrEmpty(name) == false)
+                .Distinct()
+                .OrderBy(name => name);
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static IEnumerable<string> GetFirstPartyEmoticons(JToken root)
+    {
+        try
+        {
+            return root.SelectTokens("embeddedData.thirdParty[*].name")
+                .Cast<JValue>()
+                .Select(x => x.Value<string>())
+                .Where(name => string.IsNullOrEmpty(name) == false)
+                .Distinct()
+                .OrderBy(name => name);
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    #endregion
+
+    #region User Colors
+
+    private const string USER_DEFAULT_COLOR = "#9146FF";
+
+    private Dictionary<string, UserColor> GetUserColors(JToken root)
+    {
+        if (settings.ColorUserNames == false)
+            return null;
+
+        var userColors = new Dictionary<string, UserColor>();
+
+        foreach (JToken comment in root.SelectToken("comments"))
+        {
+            JToken commenter = comment.SelectToken("commenter");
+            string user = commenter.SelectToken("display_name").Value<string>();
+
+            JToken message = comment.SelectToken("message");
+            string userColor = message.SelectToken("user_color").Value<string>();
+
+            if (string.IsNullOrEmpty(userColor))
+                userColor = USER_DEFAULT_COLOR;
+
+            if (userColors.ContainsKey(user) == false)
+                userColors.Add(user, new UserColor(user, new Color(userColor)));
+        }
+
+        // force the regexes to compile
+        // this will account to the writing preparations time
+        foreach (var item in userColors)
+        {
+            item.Value.Search1.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search1.Replace);
+            item.Value.Search2.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search2.Replace);
+        }
+
+        return userColors;
     }
 
     #endregion
@@ -147,18 +220,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         bool isWriteSubtitles = false;
         foreach (JToken comment in comments)
         {
-            ReadJsonComment(
-                comment,
-                regexEmbeddedEmoticons,
-                userColors,
-                out TimeSpan timestamp,
-                out string user,
-                out string body,
-                out bool isBrailleArt,
-                out Color color
-            );
+            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(body))
+            if (string.IsNullOrWhiteSpace(processedComment.Body))
             {
                 discardedMessagesCount++;
                 continue;
@@ -166,10 +230,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             messagesCount++;
 
-            TimeSpan showTime = timestamp + timeOffset;
+            TimeSpan showTime = processedComment.Timestamp + timeOffset;
             TimeSpan hideTime = showTime + subtitleShowDuration;
 
-            var message = new ChatMessage(timestamp, user, color, body, isBrailleArt);
+            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
 
             var sub = Subtitles.FirstOrDefault(s => s.ShowTime == showTime);
             if (sub != null)
@@ -310,43 +374,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Calculate Chat PosYs
-
-    private const int TOP_POS_Y = 10;
-    private const int BOTTOM_POS_Y = 270;
-
-    private static void CalculateChatPosYs(int fontSize, SubtitlesLocation subtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount)
-    {
-        bottomPosY = BOTTOM_POS_Y;
-
-        topPosY = bottomPosY;
-        while (topPosY > TOP_POS_Y)
-            topPosY -= fontSize;
-
-        posYCount = (bottomPosY - topPosY + fontSize) / fontSize;
-
-        if (subtitlesLocation.IsHalf())
-        {
-            posYCount = ((posYCount - (posYCount % 2)) / 2) + (posYCount % 2);
-
-            if (subtitlesLocation.IsTopHalf())
-                bottomPosY = topPosY + ((posYCount - 1) * fontSize);
-            else if (subtitlesLocation.IsBottomHalf())
-                topPosY = bottomPosY - ((posYCount - 1) * fontSize);
-        }
-        else if (subtitlesLocation.IsTwoThirds())
-        {
-            posYCount = ((posYCount - (posYCount % 3)) * 2 / 3) + (posYCount % 3);
-
-            if (subtitlesLocation.IsTopTwoThirds())
-                bottomPosY = topPosY + ((posYCount - 1) * fontSize);
-            else if (subtitlesLocation.IsBottomTwoThirds())
-                topPosY = bottomPosY - ((posYCount - 1) * fontSize);
-        }
-    }
-
-    #endregion
-
     #region Rolling Chat Subtitles
 
     private void WriteRollingChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer)
@@ -384,18 +411,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         TimeSpan maxShowTime = TimeSpan.MinValue;
         foreach (JToken comment in comments)
         {
-            ReadJsonComment(
-                comment,
-                regexEmbeddedEmoticons,
-                userColors,
-                out TimeSpan timestamp,
-                out string user,
-                out string body,
-                out bool isBrailleArt,
-                out Color color
-            );
+            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(body))
+            if (string.IsNullOrWhiteSpace(processedComment.Body))
             {
                 discardedMessagesCount++;
                 continue;
@@ -403,10 +421,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             messagesCount++;
 
-            var message = new ChatMessage(timestamp, user, color, body, isBrailleArt);
+            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
             int linesCount = message.LinesCount;
 
-            TimeSpan showTime = timestamp + timeOffset;
+            TimeSpan showTime = processedComment.Timestamp + timeOffset;
             if (showTime < nextTimeSlot)
                 showTime = nextTimeSlot;
             nextTimeSlot = showTime + TimeSpan.FromSeconds(linesCount);
@@ -564,18 +582,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         Subtitle prevSubtitle = null;
         foreach (JToken comment in comments)
         {
-            ReadJsonComment(
-                comment,
-                regexEmbeddedEmoticons,
-                userColors,
-                out TimeSpan timestamp,
-                out string user,
-                out string body,
-                out bool isBrailleArt,
-                out Color color
-            );
+            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(body))
+            if (string.IsNullOrWhiteSpace(processedComment.Body))
             {
                 discardedMessagesCount++;
                 continue;
@@ -583,11 +592,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             messagesCount++;
 
-            var message = new ChatMessage(timestamp, user, color, body, isBrailleArt);
+            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
 
             if (prevSubtitle == null)
             {
-                TimeSpan showTime = timestamp + timeOffset;
+                TimeSpan showTime = processedComment.Timestamp + timeOffset;
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, message);
 
                 Subtitles.Add(subtitle);
@@ -597,7 +606,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
             else
             {
-                TimeSpan showTime = timestamp + timeOffset;
+                TimeSpan showTime = processedComment.Timestamp + timeOffset;
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY);
                 subtitle.AddMessages(prevSubtitle);
                 subtitle.AddMessage(message);
@@ -662,109 +671,83 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Embedded Emoticons
+    #region Calculate Chat PosYs
 
-    private Regex[] GetEmbeddedEmoticons(JToken root)
+    private const int TOP_POS_Y = 10;
+    private const int BOTTOM_POS_Y = 270;
+
+    private static void CalculateChatPosYs(int fontSize, SubtitlesLocation subtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount)
     {
-        if (settings.RemoveEmoticonNames == false)
-            return null;
+        bottomPosY = BOTTOM_POS_Y;
 
-        IEnumerable<string> thirdPartyEmoticons = GetThirdPartyEmoticons(root);
-        IEnumerable<string> firstPartyEmoticons = GetFirstPartyEmoticons(root);
+        topPosY = bottomPosY;
+        while (topPosY > TOP_POS_Y)
+            topPosY -= fontSize;
 
-        IEnumerable<string> embeddedEmoticons = [];
+        posYCount = (bottomPosY - topPosY + fontSize) / fontSize;
 
-        if (thirdPartyEmoticons != null && firstPartyEmoticons != null)
+        if (subtitlesLocation.IsHalf())
         {
-            embeddedEmoticons = thirdPartyEmoticons.Concat(firstPartyEmoticons)
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        else if (thirdPartyEmoticons != null && firstPartyEmoticons == null)
-        {
-            embeddedEmoticons = thirdPartyEmoticons;
-        }
-        else if (thirdPartyEmoticons == null && firstPartyEmoticons != null)
-        {
-            embeddedEmoticons = firstPartyEmoticons;
-        }
+            posYCount = ((posYCount - (posYCount % 2)) / 2) + (posYCount % 2);
 
-        return embeddedEmoticons
-            .Select(emoticon => new Regex(@"\b" + emoticon + @"\b", RegexOptions.Compiled))
-            .ToArray();
-    }
+            if (subtitlesLocation.IsTopHalf())
+                bottomPosY = topPosY + ((posYCount - 1) * fontSize);
+            else if (subtitlesLocation.IsBottomHalf())
+                topPosY = bottomPosY - ((posYCount - 1) * fontSize);
+        }
+        else if (subtitlesLocation.IsTwoThirds())
+        {
+            posYCount = ((posYCount - (posYCount % 3)) * 2 / 3) + (posYCount % 3);
 
-    private static IEnumerable<string> GetThirdPartyEmoticons(JToken root)
-    {
-        try
-        {
-            return root.SelectTokens("embeddedData.thirdParty[*].name")
-                .Cast<JValue>()
-                .Select(x => x.Value<string>())
-                .Where(name => string.IsNullOrEmpty(name) == false)
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static IEnumerable<string> GetFirstPartyEmoticons(JToken root)
-    {
-        try
-        {
-            return root.SelectTokens("embeddedData.thirdParty[*].name")
-                .Cast<JValue>()
-                .Select(x => x.Value<string>())
-                .Where(name => string.IsNullOrEmpty(name) == false)
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        catch
-        {
-            return [];
+            if (subtitlesLocation.IsTopTwoThirds())
+                bottomPosY = topPosY + ((posYCount - 1) * fontSize);
+            else if (subtitlesLocation.IsBottomTwoThirds())
+                topPosY = bottomPosY - ((posYCount - 1) * fontSize);
         }
     }
 
     #endregion
 
-    #region User Colors
+    #region Process Comment
 
-    private const string USER_DEFAULT_COLOR = "#9146FF";
-
-    private Dictionary<string, UserColor> GetUserColors(JToken root)
+    private static ProcessedComment ProcessComment(
+        JToken comment,
+        Regex[] regexEmbeddedEmoticons,
+        Dictionary<string, UserColor> userColors,
+        TwitchSubtitlesSettings settings)
     {
-        if (settings.ColorUserNames == false)
-            return null;
+        int content_offset_seconds = comment.SelectToken("content_offset_seconds").Value<int>();
+        TimeSpan timestamp = TimeSpan.FromSeconds(content_offset_seconds);
 
-        var userColors = new Dictionary<string, UserColor>();
+        JToken commenter = comment.SelectToken("commenter");
+        string user = commenter.SelectToken("display_name").Value<string>();
 
-        foreach (JToken comment in root.SelectToken("comments"))
+        JToken message = comment.SelectToken("message");
+        string body = GetMessageBody(
+            message,
+            user,
+            regexEmbeddedEmoticons,
+            userColors,
+            timestamp,
+            settings,
+            out bool isBrailleArt
+        );
+
+        Color color = null;
+        if (settings.ColorUserNames)
         {
-            JToken commenter = comment.SelectToken("commenter");
-            string user = commenter.SelectToken("display_name").Value<string>();
-
-            JToken message = comment.SelectToken("message");
-            string userColor = message.SelectToken("user_color").Value<string>();
-
-            if (string.IsNullOrEmpty(userColor))
-                userColor = USER_DEFAULT_COLOR;
-
-            if (userColors.ContainsKey(user) == false)
-                userColors.Add(user, new UserColor(user, new Color(userColor)));
+            if (userColors.TryGetValue(user, out var userColor))
+                color = userColor.Color;
         }
 
-        // force the regexes to compile
-        // this will account to the writing preparations time
-        foreach (var item in userColors)
+        return new ProcessedComment()
         {
-            item.Value.Search1.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search1.Replace);
-            item.Value.Search2.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search2.Replace);
-        }
-
-        return userColors;
+            Timestamp = timestamp,
+            User = user,
+            Body = body,
+            IsBrailleArt = isBrailleArt,
+            Color = color
+        };
     }
 
     #endregion
@@ -783,12 +766,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     [GeneratedRegex(@"\s{2,}", RegexOptions.IgnoreCase)]
     private static partial Regex RegexDoubleSpaces();
 
-    private string GetMessageBody(
+    private static string GetMessageBody(
         JToken message,
         string user,
         Regex[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TimeSpan timestamp,
+        TwitchSubtitlesSettings settings,
         out bool isBrailleArt)
     {
         var body = new StringBuilder();
@@ -862,7 +846,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         else
         {
             if (settings.RollingChatSubtitles || settings.StaticChatSubtitles)
-                SplitMessageBody(body, user, timestamp);
+                SplitMessageBody(body, user, timestamp, settings);
         }
 
         if (settings.ColorUserNames)
@@ -879,7 +863,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private const int SPLIT_ON_N_CHARS = 45;
 
-    private void SplitMessageBody(StringBuilder body, string user, TimeSpan timestamp)
+    private static void SplitMessageBody(StringBuilder body, string user, TimeSpan timestamp, TwitchSubtitlesSettings settings)
     {
         int startIndex = 0;
         while (startIndex < body.Length)
