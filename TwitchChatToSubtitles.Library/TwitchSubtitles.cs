@@ -131,6 +131,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
+        Task lastWritingTask = null;
+
         int subsCounter = 1;
         List<Subtitle> Subtitles = [];
 
@@ -195,12 +197,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             SortRegularSubtitles(Subtitles);
                             OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
-                            foreach (var subtitle in Subtitles)
-                            {
-                                writer.WriteLine(subsCounter++);
-                                writer.WriteLine(subtitle.ToString(settings));
-                            }
-                            writer.Flush();
+                            var copySubtitles = new List<Subtitle>(Subtitles);
+                            if (lastWritingTask == null)
+                                lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
+                            else
+                                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
 
                             Subtitles.Clear();
                             Subtitles.Add(lastSub);
@@ -223,15 +224,26 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             SortRegularSubtitles(Subtitles);
             OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
-            foreach (var subtitle in Subtitles)
+            if (lastWritingTask == null)
+                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
+            else
+                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
+        }
+
+        lastWritingTask?.Wait();
+
+        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+
+        void WriteSubtitles(List<Subtitle> subtitles)
+        {
+            foreach (var subtitle in subtitles)
             {
                 writer.WriteLine(subsCounter++);
                 writer.WriteLine(subtitle.ToString(settings));
             }
+
             writer.Flush();
         }
-
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
     }
 
     private static void OverlapRegularSubtitles(List<Subtitle> Subtitles, ref int subtitlesCount)
@@ -354,6 +366,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         CalculateChatPosYs(fontSize, settings.SubtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount);
 
+        Task lastWritingTask = null;
+
         int subsCounter = 1;
         List<Subtitle> Subtitles = [];
 
@@ -416,12 +430,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                         else
                             count = Subtitles.Count;
 
-                        foreach (var subtitle in Subtitles.Take(count))
-                        {
-                            writer.WriteLine(subsCounter++);
-                            writer.WriteLine(subtitle.ToString(settings));
-                        }
-                        writer.Flush();
+                        var copySubtitles = Subtitles.Take(count).ToList();
+                        if (lastWritingTask == null)
+                            lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
+                        else
+                            lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
 
                         Subtitles.RemoveRange(0, count);
 
@@ -464,15 +477,26 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             SortRollingChatSubtitles(Subtitles);
 
-            foreach (var subtitle in Subtitles)
+            if (lastWritingTask == null)
+                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
+            else
+                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
+        }
+
+        lastWritingTask?.Wait();
+
+        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+
+        void WriteSubtitles(List<Subtitle> subtitles)
+        {
+            foreach (var subtitle in subtitles)
             {
                 writer.WriteLine(subsCounter++);
                 writer.WriteLine(subtitle.ToString(settings));
             }
+
             writer.Flush();
         }
-
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
     }
 
     private static IEnumerable<Subtitle> ShaveLineFromTheTop(Subtitle subtitle, TimeSpan timeStep)
@@ -523,6 +547,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             (59 * 1000) +
             999
         );
+
+        Task lastWritingTask = null;
 
         int subsCounter = 1;
         List<Subtitle> Subtitles = [];
@@ -597,12 +623,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 var lastSub = Subtitles[lastIndex];
                 Subtitles.RemoveAt(lastIndex);
 
-                foreach (var subtitle in Subtitles)
-                {
-                    writer.WriteLine(subsCounter++);
-                    writer.WriteLine(subtitle.ToString(settings));
-                }
-                writer.Flush();
+                var copySubtitles = new List<Subtitle>(Subtitles);
+                if (lastWritingTask == null)
+                    lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
+                else
+                    lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
 
                 Subtitles.Clear();
                 Subtitles.Add(lastSub);
@@ -613,15 +638,26 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         if (Subtitles.Count > 0)
         {
-            foreach (var subtitle in Subtitles)
+            if (lastWritingTask == null)
+                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
+            else
+                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
+        }
+
+        lastWritingTask?.Wait();
+
+        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+
+        void WriteSubtitles(List<Subtitle> subtitles)
+        {
+            foreach (var subtitle in subtitles)
             {
                 writer.WriteLine(subsCounter++);
                 writer.WriteLine(subtitle.ToString(settings));
             }
+
             writer.Flush();
         }
-
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
     }
 
     #endregion
