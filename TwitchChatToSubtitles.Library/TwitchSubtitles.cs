@@ -720,6 +720,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 userColors.Add(user, new UserColor(user, new Color(userColor)));
         }
 
+        // force the regexes to compile
+        // this will account to the writing preparations time
+        foreach (var item in userColors)
+        {
+            item.Value.Search1.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search1.Replace);
+            item.Value.Search2.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search2.Replace);
+        }
+
         return userColors;
     }
 
