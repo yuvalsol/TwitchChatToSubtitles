@@ -5,7 +5,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <PackageIcon></PackageIcon>
     <ApplicationIcon>TwitchChatToSubtitles.ico</ApplicationIcon>
     <Title>Twitch Chat To Subtitles</Title>
     <Version>1.1</Version>
