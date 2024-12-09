@@ -9,10 +9,10 @@ internal class Color
     {
         RGB = rgb;
 
-        string R = rgb.Substring(1, 2);
-        string G = rgb.Substring(3, 2);
-        string B = rgb.Substring(5, 2);
-        BGR = "H" + B + G + R;
+        var R = rgb.AsSpan(1, 2);
+        var G = rgb.AsSpan(3, 2);
+        var B = rgb.AsSpan(5, 2);
+        BGR = string.Concat("H", B, G, R);
     }
 
     public override string ToString()
