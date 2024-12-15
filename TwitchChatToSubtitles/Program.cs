@@ -52,7 +52,6 @@ try
 catch (ArgumentException ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine();
     Console.Error.WriteLine(HandledArgumentException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
@@ -60,7 +59,6 @@ catch (ArgumentException ex)
 catch (FileNotFoundException ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine();
     Console.Error.WriteLine(HandledArgumentException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
@@ -68,7 +66,6 @@ catch (FileNotFoundException ex)
 catch (Exception ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine();
     Console.Error.WriteLine(UnhandledException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
@@ -96,6 +93,13 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     twitchSubtitles.Start += (object sender, EventArgs e) =>
     {
         Console.WriteLine(GetVersion());
+
+        if (settings.RegularSubtitles)
+            Console.WriteLine("Regular Subtitles");
+        else if (settings.RollingChatSubtitles)
+            Console.WriteLine("Rolling Chat Subtitles");
+        else if (settings.StaticChatSubtitles)
+            Console.WriteLine("Static Chat Subtitles");
     };
 
     twitchSubtitles.StartLoadingJsonFile += (object sender, EventArgs e) =>
@@ -109,9 +113,14 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         Console.WriteLine("Json file " + e.JsonFile);
     };
 
-    twitchSubtitles.StartWritingPreparations += (object sender, EventArgs e) =>
+    twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
     {
-        Console.WriteLine("Begin writing preparations (emoticons, user colors)...");
+        string preparations =
+            (e.RemoveEmoticonNames ? "emoticons" : string.Empty) +
+            (e.RemoveEmoticonNames && e.ColorUserNames ? ", " : string.Empty) +
+            (e.ColorUserNames ? "user colors" : string.Empty);
+
+        Console.WriteLine($"Begin writing preparations ({preparations})...");
     };
 
     twitchSubtitles.FinishWritingPreparations += (object sender, EventArgs e) =>
@@ -177,8 +186,16 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         Console.CursorVisible = true;
 
         Console.SetCursorPosition(leftFinish, topFinish);
-        Console.WriteLine("Finished successfully.");
-        Console.WriteLine("Subtitles file " + e.SrtFile);
+
+        if (e.Error == null)
+        {
+            Console.WriteLine("Finished successfully.");
+            Console.WriteLine("Subtitles file " + e.SrtFile);
+        }
+        else
+        {
+            Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+        }
     };
 
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);

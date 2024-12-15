@@ -10,14 +10,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     public EventHandler Start;
     public EventHandler StartLoadingJsonFile;
     public EventHandler<FinishLoadingJsonFileEventArgs> FinishLoadingJsonFile;
-    public EventHandler StartWritingPreparations;
+    public EventHandler<StartWritingPreparationsEventArgs> StartWritingPreparations;
     public EventHandler FinishWritingPreparations;
     public EventHandler StartWritingSubtitles;
     public EventHandler<ProgressEventArgs> ProgressAsync;
     public EventHandler<ProgressEventArgs> FinishWritingSubtitles;
     public EventHandler<FinishEventArgs> Finish;
 
-    private const int FLUSH_SUBTITLES_LIMIT = 1000;
+    private const int COMMENTS_CHUNK_SIZE = 20;
+    private const int FLUSH_SUBTITLES_COUNT = 1000;
 
     public void WriteTwitchSubtitles(string jsonFile)
     {
@@ -48,7 +49,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         Dictionary<string, UserColor> userColors = null;
         if (settings.RemoveEmoticonNames || settings.ColorUserNames)
         {
-            StartWritingPreparations.Raise(this, () => EventArgs.Empty);
+            StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
             regexEmbeddedEmoticons = GetEmbeddedEmoticons(root);
             userColors = GetUserColors(root);
             FinishWritingPreparations.Raise(this, () => EventArgs.Empty);
@@ -56,19 +57,21 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         StartWritingSubtitles.Raise(this, () => EventArgs.Empty);
 
+        Exception error = null;
+
         {
             using var srtStream = File.Open(srtFile, FileMode.Create);
             using var writer = new StreamWriter(srtStream, Encoding.UTF8);
 
             if (settings.RegularSubtitles)
-                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, writer);
+                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
             else if (settings.RollingChatSubtitles)
-                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer);
+                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
             else if (settings.StaticChatSubtitles)
-                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer);
+                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
         }
 
-        Finish.Raise(this, () => new FinishEventArgs(srtFile));
+        Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
     }
 
     #region Load Json File
@@ -160,7 +163,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region User Colors
 
-    private const string USER_DEFAULT_COLOR = "#9146FF";
+    private const string DEFAULT_USER_COLOR = "#9146FF";
 
     private Dictionary<string, UserColor> GetUserColors(JToken root)
     {
@@ -171,14 +174,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         foreach (JToken comment in root.SelectToken("comments"))
         {
-            JToken commenter = comment.SelectToken("commenter");
-            string user = commenter.SelectToken("display_name").Value<string>();
+            string user = comment.SelectToken("commenter").SelectToken("display_name").Value<string>();
 
-            JToken message = comment.SelectToken("message");
-            string userColor = message.SelectToken("user_color").Value<string>();
-
+            string userColor = comment.SelectToken("message").SelectToken("user_color").Value<string>();
             if (string.IsNullOrEmpty(userColor))
-                userColor = USER_DEFAULT_COLOR;
+                userColor = DEFAULT_USER_COLOR;
 
             if (userColors.ContainsKey(user) == false)
                 userColors.Add(user, new UserColor(user, new Color(userColor)));
@@ -199,14 +199,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Regular Subtitles
 
-    private void WriteRegularSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer)
+    private void WriteRegularSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
-        Task lastWritingTask = null;
+        Task<int> lastWritingTask = null;
+        var cts = new CancellationTokenSource();
+        var ct = cts.Token;
 
-        int subsCounter = 1;
         List<Subtitle> Subtitles = [];
 
         int messagesCount = 0;
@@ -218,35 +219,45 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             totalMessages = comments.Count();
 
         bool isWriteSubtitles = false;
-        foreach (JToken comment in comments)
-        {
-            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(processedComment.Body))
+        ProcessCommentsInChunks(
+            comments,
+            regexEmbeddedEmoticons,
+            userColors,
+            settings,
+            ProcessComment,
+            PostProcessCommentsChunk,
+            PostProcessComments,
+            ref error,
+            cts,
+            ct
+        );
+
+        void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
+        {
+            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
-                continue;
+                return;
             }
 
             messagesCount++;
 
-            TimeSpan showTime = processedComment.Timestamp + timeOffset;
-            TimeSpan hideTime = showTime + subtitleShowDuration;
-
-            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
+            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
 
             var sub = Subtitles.FirstOrDefault(s => s.ShowTime == showTime);
             if (sub != null)
             {
-                sub.AddMessage(message);
+                sub.AddMessage(pccm.message);
             }
             else
             {
-                Subtitles.Add(new Subtitle(showTime, hideTime, message));
+                TimeSpan hideTime = showTime + subtitleShowDuration;
+                Subtitles.Add(new Subtitle(showTime, hideTime, pccm.message));
                 subtitlesCount++;
             }
 
-            if (Subtitles.Count >= FLUSH_SUBTITLES_LIMIT)
+            if (Subtitles.Count >= FLUSH_SUBTITLES_COUNT)
             {
                 if (isWriteSubtitles)
                 {
@@ -261,11 +272,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             SortRegularSubtitles(Subtitles);
                             OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
-                            var copySubtitles = new List<Subtitle>(Subtitles);
-                            if (lastWritingTask == null)
-                                lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
-                            else
-                                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
+                            var copySubtitles = Subtitles.ToArray();
+                            WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
 
                             Subtitles.Clear();
                             Subtitles.Add(lastSub);
@@ -279,34 +287,26 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     isWriteSubtitles = true;
                 }
             }
+        }
 
+        void PostProcessCommentsChunk()
+        {
             ProgressAsync.RaiseAsync(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
 
-        if (Subtitles.Count > 0)
+        void PostProcessComments()
         {
-            SortRegularSubtitles(Subtitles);
-            OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
-
-            if (lastWritingTask == null)
-                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
-            else
-                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
-        }
-
-        lastWritingTask?.Wait();
-
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
-
-        void WriteSubtitles(List<Subtitle> subtitles)
-        {
-            foreach (var subtitle in subtitles)
+            if (Subtitles.Count > 0)
             {
-                writer.WriteLine(subsCounter++);
-                writer.WriteLine(subtitle.ToString(settings));
+                SortRegularSubtitles(Subtitles);
+                OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
+
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
             }
 
-            writer.Flush();
+            lastWritingTask?.Wait(ct);
+
+            FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
     }
 
@@ -376,7 +376,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Rolling Chat Subtitles
 
-    private void WriteRollingChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer)
+    private void WriteRollingChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
@@ -393,9 +393,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         CalculateChatPosYs(fontSize, settings.SubtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount);
 
-        Task lastWritingTask = null;
+        Task<int> lastWritingTask = null;
+        var cts = new CancellationTokenSource();
+        var ct = cts.Token;
 
-        int subsCounter = 1;
         List<Subtitle> Subtitles = [];
 
         int messagesCount = 0;
@@ -409,22 +410,33 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         TimeSpan nextTimeSlot = TimeSpan.MinValue;
         bool isWriteSubtitles = false;
         TimeSpan maxShowTime = TimeSpan.MinValue;
-        foreach (JToken comment in comments)
-        {
-            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(processedComment.Body))
+        ProcessCommentsInChunks(
+            comments,
+            regexEmbeddedEmoticons,
+            userColors,
+            settings,
+            ProcessComment,
+            PostProcessCommentsChunk,
+            PostProcessComments,
+            ref error,
+            cts,
+            ct
+        );
+
+        void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
+        {
+            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
-                continue;
+                return;
             }
 
             messagesCount++;
 
-            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
-            int linesCount = message.LinesCount;
+            int linesCount = pccm.message.LinesCount;
 
-            TimeSpan showTime = processedComment.Timestamp + timeOffset;
+            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
             if (showTime < nextTimeSlot)
                 showTime = nextTimeSlot;
             nextTimeSlot = showTime + TimeSpan.FromSeconds(linesCount);
@@ -448,11 +460,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                         else
                             count = Subtitles.Count;
 
-                        var copySubtitles = Subtitles.Take(count).ToList();
-                        if (lastWritingTask == null)
-                            lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
-                        else
-                            lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
+                        var copySubtitles = Subtitles.Take(count).ToArray();
+                        WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
 
                         Subtitles.RemoveRange(0, count);
 
@@ -465,7 +474,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             for (int posY = bottomPosY; posY >= topPosY; posY -= fontSize)
             {
                 TimeSpan hideTime = showTime + timeStep;
-                var subtitle = new Subtitle(showTime, hideTime, posY, message);
+                var subtitle = new Subtitle(showTime, hideTime, posY, pccm.message);
                 Subtitles.Add(subtitle);
                 subtitlesCount++;
 
@@ -479,7 +488,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 showTime = hideTime;
             }
 
-            if (Subtitles.Count >= FLUSH_SUBTITLES_LIMIT)
+            if (Subtitles.Count >= FLUSH_SUBTITLES_COUNT)
             {
                 if (isWriteSubtitles == false)
                 {
@@ -487,33 +496,25 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     isWriteSubtitles = true;
                 }
             }
+        }
 
+        void PostProcessCommentsChunk()
+        {
             ProgressAsync.RaiseAsync(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
 
-        if (Subtitles.Count > 0)
+        void PostProcessComments()
         {
-            SortRollingChatSubtitles(Subtitles);
-
-            if (lastWritingTask == null)
-                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
-            else
-                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
-        }
-
-        lastWritingTask?.Wait();
-
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
-
-        void WriteSubtitles(List<Subtitle> subtitles)
-        {
-            foreach (var subtitle in subtitles)
+            if (Subtitles.Count > 0)
             {
-                writer.WriteLine(subsCounter++);
-                writer.WriteLine(subtitle.ToString(settings));
+                SortRollingChatSubtitles(Subtitles);
+
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
             }
 
-            writer.Flush();
+            lastWritingTask?.Wait(ct);
+
+            FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
     }
 
@@ -545,7 +546,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Static Chat Subtitles
 
-    private void WriteStaticChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer)
+    private void WriteStaticChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
@@ -566,9 +567,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             999
         );
 
-        Task lastWritingTask = null;
+        Task<int> lastWritingTask = null;
+        var cts = new CancellationTokenSource();
+        var ct = cts.Token;
 
-        int subsCounter = 1;
         List<Subtitle> Subtitles = [];
 
         int messagesCount = 0;
@@ -580,24 +582,34 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             totalMessages = comments.Count();
 
         Subtitle prevSubtitle = null;
-        foreach (JToken comment in comments)
-        {
-            var processedComment = ProcessComment(comment, regexEmbeddedEmoticons, userColors, settings);
 
-            if (string.IsNullOrWhiteSpace(processedComment.Body))
+        ProcessCommentsInChunks(
+            comments,
+            regexEmbeddedEmoticons,
+            userColors,
+            settings,
+            ProcessComment,
+            PostProcessCommentsChunk,
+            PostProcessComments,
+            ref error,
+            cts,
+            ct
+        );
+
+        void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
+        {
+            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
-                continue;
+                return;
             }
 
             messagesCount++;
 
-            var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
-
             if (prevSubtitle == null)
             {
-                TimeSpan showTime = processedComment.Timestamp + timeOffset;
-                var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, message);
+                TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
+                var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, pccm.message);
 
                 Subtitles.Add(subtitle);
                 subtitlesCount++;
@@ -606,10 +618,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
             else
             {
-                TimeSpan showTime = processedComment.Timestamp + timeOffset;
+                TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY);
                 subtitle.AddMessages(prevSubtitle);
-                subtitle.AddMessage(message);
+                subtitle.AddMessage(pccm.message);
 
                 int linesCount = subtitle.LinesCount;
                 if (linesCount > posYCount)
@@ -626,46 +638,33 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 prevSubtitle = subtitle;
             }
 
-            if (Subtitles.Count >= FLUSH_SUBTITLES_LIMIT)
+            if (Subtitles.Count >= FLUSH_SUBTITLES_COUNT)
             {
                 int lastIndex = Subtitles.Count - 1;
                 var lastSub = Subtitles[lastIndex];
                 Subtitles.RemoveAt(lastIndex);
 
-                var copySubtitles = new List<Subtitle>(Subtitles);
-                if (lastWritingTask == null)
-                    lastWritingTask = Task.Run(() => WriteSubtitles(copySubtitles));
-                else
-                    lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(copySubtitles));
+                var copySubtitles = Subtitles.ToArray();
+                WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
 
                 Subtitles.Clear();
                 Subtitles.Add(lastSub);
             }
+        }
 
+        void PostProcessCommentsChunk()
+        {
             ProgressAsync.RaiseAsync(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
 
-        if (Subtitles.Count > 0)
+        void PostProcessComments()
         {
-            if (lastWritingTask == null)
-                lastWritingTask = Task.Run(() => WriteSubtitles(Subtitles));
-            else
-                lastWritingTask = lastWritingTask.ContinueWith(_ => WriteSubtitles(Subtitles));
-        }
+            if (Subtitles.Count > 0)
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
 
-        lastWritingTask?.Wait();
+            lastWritingTask?.Wait(ct);
 
-        FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
-
-        void WriteSubtitles(List<Subtitle> subtitles)
-        {
-            foreach (var subtitle in subtitles)
-            {
-                writer.WriteLine(subsCounter++);
-                writer.WriteLine(subtitle.ToString(settings));
-            }
-
-            writer.Flush();
+            FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
     }
 
@@ -708,46 +707,155 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Process Comment
+    #region Process Comments
 
-    private static ProcessedComment ProcessComment(
+    private static void ProcessCommentsInChunks(
+        JToken comments,
+        Regex[] regexEmbeddedEmoticons,
+        Dictionary<string, UserColor> userColors,
+        TwitchSubtitlesSettings settings,
+        Action<(ProcessedComment, ChatMessage)> ProcessComment,
+        Action PostProcessCommentsChunk,
+        Action PostProcessComments,
+        ref Exception error,
+        CancellationTokenSource cts,
+        CancellationToken ct)
+    {
+        try
+        {
+            Task<(ProcessedComment, ChatMessage)[]> processCommentsTask = null;
+
+            JToken[] firstChunk = null;
+            bool hasReachedFirstChunk = false;
+            bool hasReachedSecondChunk = false;
+
+            foreach (JToken[] chunk in comments.Chunk(COMMENTS_CHUNK_SIZE))
+            {
+                if (hasReachedFirstChunk == false)
+                {
+                    firstChunk = chunk;
+                    hasReachedFirstChunk = true;
+                    continue;
+                }
+
+                if (hasReachedSecondChunk == false)
+                {
+                    processCommentsTask = Task.Run(() => ProcessCommentsAsync(chunk /* second chunk */, regexEmbeddedEmoticons, userColors, settings, ct), ct);
+
+                    foreach (JToken comment in firstChunk)
+                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings));
+                    PostProcessCommentsChunk();
+
+                    firstChunk = null;
+                    hasReachedSecondChunk = true;
+                    continue;
+                }
+
+                processCommentsTask.Wait(ct);
+                (ProcessedComment, ChatMessage)[] currentComments = processCommentsTask.Result;
+
+                processCommentsTask = Task.Run(() => ProcessCommentsAsync(chunk, regexEmbeddedEmoticons, userColors, settings, ct), ct);
+
+                foreach ((ProcessedComment, ChatMessage) processedComment in currentComments)
+                    ProcessComment(processedComment);
+                PostProcessCommentsChunk();
+            }
+
+            if (hasReachedFirstChunk)
+            {
+                if (hasReachedSecondChunk)
+                {
+                    processCommentsTask.Wait(ct);
+                    (ProcessedComment, ChatMessage)[] currentComments = processCommentsTask.Result;
+
+                    foreach ((ProcessedComment, ChatMessage) processedComment in currentComments)
+                        ProcessComment(processedComment);
+                    PostProcessCommentsChunk();
+                }
+                else
+                {
+                    foreach (JToken comment in firstChunk)
+                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings));
+                    PostProcessCommentsChunk();
+                }
+            }
+
+            PostProcessComments();
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish the task gracefully
+        }
+        catch (AggregateException aex)
+        {
+            error = aex.InnerException;
+        }
+        catch (Exception ex)
+        {
+            cts.Cancel();
+            error = ex;
+        }
+    }
+
+    private static (ProcessedComment, ChatMessage)[] ProcessCommentsAsync(
+        JToken[] comments,
+        Regex[] regexEmbeddedEmoticons,
+        Dictionary<string, UserColor> userColors,
+        TwitchSubtitlesSettings settings,
+        CancellationToken ct)
+    {
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+
+            return comments.Select(comment => GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings)).ToArray();
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish the task gracefully
+            return null;
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
+    private static (ProcessedComment, ChatMessage) GetProcessComment(
         JToken comment,
         Regex[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TwitchSubtitlesSettings settings)
     {
-        int content_offset_seconds = comment.SelectToken("content_offset_seconds").Value<int>();
-        TimeSpan timestamp = TimeSpan.FromSeconds(content_offset_seconds);
+        var processedComment = new ProcessedComment
+        {
+            Timestamp = TimeSpan.FromSeconds(comment.SelectToken("content_offset_seconds").Value<int>()),
+            User = comment.SelectToken("commenter").SelectToken("display_name").Value<string>()
+        };
 
-        JToken commenter = comment.SelectToken("commenter");
-        string user = commenter.SelectToken("display_name").Value<string>();
-
-        JToken message = comment.SelectToken("message");
-        string body = GetMessageBody(
-            message,
-            user,
+        processedComment.Body = GetMessageBody(
+            comment.SelectToken("message"),
+            processedComment.User,
             regexEmbeddedEmoticons,
             userColors,
-            timestamp,
+            processedComment.Timestamp,
             settings,
-            out bool isBrailleArt
+            out processedComment.IsBrailleArt
         );
 
-        Color color = null;
         if (settings.ColorUserNames)
         {
-            if (userColors.TryGetValue(user, out var userColor))
-                color = userColor.Color;
+            if (userColors.TryGetValue(processedComment.User, out var userColor))
+                processedComment.Color = userColor.Color;
         }
 
-        return new ProcessedComment()
-        {
-            Timestamp = timestamp,
-            User = user,
-            Body = body,
-            IsBrailleArt = isBrailleArt,
-            Color = color
-        };
+        if (string.IsNullOrWhiteSpace(processedComment.Body))
+            return (processedComment, null);
+
+        var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
+        return (processedComment, message);
     }
 
     #endregion
@@ -994,6 +1102,61 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         });
 
         return measurements[0];
+    }
+
+    #endregion
+
+    #region Write Subtitles
+
+    private static void WriteSubtitles(
+        ref Task<int> lastWritingTask,
+        IEnumerable<Subtitle> subtitles,
+        TwitchSubtitlesSettings settings,
+        StreamWriter writer,
+        CancellationTokenSource cts,
+        CancellationToken ct)
+    {
+        if (lastWritingTask == null)
+            lastWritingTask = Task.Run(() => WriteSubtitlesAsync(subtitles, 1, settings, writer, cts, ct), ct);
+        else
+            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteSubtitlesAsync(subtitles, previousTask.Result, settings, writer, cts, ct), ct);
+    }
+
+    private static int WriteSubtitlesAsync(
+        IEnumerable<Subtitle> subtitles,
+        int subsCounter,
+        TwitchSubtitlesSettings settings,
+        StreamWriter writer,
+        CancellationTokenSource cts,
+        CancellationToken ct)
+    {
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+
+            foreach (var subtitle in subtitles)
+            {
+                writer.WriteLine(subsCounter++);
+                writer.WriteLine(subtitle.ToString(settings));
+            }
+
+            writer.Flush();
+
+            ct.ThrowIfCancellationRequested();
+
+            return subsCounter;
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish the task gracefully
+            return subsCounter;
+        }
+        catch
+        {
+            cts.Cancel();
+            throw;
+        }
     }
 
     #endregion
