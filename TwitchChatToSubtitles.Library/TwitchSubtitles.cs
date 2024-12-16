@@ -45,7 +45,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         JToken root = LoadJsonFile(jsonFile);
         FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile));
 
-        Regex[] regexEmbeddedEmoticons = null;
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
         Dictionary<string, UserColor> userColors = null;
         if (settings.RemoveEmoticonNames || settings.ColorUserNames)
         {
@@ -95,7 +95,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Embedded Emoticons
 
-    private Regex[] GetEmbeddedEmoticons(JToken root)
+    private (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root)
     {
         if (settings.RemoveEmoticonNames == false)
             return null;
@@ -121,7 +121,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
 
         return embeddedEmoticons
-            .Select(emoticon => new Regex(@"\b" + emoticon + @"\b", RegexOptions.Compiled))
+            .Select(emoticon => (emoticon, new Regex($@"\b{emoticon}\b", RegexOptions.Compiled)))
             .ToArray();
     }
 
@@ -199,7 +199,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Regular Subtitles
 
-    private void WriteRegularSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
@@ -376,7 +376,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Rolling Chat Subtitles
 
-    private void WriteRollingChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
@@ -546,7 +546,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Static Chat Subtitles
 
-    private void WriteStaticChatSubtitles(JToken root, Regex[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
@@ -711,7 +711,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private static void ProcessCommentsInChunks(
         JToken comments,
-        Regex[] regexEmbeddedEmoticons,
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TwitchSubtitlesSettings settings,
         Action<(ProcessedComment, ChatMessage)> ProcessComment,
@@ -800,7 +800,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private static (ProcessedComment, ChatMessage)[] ProcessCommentsAsync(
         JToken[] comments,
-        Regex[] regexEmbeddedEmoticons,
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TwitchSubtitlesSettings settings,
         CancellationToken ct)
@@ -825,7 +825,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private static (ProcessedComment, ChatMessage) GetProcessComment(
         JToken comment,
-        Regex[] regexEmbeddedEmoticons,
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TwitchSubtitlesSettings settings)
     {
@@ -877,7 +877,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     private static string GetMessageBody(
         JToken message,
         string user,
-        Regex[] regexEmbeddedEmoticons,
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
         TimeSpan timestamp,
         TwitchSubtitlesSettings settings,
@@ -940,8 +940,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             if (settings.RemoveEmoticonNames)
             {
-                foreach (var regex in regexEmbeddedEmoticons)
-                    regex.Replace(body, " ");
+                string bodyString = body.ToString();
+                foreach (var (emoticon, regex) in regexEmbeddedEmoticons)
+                {
+                    if (bodyString.Contains(emoticon, StringComparison.OrdinalIgnoreCase))
+                    {
+                        regex.Replace(body, " ");
+                        bodyString = body.ToString();
+                    }
+                }
             }
 
             RegexDoubleSpaces().Replace(body, " ");
@@ -959,10 +966,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         if (settings.ColorUserNames)
         {
+            string bodyString = body.ToString();
             foreach (var item in userColors)
             {
-                item.Value.Search1.Search.Replace(body, item.Value.Search1.Replace);
-                item.Value.Search2.Search.Replace(body, item.Value.Search2.Replace);
+                if (bodyString.Contains(item.Value.User, StringComparison.OrdinalIgnoreCase))
+                {
+                    item.Value.Search1.Search.Replace(body, item.Value.Search1.Replace);
+                    item.Value.Search2.Search.Replace(body, item.Value.Search2.Replace);
+                    bodyString = body.ToString();
+                }
             }
         }
 
