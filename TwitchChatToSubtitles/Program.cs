@@ -194,6 +194,12 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         }
         else
         {
+            try
+            {
+                File.Delete(e.SrtFile);
+            }
+            catch { }
+
             Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
         }
     };
