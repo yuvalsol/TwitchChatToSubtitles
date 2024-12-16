@@ -102,15 +102,18 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             Console.WriteLine("Static Chat Subtitles");
     };
 
-    twitchSubtitles.StartLoadingJsonFile += (object sender, EventArgs e) =>
+    twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
     {
-        Console.WriteLine("Loading Json file...");
+        Console.WriteLine("Loading JSON file...");
     };
 
     twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
     {
-        Console.WriteLine("Json file loaded successfully.");
-        Console.WriteLine("Json file " + e.JsonFile);
+        if (e.Error == null)
+            Console.WriteLine("JSON file loaded successfully.");
+        else
+            Console.WriteLine("Could not load JSON file.");
+        Console.WriteLine("JSON file: " + e.JsonFile);
     };
 
     twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
@@ -123,9 +126,12 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         Console.WriteLine($"Begin writing preparations ({preparations})...");
     };
 
-    twitchSubtitles.FinishWritingPreparations += (object sender, EventArgs e) =>
+    twitchSubtitles.FinishWritingPreparations += (object sender, FinishWritingPreparationsEventArgs e) =>
     {
-        Console.WriteLine("Writing preparations finished successfully.");
+        if (e.Error == null)
+            Console.WriteLine("Writing preparations finished successfully.");
+        else
+            Console.WriteLine("Failed to finish writing preparations.");
     };
 
     int leftMessages = 0;
@@ -137,7 +143,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     int leftFinish = 0;
     int topFinish = 0;
 
-    twitchSubtitles.StartWritingSubtitles += (object sender, EventArgs e) =>
+    twitchSubtitles.StartWritingSubtitles += (object sender, StartWritingSubtitlesEventArgs e) =>
     {
         Console.Write("Chat Messages: ");
         leftMessages = Console.CursorLeft;
@@ -185,31 +191,48 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     {
         Console.CursorVisible = true;
 
-        Console.SetCursorPosition(leftFinish, topFinish);
+        if (leftFinish != 0 || topFinish != 0)
+            Console.SetCursorPosition(leftFinish, topFinish);
 
         if (e.Error == null)
         {
             Console.WriteLine("Finished successfully.");
-            Console.WriteLine("Subtitles file " + e.SrtFile);
+            Console.WriteLine("Subtitles file: " + e.SrtFile);
+
+#if DEBUG
+            Console.WriteLine("Press any key to continue . . .");
+            Console.ReadKey(true);
+#endif
         }
         else
         {
             try
             {
-                File.Delete(e.SrtFile);
+                if (File.Exists(e.SrtFile))
+                    File.Delete(e.SrtFile);
             }
             catch { }
 
+#if RELEASE
+            Console.WriteLine("Failed to write subtitles.");
+            Console.WriteLine("Error: " + e.Error.Message);
+
+            Exception ex = e.Error.InnerException;
+            while (ex != null)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+                ex = ex.InnerException;
+            }
+#elif DEBUG
             Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+#endif
+
+            Console.WriteLine("Press any key to continue . . .");
+            Console.ReadKey(true);
         }
     };
 
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);
-
-#if DEBUG
-    Console.WriteLine("Press any key to continue . . .");
-    Console.ReadKey(true);
-#endif
 }
 
 #if DEBUG

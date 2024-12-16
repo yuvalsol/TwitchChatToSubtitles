@@ -8,11 +8,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     private readonly TwitchSubtitlesSettings settings = settings ?? new();
 
     public EventHandler Start;
-    public EventHandler StartLoadingJsonFile;
+    public EventHandler<StartLoadingJsonFileEventArgs> StartLoadingJsonFile;
     public EventHandler<FinishLoadingJsonFileEventArgs> FinishLoadingJsonFile;
     public EventHandler<StartWritingPreparationsEventArgs> StartWritingPreparations;
-    public EventHandler FinishWritingPreparations;
-    public EventHandler StartWritingSubtitles;
+    public EventHandler<FinishWritingPreparationsEventArgs> FinishWritingPreparations;
+    public EventHandler<StartWritingSubtitlesEventArgs> StartWritingSubtitles;
     public EventHandler<ProgressEventArgs> ProgressAsync;
     public EventHandler<ProgressEventArgs> FinishWritingSubtitles;
     public EventHandler<FinishEventArgs> Finish;
@@ -34,6 +34,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if ((settings.RegularSubtitles || settings.RollingChatSubtitles || settings.StaticChatSubtitles) == false)
             throw new ArgumentException("Subtitles type (RegularSubtitles, RollingChatSubtitles, StaticChatSubtitles) is not selected.");
 
+        Exception error = null;
+
         Start.Raise(this, () => EventArgs.Empty);
 
         string srtFile = Path.Combine(
@@ -41,23 +43,38 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             Path.GetFileNameWithoutExtension(jsonFile) + ".srt"
         );
 
-        StartLoadingJsonFile.Raise(this, () => EventArgs.Empty);
-        JToken root = LoadJsonFile(jsonFile);
-        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile));
+        StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
+        JToken root = LoadJsonFile(jsonFile, ref error);
+        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
+
+        if (error != null)
+        {
+            Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
+            return;
+        }
 
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
         Dictionary<string, UserColor> userColors = null;
         if (settings.RemoveEmoticonNames || settings.ColorUserNames)
         {
             StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
-            regexEmbeddedEmoticons = GetEmbeddedEmoticons(root);
-            userColors = GetUserColors(root);
-            FinishWritingPreparations.Raise(this, () => EventArgs.Empty);
+
+            if (settings.RemoveEmoticonNames)
+                regexEmbeddedEmoticons = GetEmbeddedEmoticons(root, ref error);
+
+            if (settings.ColorUserNames && error == null)
+                userColors = GetUserColors(root, ref error);
+
+            FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames, error));
+
+            if (error != null)
+            {
+                Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
+                return;
+            }
         }
 
-        StartWritingSubtitles.Raise(this, () => EventArgs.Empty);
-
-        Exception error = null;
+        StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
 
         {
             using var srtStream = File.Open(srtFile, FileMode.Create);
@@ -76,7 +93,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Load Json File
 
-    private static JToken LoadJsonFile(string jsonFile)
+    private static JToken LoadJsonFile(string jsonFile, ref Exception error)
     {
         using var jsonStream = new StreamReader(jsonFile);
         using var reader = new JsonTextReader(jsonStream);
@@ -87,7 +104,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
         catch (Exception ex)
         {
-            throw new Exception("Could not load JSON file '" + jsonFile + "'.", ex);
+            error = ex;
+            return null;
         }
     }
 
@@ -95,34 +113,39 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Embedded Emoticons
 
-    private (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root)
+    private static (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root, ref Exception error)
     {
-        if (settings.RemoveEmoticonNames == false)
+        try
+        {
+            IEnumerable<string> thirdPartyEmoticons = GetThirdPartyEmoticons(root);
+            IEnumerable<string> firstPartyEmoticons = GetFirstPartyEmoticons(root);
+
+            IEnumerable<string> embeddedEmoticons = [];
+
+            if (thirdPartyEmoticons != null && firstPartyEmoticons != null)
+            {
+                embeddedEmoticons = thirdPartyEmoticons.Concat(firstPartyEmoticons)
+                    .Distinct()
+                    .OrderBy(name => name);
+            }
+            else if (thirdPartyEmoticons != null && firstPartyEmoticons == null)
+            {
+                embeddedEmoticons = thirdPartyEmoticons;
+            }
+            else if (thirdPartyEmoticons == null && firstPartyEmoticons != null)
+            {
+                embeddedEmoticons = firstPartyEmoticons;
+            }
+
+            return embeddedEmoticons
+                .Select(emoticon => (emoticon, new Regex($@"\b{emoticon}\b", RegexOptions.Compiled)))
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            error = ex;
             return null;
-
-        IEnumerable<string> thirdPartyEmoticons = GetThirdPartyEmoticons(root);
-        IEnumerable<string> firstPartyEmoticons = GetFirstPartyEmoticons(root);
-
-        IEnumerable<string> embeddedEmoticons = [];
-
-        if (thirdPartyEmoticons != null && firstPartyEmoticons != null)
-        {
-            embeddedEmoticons = thirdPartyEmoticons.Concat(firstPartyEmoticons)
-                .Distinct()
-                .OrderBy(name => name);
         }
-        else if (thirdPartyEmoticons != null && firstPartyEmoticons == null)
-        {
-            embeddedEmoticons = thirdPartyEmoticons;
-        }
-        else if (thirdPartyEmoticons == null && firstPartyEmoticons != null)
-        {
-            embeddedEmoticons = firstPartyEmoticons;
-        }
-
-        return embeddedEmoticons
-            .Select(emoticon => (emoticon, new Regex($@"\b{emoticon}\b", RegexOptions.Compiled)))
-            .ToArray();
     }
 
     private static IEnumerable<string> GetThirdPartyEmoticons(JToken root)
@@ -165,34 +188,31 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private const string DEFAULT_USER_COLOR = "#9146FF";
 
-    private Dictionary<string, UserColor> GetUserColors(JToken root)
+    private static Dictionary<string, UserColor> GetUserColors(JToken root, ref Exception error)
     {
-        if (settings.ColorUserNames == false)
+        try
+        {
+            var userColors = new Dictionary<string, UserColor>();
+
+            foreach (JToken comment in root.SelectToken("comments"))
+            {
+                string user = comment.SelectToken("commenter").SelectToken("display_name").Value<string>();
+
+                string userColor = comment.SelectToken("message").SelectToken("user_color").Value<string>();
+                if (string.IsNullOrEmpty(userColor))
+                    userColor = DEFAULT_USER_COLOR;
+
+                if (userColors.ContainsKey(user) == false)
+                    userColors.Add(user, new UserColor(user, new Color(userColor)));
+            }
+
+            return userColors;
+        }
+        catch (Exception ex)
+        {
+            error = ex;
             return null;
-
-        var userColors = new Dictionary<string, UserColor>();
-
-        foreach (JToken comment in root.SelectToken("comments"))
-        {
-            string user = comment.SelectToken("commenter").SelectToken("display_name").Value<string>();
-
-            string userColor = comment.SelectToken("message").SelectToken("user_color").Value<string>();
-            if (string.IsNullOrEmpty(userColor))
-                userColor = DEFAULT_USER_COLOR;
-
-            if (userColors.ContainsKey(user) == false)
-                userColors.Add(user, new UserColor(user, new Color(userColor)));
         }
-
-        // force the regexes to compile
-        // this will account to the writing preparations time
-        foreach (var item in userColors)
-        {
-            item.Value.Search1.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search1.Replace);
-            item.Value.Search2.Search.Replace("Lorem ipsum dolor sit amet, consectetur adipiscing elit.", item.Value.Search2.Replace);
-        }
-
-        return userColors;
     }
 
     #endregion
