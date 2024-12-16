@@ -279,7 +279,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
                             var copySubtitles = Subtitles.ToArray();
-                            WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
+                            WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                             Subtitles.Clear();
                             Subtitles.Add(lastSub);
@@ -307,7 +307,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 SortRegularSubtitles(Subtitles);
                 OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
             }
 
             lastWritingTask?.Wait(ct);
@@ -467,7 +467,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             count = Subtitles.Count;
 
                         var copySubtitles = Subtitles.Take(count).ToArray();
-                        WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
+                        WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                         Subtitles.RemoveRange(0, count);
 
@@ -515,7 +515,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             {
                 SortRollingChatSubtitles(Subtitles);
 
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
             }
 
             lastWritingTask?.Wait(ct);
@@ -651,7 +651,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 Subtitles.RemoveAt(lastIndex);
 
                 var copySubtitles = Subtitles.ToArray();
-                WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, cts, ct);
+                WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                 Subtitles.Clear();
                 Subtitles.Add(lastSub);
@@ -666,7 +666,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         void PostProcessComments()
         {
             if (Subtitles.Count > 0)
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, cts, ct);
+                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
 
             lastWritingTask?.Wait(ct);
 
@@ -1131,13 +1131,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         IEnumerable<Subtitle> subtitles,
         TwitchSubtitlesSettings settings,
         StreamWriter writer,
-        CancellationTokenSource cts,
         CancellationToken ct)
     {
+        if (lastWritingTask != null && lastWritingTask.Exception != null)
+            throw lastWritingTask.Exception;
+
         if (lastWritingTask == null)
-            lastWritingTask = Task.Run(() => WriteSubtitlesAsync(subtitles, 1, settings, writer, cts, ct), ct);
+            lastWritingTask = Task.Run(() => WriteSubtitlesAsync(subtitles, 1, settings, writer, ct), ct);
         else
-            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteSubtitlesAsync(subtitles, previousTask.Result, settings, writer, cts, ct), ct);
+            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteSubtitlesAsync(subtitles, previousTask.Result, settings, writer, ct), ct);
     }
 
     private static int WriteSubtitlesAsync(
@@ -1145,7 +1147,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int subsCounter,
         TwitchSubtitlesSettings settings,
         StreamWriter writer,
-        CancellationTokenSource cts,
         CancellationToken ct)
     {
         try
@@ -1172,7 +1173,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
         catch
         {
-            cts.Cancel();
             throw;
         }
     }
