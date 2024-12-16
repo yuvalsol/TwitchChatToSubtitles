@@ -113,72 +113,58 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Embedded Emoticons
 
+    // https://en.wikipedia.org/wiki/List_of_emoticons
+    [GeneratedRegex(@"^([A-Z])?[-—–―‒_`~!@#$%^&*()=+[\]{};:'""\\|,.<>/?‘’“”0-9]+([A-Z])?$|^\\o/$|^\(\.Y\.\)$|^\(o\)\(o\)$|^DX$|^XD$|^XP$", RegexOptions.IgnoreCase)]
+    private static partial Regex RegexTextEmoticon();
+
     private static (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root, ref Exception error)
     {
         try
         {
-            IEnumerable<string> thirdPartyEmoticons = GetThirdPartyEmoticons(root);
-            IEnumerable<string> firstPartyEmoticons = GetFirstPartyEmoticons(root);
+            var emoticonIds =
+                Enumerable.Empty<JToken>()
+                .Concat(root.SelectTokens("embeddedData.thirdParty[*].id"))
+                .Concat(root.SelectTokens("embeddedData.firstParty[*].id"))
+                .Cast<JValue>()
+                .Select(node => node.Value<string>())
+                .Where(id => string.IsNullOrEmpty(id) == false)
+                .Distinct()
+                .OrderBy(id => id)
+                .ToArray();
 
-            IEnumerable<string> embeddedEmoticons = [];
+            var emoticonsInMessages =
+                root.SelectTokens("comments[*].message.fragments[*].emoticon.emoticon_id")
+                .Cast<JValue>()
+                .Select(node => new { node, id = node.Value<string>() })
+                .Where(item => string.IsNullOrEmpty(item.id) == false)
+                .Where(item => emoticonIds.Contains(item.id))
+                .Select(item => item.node)
+                .Select(node => node.Parent/*emoticon_id container*/.Parent/*emoticon*/.Parent/*emoticon container*/.Parent/*fragment*/.SelectToken("text").Value<string>())
+                .Where(name => string.IsNullOrEmpty(name) == false);
 
-            if (thirdPartyEmoticons != null && firstPartyEmoticons != null)
-            {
-                embeddedEmoticons = thirdPartyEmoticons.Concat(firstPartyEmoticons)
-                    .Distinct()
-                    .OrderBy(name => name);
-            }
-            else if (thirdPartyEmoticons != null && firstPartyEmoticons == null)
-            {
-                embeddedEmoticons = thirdPartyEmoticons;
-            }
-            else if (thirdPartyEmoticons == null && firstPartyEmoticons != null)
-            {
-                embeddedEmoticons = firstPartyEmoticons;
-            }
+            var emoticonNames =
+                Enumerable.Empty<JToken>()
+                .Concat(root.SelectTokens("embeddedData.thirdParty[*].name"))
+                .Concat(root.SelectTokens("embeddedData.firstParty[*].name"))
+                .Cast<JValue>()
+                .Select(node => node.Value<string>())
+                .Where(name => string.IsNullOrEmpty(name) == false);
 
-            return embeddedEmoticons
-                .Select(emoticon => (emoticon, new Regex($@"\b{emoticon}\b", RegexOptions.Compiled)))
+            return
+                Enumerable.Empty<string>()
+                .Concat(emoticonsInMessages)
+                .Concat(emoticonNames)
+                .Distinct()
+                .OrderBy(name => name)
+                // keep text emoticons in messages
+                .Where(name => RegexTextEmoticon().IsMatch(name) == false)
+                .Select(emoticon => (emoticon, new Regex($@"\b{Regex.Escape(emoticon)}\b", RegexOptions.Compiled)))
                 .ToArray();
         }
         catch (Exception ex)
         {
             error = ex;
             return null;
-        }
-    }
-
-    private static IEnumerable<string> GetThirdPartyEmoticons(JToken root)
-    {
-        try
-        {
-            return root.SelectTokens("embeddedData.thirdParty[*].name")
-                .Cast<JValue>()
-                .Select(x => x.Value<string>())
-                .Where(name => string.IsNullOrEmpty(name) == false)
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static IEnumerable<string> GetFirstPartyEmoticons(JToken root)
-    {
-        try
-        {
-            return root.SelectTokens("embeddedData.thirdParty[*].name")
-                .Cast<JValue>()
-                .Select(x => x.Value<string>())
-                .Where(name => string.IsNullOrEmpty(name) == false)
-                .Distinct()
-                .OrderBy(name => name);
-        }
-        catch
-        {
-            return [];
         }
     }
 
