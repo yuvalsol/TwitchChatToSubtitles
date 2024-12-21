@@ -977,8 +977,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             {
                 if (bodyString.Contains(item.Value.User, StringComparison.OrdinalIgnoreCase))
                 {
-                    item.Value.Search1.Search.Replace(body, item.Value.Search1.Replace);
-                    item.Value.Search2.Search.Replace(body, item.Value.Search2.Replace);
+                    item.Value.SearchAndReplace(body);
                     bodyString = body.ToString();
                 }
             }
