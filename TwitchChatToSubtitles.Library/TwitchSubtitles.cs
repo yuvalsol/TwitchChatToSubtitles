@@ -174,11 +174,18 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private const string DEFAULT_USER_COLOR = "#9146FF";
 
+    // (?<=^|\b|\s)
+    // @
+    // [A-Za-z0-9_]+
+    // (?=$|\b|\s)
+    [GeneratedRegex(@"(?<=^|\b|\s)@[A-Za-z0-9_]+(?=$|\b|\s)", RegexOptions.IgnoreCase)]
+    private static partial Regex RegexUserName();
+
     private static Dictionary<string, UserColor> GetUserColors(JToken root, ref Exception error)
     {
         try
         {
-            var userColors = new Dictionary<string, UserColor>();
+            var userColors = new Dictionary<string, UserColor>(StringComparer.OrdinalIgnoreCase);
 
             foreach (JToken comment in root.SelectToken("comments"))
             {
@@ -190,6 +197,27 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
                 if (userColors.ContainsKey(user) == false)
                     userColors.Add(user, new UserColor(user, new Color(userColor)));
+            }
+
+            string streamer = root.SelectToken("streamer").SelectToken("name").Value<string>();
+            if (string.IsNullOrEmpty(streamer) == false)
+            {
+                if (streamer.StartsWith('@'))
+                    streamer = streamer[1..];
+
+                if (userColors.ContainsKey(streamer) == false)
+                    userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+            }
+
+            var videoTitle = root.SelectToken("video").SelectToken("title").Value<string>();
+            if (string.IsNullOrEmpty(videoTitle) == false)
+            {
+                foreach (Match match in RegexUserName().Matches(videoTitle))
+                {
+                    streamer = match.Value[1..];
+                    if (userColors.ContainsKey(streamer) == false)
+                        userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+                }
             }
 
             return userColors;
