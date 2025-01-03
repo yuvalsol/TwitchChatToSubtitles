@@ -913,6 +913,25 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     [GeneratedRegex(@"\s{2,}", RegexOptions.IgnoreCase)]
     private static partial Regex RegexDoubleSpaces();
 
+    [GeneratedRegex(@"^(?:\s|󠀀)+|(?:\s|󠀀)+$", RegexOptions.IgnoreCase)]
+    private static partial Regex RegexBodyTrim();
+
+    // starts with https:// or www.
+    // (?:https://|http://|ftp://|www\.)
+    // [A-Za-z0-9-\\@:%_\+~#=,./]+
+
+    // starts with xxx.xxx.xxx/
+    // (?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+
+    // [A-Za-z0-9-\\@:%_\+~#=,]+/
+    // [A-Za-z0-9-\\@:%_\+~#=,./]+
+
+    // ends with com,gov,net,org,tv
+    // (?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+
+    // (?:com|gov|net|org|tv)
+
+    [GeneratedRegex(@"(?<Link>(?:https://|http://|ftp://|www\.)[A-Za-z0-9-\\@:%_\+~#=,./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+[A-Za-z0-9-\\@:%_\+~#=,]+/[A-Za-z0-9-\\@:%_\+~#=,./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+(?:com|gov|net|org|tv))", RegexOptions.IgnoreCase)]
+    private static partial Regex RegexLink();
+
     private static string GetMessageBody(
         JToken message,
         string user,
@@ -991,6 +1010,27 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
 
             RegexDoubleSpaces().Replace(body, " ");
+            RegexBodyTrim().Replace(body, string.Empty);
+
+            if (body.Length == 0)
+                return string.Empty;
+
+            // there is no setting for "underline links" or "don't use assa tags"
+            // underlining links requires assa tags, same as coloring user names
+            // so, if coloring user names is not selected, it implicitly means not to use assa tags
+            // in that case, also, don't underline links
+            if (settings.ColorUserNames)
+            {
+                bool haslinks = RegexLink().IsMatch(body.ToString());
+                if (haslinks)
+                {
+                    foreach (var match in RegexLink().Matches(body.ToString()).Cast<Match>().OrderByDescending(m => m.Index))
+                    {
+                        body.Insert(match.Index + match.Length, @"{\u0}");
+                        body.Insert(match.Index, @"{\u1}");
+                    }
+                }
+            }
         }
 
         if (isBrailleArt)
