@@ -49,10 +49,11 @@ public sealed class ProgressEventArgs(int messagesCount, int discardedMessagesCo
     public static new readonly ProgressEventArgs Empty = new(default, default, default, default);
 }
 
-public sealed class FinishEventArgs(string srtFile, Exception error) : EventArgs
+public sealed class FinishEventArgs(string srtFile, TimeSpan processTime, Exception error) : EventArgs
 {
     public string SrtFile { get; private set; } = srtFile;
+    public TimeSpan ProcessTime { get; private set; } = processTime;
     public Exception Error { get; private set; } = error;
 
-    public static new readonly FinishEventArgs Empty = new(default, default);
+    public static new readonly FinishEventArgs Empty = new(default, default, default);
 }

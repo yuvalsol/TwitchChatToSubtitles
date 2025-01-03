@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Diagnostics;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace TwitchChatToSubtitles.Library;
@@ -49,7 +50,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         if (error != null)
         {
-            Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
+            Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
             return;
         }
 
@@ -69,12 +70,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             if (error != null)
             {
-                Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
+                Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
                 return;
             }
         }
 
         StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
+
+        long startTime = Stopwatch.GetTimestamp();
 
         {
             using var srtStream = File.Open(srtFile, FileMode.Create);
@@ -88,7 +91,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
         }
 
-        Finish.Raise(this, () => new FinishEventArgs(srtFile, error));
+        TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
+
+        Finish.Raise(this, () => new FinishEventArgs(srtFile, processTime, error));
     }
 
     #region Load Json File

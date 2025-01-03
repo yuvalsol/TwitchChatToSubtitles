@@ -199,6 +199,9 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             Console.WriteLine("Finished successfully.");
             Console.WriteLine("Subtitles file: " + e.SrtFile);
 
+            string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss" : "m':'ss");
+            Console.WriteLine("Process Time: " + processTime);
+
 #if DEBUG
             Console.WriteLine("Press any key to continue . . .");
             Console.ReadKey(true);
