@@ -18,7 +18,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     public EventHandler<ProgressEventArgs> FinishWritingSubtitles;
     public EventHandler<FinishEventArgs> Finish;
 
-    private const int COMMENTS_CHUNK_SIZE = 50;
+    private const int COMMENTS_CHUNK_SIZE = 100;
     private const int FLUSH_SUBTITLES_COUNT = 1000;
 
     public void WriteTwitchSubtitles(string jsonFile)
@@ -274,7 +274,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
+            if (string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -465,7 +465,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
+            if (string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -637,7 +637,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrWhiteSpace(pccm.processedComment.Body))
+            if (string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -884,14 +884,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             out processedComment.IsBrailleArt
         );
 
+        if (string.IsNullOrEmpty(processedComment.Body))
+            return (processedComment, null);
+
         if (settings.ColorUserNames)
         {
             if (userColors.TryGetValue(processedComment.User, out var userColor))
                 processedComment.Color = userColor.Color;
         }
-
-        if (string.IsNullOrWhiteSpace(processedComment.Body))
-            return (processedComment, null);
 
         var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
         return (processedComment, message);
@@ -1013,7 +1013,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             RegexBodyTrim().Replace(body, string.Empty);
 
             if (body.Length == 0)
-                return string.Empty;
+                return null;
 
             // there is no setting for "underline links" or "don't use assa tags"
             // underlining links requires assa tags, same as coloring user names
@@ -1021,10 +1021,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             // in that case, also, don't underline links
             if (settings.ColorUserNames)
             {
-                bool haslinks = RegexLink().IsMatch(body.ToString());
-                if (haslinks)
+                string bodyString = body.ToString();
+                if (RegexLink().IsMatch(bodyString))
                 {
-                    foreach (var match in RegexLink().Matches(body.ToString()).Cast<Match>().OrderByDescending(m => m.Index))
+                    foreach (var match in RegexLink().Matches(bodyString).Cast<Match>().OrderByDescending(m => m.Index))
                     {
                         body.Insert(match.Index + match.Length, @"{\u0}");
                         body.Insert(match.Index, @"{\u1}");
