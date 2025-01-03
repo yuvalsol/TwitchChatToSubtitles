@@ -19,16 +19,19 @@ internal class UserColor
         // (?<=^|\b|\s|\\N)
         // @
         // user
+        // (?![/])
+        // (?!\.com)
         // (?=$|\b|\s|\\N)
-        Search1 = new Regex($@"(?<=^|\b|\s|\\N)@{Regex.Escape(user)}(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        Search1 = new Regex($@"(?<=^|\b|\s|\\N)@{Regex.Escape(user)}(?![/])(?!\.com)(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Replacement1 = $"{{\\c&{Color.BGR}&}}@{user}{{\\c}}";
 
         // (?<=^|\b|\s|\\N)
         // (?<![@/])
         // user
         // (?![@/])
+        // (?!\.com)
         // (?=$|\b|\s|\\N)
-        Search2 = new Regex($@"(?<=^|\b|\s|\\N)(?<![@/]){Regex.Escape(user)}(?![@/])(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        Search2 = new Regex($@"(?<=^|\b|\s|\\N)(?<![@/]){Regex.Escape(user)}(?![@/])(?!\.com)(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         Replacement2 = $"{{\\c&{Color.BGR}&}}{user}{{\\c}}";
     }
 
