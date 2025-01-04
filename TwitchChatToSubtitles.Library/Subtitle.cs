@@ -169,9 +169,9 @@ internal class Subtitle
                 fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
             if (PosY > 0)
-                sb.AppendLine($@"{{\a5\an7\pos({PosX(subtitlesLocation, subtitlesFontSize)},{PosY}){fontSizeStr}\bord1\shad0}}");
+                sb.AppendLine($@"{{\a5\an7\pos({PosX(subtitlesLocation, subtitlesFontSize)},{PosY}){fontSizeStr}\bord0\shad0}}");
             else if (subtitlesFontSize != SubtitlesFontSize.None)
-                sb.AppendLine($@"{{{fontSizeStr}\bord1\shad0}}");
+                sb.AppendLine($@"{{{fontSizeStr}\bord0\shad0}}");
         }
 
         foreach (var message in Messages)
