@@ -910,10 +910,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     [GeneratedRegex(@"(?<Prefix>\s*)[A-Za-z0-9]+(?<Suffix>\s*)")]
     private static partial Regex RegexEmoticonName();
 
-    [GeneratedRegex(@"\s{2,}", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\s{2,}")]
     private static partial Regex RegexDoubleSpaces();
 
-    [GeneratedRegex(@"^(?:\s|󠀀)+|(?:\s|󠀀)+$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s+|\s+$")]
     private static partial Regex RegexBodyTrim();
 
     // starts with https:// or www.
@@ -1009,6 +1009,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 }
             }
 
+            body.Replace("\uDB40\uDC00", " ").Replace('\uFFFC', ' ');
             RegexDoubleSpaces().Replace(body, " ");
             RegexBodyTrim().Replace(body, string.Empty);
 
