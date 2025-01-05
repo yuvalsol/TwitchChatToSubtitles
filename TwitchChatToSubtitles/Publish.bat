@@ -6,3 +6,4 @@ echo.
 dotnet publish --output "%publishDir%\linux-x64" --runtime linux-x64 %arguments%
 echo.
 ::pause
+exit /b 0
