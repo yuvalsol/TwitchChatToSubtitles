@@ -149,15 +149,15 @@ internal class Subtitle
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None);
+        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize)
+    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, bool isUsingAssaTags)
     {
         var sb = new StringBuilder();
         sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
@@ -173,9 +173,13 @@ internal class Subtitle
             else if (subtitlesFontSize != SubtitlesFontSize.None)
                 sb.AppendLine($@"{{{fontSizeStr}\bord0\shad0}}");
         }
+        else if (isUsingAssaTags)
+        {
+            sb.AppendLine(@"{\bord0\shad0}");
+        }
 
         foreach (var message in Messages)
-            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize));
+            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, isUsingAssaTags));
 
         return sb.ToString();
     }

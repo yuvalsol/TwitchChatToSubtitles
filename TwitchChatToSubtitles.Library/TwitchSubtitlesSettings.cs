@@ -69,4 +69,17 @@ public class TwitchSubtitlesSettings
     public int TimeOffset { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ColorUserNames { get; set; }
+
+    public bool IsUsingAssaTags
+    {
+        get
+        {
+            return
+                RollingChatSubtitles ||
+                StaticChatSubtitles ||
+                ColorUserNames ||
+                ShowTimestamps ||
+                SubtitlesFontSize != SubtitlesFontSize.None;
+        }
+    }
 }

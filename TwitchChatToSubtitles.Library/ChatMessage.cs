@@ -4,6 +4,7 @@ internal partial class ChatMessage
 {
     public readonly TimeSpan Timestamp;
     public readonly string User;
+    public readonly bool IsModerator;
     public readonly Color UserColor;
     public readonly bool IsBrailleArt;
 
@@ -12,11 +13,12 @@ internal partial class ChatMessage
         Body = body;
     }
 
-    public ChatMessage(TimeSpan timestamp, string user, Color userColor, string body, bool isBrailleArt)
+    public ChatMessage(TimeSpan timestamp, string user, bool isModerator, Color userColor, string body, bool isBrailleArt)
         : this(body)
     {
         Timestamp = timestamp;
         User = user;
+        IsModerator = isModerator;
         UserColor = userColor;
         IsBrailleArt = isBrailleArt;
     }
@@ -64,7 +66,7 @@ internal partial class ChatMessage
     public ChatMessage ShaveLinesFromTheTop(int shaveCount)
     {
         if (shaveCount <= 0)
-            return new ChatMessage(Timestamp, User, UserColor, Body, IsBrailleArt);
+            return new ChatMessage(Timestamp, User, IsModerator, UserColor, Body, IsBrailleArt);
 
         if (shaveCount >= LinesCount)
             return null;
@@ -103,15 +105,15 @@ internal partial class ChatMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesFontSize.None);
+        return ToString(false, SubtitlesFontSize.None, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesFontSize);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesFontSize, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesFontSize subtitlesFontSize)
+    public string ToString(bool showTimestamps, SubtitlesFontSize subtitlesFontSize, bool isUsingAssaTags)
     {
         if (string.IsNullOrEmpty(User))
         {
@@ -124,12 +126,12 @@ internal partial class ChatMessage
             {
                 string fontSizeStr = string.Empty;
                 if (subtitlesFontSize != SubtitlesFontSize.None)
-                    fontSizeStr = $@"{{\fs{(int)subtitlesFontSize}}} ";
+                    fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
-                timestampStr = $@"{{\fs6}}{ToTimestamp(Timestamp)}{{\rfs}}{fontSizeStr}";
+                timestampStr = $@"{{\fs6}}{ToTimestamp(Timestamp)}{{\rfs{fontSizeStr}\bord0\shad0}} ";
             }
 
-            return $"{timestampStr}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
         }
     }
 }

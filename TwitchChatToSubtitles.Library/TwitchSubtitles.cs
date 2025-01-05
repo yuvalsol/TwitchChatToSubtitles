@@ -871,7 +871,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         var processedComment = new ProcessedComment
         {
             Timestamp = TimeSpan.FromSeconds(comment.SelectToken("content_offset_seconds").Value<int>()),
-            User = comment.SelectToken("commenter").SelectToken("display_name").Value<string>()
+            User = comment.SelectToken("commenter").SelectToken("display_name").Value<string>(),
+            IsModerator = comment.SelectToken("message").SelectToken("user_badges").Any(ub => ub.SelectToken("_id").Value<string>() == "moderator")
         };
 
         processedComment.Body = GetMessageBody(
@@ -893,7 +894,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 processedComment.Color = userColor.Color;
         }
 
-        var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
+        var message = new ChatMessage(processedComment.Timestamp, processedComment.User, processedComment.IsModerator, processedComment.Color, processedComment.Body, processedComment.IsBrailleArt);
         return (processedComment, message);
     }
 
@@ -1016,11 +1017,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             if (body.Length == 0)
                 return null;
 
-            // there is no setting for "underline links" or "don't use assa tags"
-            // underlining links requires assa tags, same as coloring user names
-            // so, if coloring user names is not selected, it implicitly means not to use assa tags
-            // in that case, also, don't underline links
-            if (settings.ColorUserNames)
+            if (settings.IsUsingAssaTags)
             {
                 string bodyString = body.ToString();
                 if (RegexLink().IsMatch(bodyString))
