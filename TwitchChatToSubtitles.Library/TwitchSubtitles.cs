@@ -919,18 +919,18 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     // starts with https:// or www.
     // (?:https://|http://|ftp://|www\.)
-    // [A-Za-z0-9-\\@:%_\+~#=,./]+
+    // [A-Za-z0-9-\\@:%_\+~#=,?&./]+
 
     // starts with xxx.xxx.xxx/
-    // (?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+
-    // [A-Za-z0-9-\\@:%_\+~#=,]+/
-    // [A-Za-z0-9-\\@:%_\+~#=,./]+
+    // (?:[A-Za-z0-9-\\@:%_\+~#=,?&]+\.)+
+    // [A-Za-z0-9-\\@:%_\+~#=,?&]+/
+    // [A-Za-z0-9-\\@:%_\+~#=,?&./]+
 
     // ends with com,gov,net,org,tv
-    // (?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+
+    // (?:[A-Za-z0-9-\\@:%_\+~#=,?&]+\.)+
     // (?:com|gov|net|org|tv)
 
-    [GeneratedRegex(@"(?<Link>(?:https://|http://|ftp://|www\.)[A-Za-z0-9-\\@:%_\+~#=,./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+[A-Za-z0-9-\\@:%_\+~#=,]+/[A-Za-z0-9-\\@:%_\+~#=,./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,]+\.)+(?:com|gov|net|org|tv))", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?<Link>(?:https://|http://|ftp://|www\.)[A-Za-z0-9-\\@:%_\+~#=,?&./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,?&]+\.)+[A-Za-z0-9-\\@:%_\+~#=,?&]+/[A-Za-z0-9-\\@:%_\+~#=,?&./]+|(?:[A-Za-z0-9-\\@:%_\+~#=,?&]+\.)+(?:com|gov|net|org|tv))", RegexOptions.IgnoreCase)]
     private static partial Regex RegexLink();
 
     private static string GetMessageBody(
