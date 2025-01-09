@@ -961,9 +961,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             body.Append(message.SelectToken("body").Value<string>());
         }
 
-        isBrailleArt = RegexIsBrailleArt().IsMatch(body.ToString());
-
-        if (isBrailleArt)
+        if (isBrailleArt = RegexIsBrailleArt().IsMatch(body.ToString()))
         {
             if (settings.RemoveEmoticonNames)
             {
@@ -994,51 +992,48 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     body.Insert(match.Index, replacement);
                 }
             }
-        }
-        else
-        {
-            if (settings.RemoveEmoticonNames)
-            {
-                string bodyString = body.ToString();
-                foreach (var (emoticon, regex) in regexEmbeddedEmoticons)
-                {
-                    if (bodyString.Contains(emoticon, StringComparison.OrdinalIgnoreCase))
-                    {
-                        regex.Replace(body, " ");
-                        bodyString = body.ToString();
-                    }
-                }
-            }
 
-            body.Replace("\uDB40\uDC00", " ").Replace('\uFFFC', ' ');
-            RegexDoubleSpaces().Replace(body, " ");
-            RegexBodyTrim().Replace(body, string.Empty);
-
-            if (body.Length == 0)
-                return null;
-
-            if (settings.IsUsingAssaTags)
-            {
-                string bodyString = body.ToString();
-                if (RegexLink().IsMatch(bodyString))
-                {
-                    foreach (var match in RegexLink().Matches(bodyString).Cast<Match>().OrderByDescending(m => m.Index))
-                    {
-                        body.Insert(match.Index + match.Length, @"{\u0}");
-                        body.Insert(match.Index, @"{\u1}");
-                    }
-                }
-            }
-        }
-
-        if (isBrailleArt)
-        {
             SplitMessageBodyForBrailleArt(body);
+
+            return body.ToString();
         }
-        else
+
+        if (settings.RemoveEmoticonNames)
         {
-            if (settings.RollingChatSubtitles || settings.StaticChatSubtitles)
-                SplitMessageBody(body, user, timestamp, settings);
+            string bodyString = body.ToString();
+            foreach (var (emoticon, regex) in regexEmbeddedEmoticons)
+            {
+                if (bodyString.Contains(emoticon, StringComparison.OrdinalIgnoreCase))
+                {
+                    regex.Replace(body, " ");
+                    bodyString = body.ToString();
+                }
+            }
+        }
+
+        body.Replace("\uDB40\uDC00", " ").Replace('\uFFFC', ' ');
+        RegexDoubleSpaces().Replace(body, " ");
+        RegexBodyTrim().Replace(body, string.Empty);
+
+        if (body.Length == 0)
+            return null;
+
+        if (settings.RollingChatSubtitles || settings.StaticChatSubtitles)
+            SplitMessageBody(body, user, timestamp, settings);
+
+        if (settings.IsUsingAssaTags)
+        {
+            string bodyString = body.ToString();
+            if (RegexLink().IsMatch(bodyString))
+            {
+                foreach (var match in RegexLink().Matches(bodyString).Cast<Match>().OrderByDescending(m => m.Index))
+                {
+                    body.Insert(match.Index + match.Length, @"{\u0}");
+                    body.Insert(match.Index, @"{\u1}");
+                }
+
+                body.Replace(@"{\u1}\N", @"\N{\u1}").Replace(@"\N{\u0}", @"{\u0}\N");
+            }
         }
 
         if (settings.ColorUserNames)
@@ -1103,7 +1098,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             for (int i = endIndex; i >= startIndex; i--)
             {
                 // break long url
-                if (body[i] == '/')
+                if (body[i] == '/' || body[i] == '?' || body[i] == '&')
                 {
                     body.Insert(i + 1, '\n');
                     startIndex = i + 2;
