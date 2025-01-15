@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>disable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>TwitchChatToSubtitles.ico</ApplicationIcon>
+    <Title>Twitch Chat To Subtitles</Title>
+    <Version>1.4</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="TwitchChatToSubtitles.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TwitchChatToSubtitles.Library\TwitchChatToSubtitles.Library.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="CustomMessageBox\" />
+  </ItemGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(Configuration.Contains('Release')) And '$(BuildingInsideVisualStudio)' == 'true'">
+        <Exec Command="call Publish.bat" />
+    </Target>
+
+</Project>

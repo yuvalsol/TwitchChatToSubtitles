@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{E5306A00
 		Solution Items\Icons\TwitchChatToSubtitles.png = Solution Items\Icons\TwitchChatToSubtitles.png
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchChatToSubtitlesUI", "TwitchChatToSubtitlesUI\TwitchChatToSubtitlesUI.csproj", "{FC18E232-57EE-4A6A-9173-98894FD749EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B124FFF8-57D4-48A6-814E-9057479ACA2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC18E232-57EE-4A6A-9173-98894FD749EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC18E232-57EE-4A6A-9173-98894FD749EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC18E232-57EE-4A6A-9173-98894FD749EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC18E232-57EE-4A6A-9173-98894FD749EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
