@@ -2,62 +2,18 @@
 
 public class TwitchSubtitlesSettings
 {
+    public SubtitlesType SubtitlesType { get; set; }
+
     // RegularSubtitles
-    public bool RegularSubtitles { get; set; }
+    public bool RegularSubtitles { get { return SubtitlesType == SubtitlesType.RegularSubtitles; } }
     public int SubtitleShowDuration { get; set; } = 5;
 
     // RollingChatSubtitles
-    private bool rollingChatSubtitles;
-    public bool RollingChatSubtitles
-    {
-        get
-        {
-            return rollingChatSubtitles;
-        }
-
-        set
-        {
-            rollingChatSubtitles = value;
-
-            if (rollingChatSubtitles)
-            {
-                if (SubtitlesSpeed == SubtitlesSpeed.None)
-                    SubtitlesSpeed = SubtitlesSpeed.Regular;
-
-                if (SubtitlesFontSize == SubtitlesFontSize.None)
-                    SubtitlesFontSize = SubtitlesFontSize.Regular;
-
-                if (SubtitlesLocation == SubtitlesLocation.None)
-                    SubtitlesLocation = SubtitlesLocation.Left;
-            }
-        }
-    }
-
+    public bool RollingChatSubtitles { get { return SubtitlesType == SubtitlesType.RollingChatSubtitles; } }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
 
     // StaticChatSubtitles
-    private bool staticChatSubtitles;
-    public bool StaticChatSubtitles
-    {
-        get
-        {
-            return staticChatSubtitles;
-        }
-
-        set
-        {
-            staticChatSubtitles = value;
-
-            if (staticChatSubtitles)
-            {
-                if (SubtitlesFontSize == SubtitlesFontSize.None)
-                    SubtitlesFontSize = SubtitlesFontSize.Regular;
-
-                if (SubtitlesLocation == SubtitlesLocation.None)
-                    SubtitlesLocation = SubtitlesLocation.Left;
-            }
-        }
-    }
+    public bool StaticChatSubtitles { get { return SubtitlesType == SubtitlesType.StaticChatSubtitles; } }
 
     // RollingChatSubtitles
     // StaticChatSubtitles
@@ -70,7 +26,7 @@ public class TwitchSubtitlesSettings
     public bool RemoveEmoticonNames { get; set; }
     public bool ColorUserNames { get; set; }
 
-    public bool IsUsingAssaTags
+    internal bool IsUsingAssaTags
     {
         get
         {

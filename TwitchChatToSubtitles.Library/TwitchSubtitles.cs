@@ -33,7 +33,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
 
         if ((settings.RegularSubtitles || settings.RollingChatSubtitles || settings.StaticChatSubtitles) == false)
-            throw new ArgumentException("Subtitles type (RegularSubtitles, RollingChatSubtitles, StaticChatSubtitles) is not selected.");
+            throw new ArgumentException("Subtitles type was not selected.");
 
         Exception error = null;
 

@@ -235,11 +235,12 @@ internal class TwitchSubtitlesOptions
     {
         return new TwitchSubtitlesSettings
         {
-            RegularSubtitles = RegularSubtitles,
+            SubtitlesType =
+                (RegularSubtitles ? SubtitlesType.RegularSubtitles :
+                (RollingChatSubtitles ? SubtitlesType.RollingChatSubtitles :
+                (StaticChatSubtitles ? SubtitlesType.StaticChatSubtitles : 0))),
             SubtitleShowDuration = SubtitleShowDuration,
-            RollingChatSubtitles = RollingChatSubtitles,
             SubtitlesSpeed = SubtitlesSpeed,
-            StaticChatSubtitles = StaticChatSubtitles,
             SubtitlesLocation = SubtitlesLocation,
             SubtitlesFontSize = SubtitlesFontSize,
             ShowTimestamps = ShowTimestamps,
