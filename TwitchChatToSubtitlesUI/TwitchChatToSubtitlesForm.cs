@@ -249,11 +249,11 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
 
                 if (settings.RegularSubtitles)
-                    WriteLine("Regular Subtitles");
+                    WriteLine("Regular Subtitles.");
                 else if (settings.RollingChatSubtitles)
-                    WriteLine("Rolling Chat Subtitles");
+                    WriteLine("Rolling Chat Subtitles.");
                 else if (settings.StaticChatSubtitles)
-                    WriteLine("Static Chat Subtitles");
+                    WriteLine("Static Chat Subtitles.");
             };
 
             twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>

@@ -46,6 +46,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
         JToken root = LoadJsonFile(jsonFile, ref error);
+        if (IsTwitchChatJsonFile(root) == false)
+            error = new Exception("Malformed or not a Twitch chat JSON file.");
         FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
 
         if (error != null)
@@ -112,6 +114,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             error = ex;
             return null;
         }
+    }
+
+    private static bool IsTwitchChatJsonFile(JToken root)
+    {
+        return root.SelectToken("comments") != null;
     }
 
     #endregion
@@ -204,24 +211,32 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     userColors.Add(user, new UserColor(user, new Color(userColor)));
             }
 
-            string streamer = root.SelectToken("streamer").SelectToken("name").Value<string>();
-            if (string.IsNullOrEmpty(streamer) == false)
+            var streamerToken = root.SelectToken("streamer");
+            if (streamerToken != null)
             {
-                if (streamer.StartsWith('@'))
-                    streamer = streamer[1..];
-
-                if (userColors.ContainsKey(streamer) == false)
-                    userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
-            }
-
-            var videoTitle = root.SelectToken("video").SelectToken("title").Value<string>();
-            if (string.IsNullOrEmpty(videoTitle) == false)
-            {
-                foreach (Match match in RegexUserName().Matches(videoTitle))
+                string streamer = streamerToken.SelectToken("name").Value<string>();
+                if (string.IsNullOrEmpty(streamer) == false)
                 {
-                    streamer = match.Value[1..];
+                    if (streamer.StartsWith('@'))
+                        streamer = streamer[1..];
+
                     if (userColors.ContainsKey(streamer) == false)
                         userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+                }
+            }
+
+            var videoToken = root.SelectToken("video");
+            if (videoToken != null)
+            {
+                var videoTitle = videoToken.SelectToken("title").Value<string>();
+                if (string.IsNullOrEmpty(videoTitle) == false)
+                {
+                    foreach (Match match in RegexUserName().Matches(videoTitle))
+                    {
+                        string streamer = match.Value[1..];
+                        if (userColors.ContainsKey(streamer) == false)
+                            userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+                    }
                 }
             }
 

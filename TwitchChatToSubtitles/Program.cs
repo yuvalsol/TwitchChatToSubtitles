@@ -95,11 +95,11 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         Console.WriteLine(GetVersion());
 
         if (settings.RegularSubtitles)
-            Console.WriteLine("Regular Subtitles");
+            Console.WriteLine("Regular Subtitles.");
         else if (settings.RollingChatSubtitles)
-            Console.WriteLine("Rolling Chat Subtitles");
+            Console.WriteLine("Rolling Chat Subtitles.");
         else if (settings.StaticChatSubtitles)
-            Console.WriteLine("Static Chat Subtitles");
+            Console.WriteLine("Static Chat Subtitles.");
     };
 
     twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
