@@ -1,3 +1,5 @@
+![Twitch Chat To Subtitles](./Solution%20Items/Images/TwitchChatToSubtitlesUI.jpg "Twitch Chat To Subtitles")
+
 # Twitch Chat To Subtitles
 
 Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitle file.
@@ -7,7 +9,9 @@ The program provides 3 types of subtitles:
 2. **Rolling Chat Subtitles**. Chat messages will roll from the bottom to top of the screen and then disappear. Past chat messages won't clutter the screen.
 3. **Static Chat Subtitles**. Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does.
 
-The program uses [ASSA tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA tags are what allows the program to position the subtitles in different locations on the screen. ASSA tags are not part of SubRip specification but some media players have the ability to read ASSA tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC, or at least VLC 3, ignores ASSA tags in a SubRip file. For this case, the program can create [Subtitles Without ASSA Tags](#subtitles-without-assa-tags "Subtitles Without ASSA Tags").
+The program uses [ASSA tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA tags are what allows the program to position the subtitles in different locations on the screen. ASSA tags are not part of SubRip specification but some media players have the ability to read ASSA tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC, or at least VLC 3, ignores ASSA tags in a SubRip file. For this case, the program can create [Subtitles Without ASSA Tags](#subtitles-without-assa-tags "Subtitles Without ASSA Tags"). If the program generates subtitles with ASSA tags, it will also underline moderators and URL links.
+
+The program is provided both as Command Line (**TwitchChatToSubtitles.exe**) and as UI (**TwitchChatToSubtitlesUI.exe**).
 
 Twitch Chat To Subtitles requires .NET 8 Runtime.
 

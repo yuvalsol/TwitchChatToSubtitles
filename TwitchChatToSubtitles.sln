@@ -21,6 +21,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Icons", "Icons", "{E5306A00
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchChatToSubtitlesUI", "TwitchChatToSubtitlesUI\TwitchChatToSubtitlesUI.csproj", "{FC18E232-57EE-4A6A-9173-98894FD749EF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{0CC81722-D27A-4705-A0F6-68D06D78B875}"
+	ProjectSection(SolutionItems) = preProject
+		Solution Items\Images\TwitchChatToSubtitlesUI.jpg = Solution Items\Images\TwitchChatToSubtitlesUI.jpg
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,5 +50,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E5306A00-E19C-4334-8A9C-CF3CF514E89E} = {0E87DD70-61E6-4DFD-919B-259D02BF8386}
+		{0CC81722-D27A-4705-A0F6-68D06D78B875} = {0E87DD70-61E6-4DFD-919B-259D02BF8386}
 	EndGlobalSection
 EndGlobal
