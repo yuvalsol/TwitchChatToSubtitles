@@ -246,7 +246,6 @@ namespace TwitchChatToSubtitlesUI
             {
                 btnCopy.Enabled = false;
                 txtConsole.Clear();
-                Application.DoEvents();
 
                 if (settings.RegularSubtitles)
                     WriteLine("Regular Subtitles.");
@@ -254,11 +253,15 @@ namespace TwitchChatToSubtitlesUI
                     WriteLine("Rolling Chat Subtitles.");
                 else if (settings.StaticChatSubtitles)
                     WriteLine("Static Chat Subtitles.");
+
+                Application.DoEvents();
             };
 
             twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
             {
                 WriteLine("Loading JSON file...");
+
+                Application.DoEvents();
             };
 
             twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
@@ -268,6 +271,8 @@ namespace TwitchChatToSubtitlesUI
                 else
                     WriteLine("Could not load JSON file.");
                 WriteLine("JSON file: " + e.JsonFile);
+
+                Application.DoEvents();
             };
 
             twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
@@ -278,6 +283,8 @@ namespace TwitchChatToSubtitlesUI
                     (e.ColorUserNames ? "user colors" : string.Empty);
 
                 WriteLine($"Begin writing preparations ({preparations})...");
+
+                Application.DoEvents();
             };
 
             twitchSubtitles.FinishWritingPreparations += (object sender, FinishWritingPreparationsEventArgs e) =>
@@ -301,6 +308,8 @@ namespace TwitchChatToSubtitlesUI
                 WriteLine("Subtitles: 0");
 
                 selectionLength = txtConsole.TextLength - selectionStart;
+
+                Application.DoEvents();
             };
 
             var lockObj = new object();
@@ -336,10 +345,11 @@ namespace TwitchChatToSubtitlesUI
                     string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
                     WriteLine("Process Time: " + processTime);
 
-                    Application.DoEvents();
-
                     if (chkCloseWhenFinishedSuccessfully.Checked)
+                    {
+                        Application.DoEvents();
                         this.Close();
+                    }
                 }
                 else
                 {
@@ -366,6 +376,8 @@ namespace TwitchChatToSubtitlesUI
                 }
 
                 btnCopy.Enabled = true;
+
+                Application.DoEvents();
             };
 
             twitchSubtitles.WriteTwitchSubtitles(jsonFile);
