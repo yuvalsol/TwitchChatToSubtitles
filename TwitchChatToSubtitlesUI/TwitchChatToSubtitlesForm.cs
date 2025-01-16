@@ -45,7 +45,7 @@ namespace TwitchChatToSubtitlesUI
 
         private void ResetFormTitle()
         {
-            this.Text = Program.Version();
+            Text = Program.Version();
         }
 
         private void TwitchChatToSubtitlesForm_Shown(object sender, EventArgs e)
@@ -156,7 +156,7 @@ namespace TwitchChatToSubtitlesUI
 
         private void btnClose_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         #endregion
@@ -196,7 +196,7 @@ namespace TwitchChatToSubtitlesUI
             openJsonFileDialog.InitialDirectory = Path.GetDirectoryName(jsonFile);
 
             ResetFormTitle();
-            this.Text = openJsonFileDialog.FileName + " - " + this.Text;
+            Text = openJsonFileDialog.FileName + " - " + Text;
         }
 
         private static bool IsJsonFile(string jsonFile)
@@ -244,7 +244,8 @@ namespace TwitchChatToSubtitlesUI
 
             twitchSubtitles.Start += (object sender, EventArgs e) =>
             {
-                btnCopy.Enabled = false;
+                Cursor = Cursors.WaitCursor;
+
                 txtConsole.Clear();
 
                 if (settings.RegularSubtitles)
@@ -348,7 +349,7 @@ namespace TwitchChatToSubtitlesUI
                     if (chkCloseWhenFinishedSuccessfully.Checked)
                     {
                         Application.DoEvents();
-                        this.Close();
+                        Close();
                     }
                 }
                 else
@@ -375,7 +376,7 @@ namespace TwitchChatToSubtitlesUI
 #endif
                 }
 
-                btnCopy.Enabled = true;
+                Cursor = Cursors.Default;
 
                 Application.DoEvents();
             };
