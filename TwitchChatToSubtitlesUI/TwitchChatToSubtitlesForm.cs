@@ -443,10 +443,11 @@ namespace TwitchChatToSubtitlesUI
         {
             try
             {
-                if (File.Exists(settingsFileName) == false)
+                var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
+                if (File.Exists(settingsFile) == false)
                     return null;
 
-                return JsonSerializer.Deserialize<UISettings>(File.ReadAllText(settingsFileName));
+                return JsonSerializer.Deserialize<UISettings>(File.ReadAllText(settingsFile));
             }
             catch
             {
@@ -480,7 +481,8 @@ namespace TwitchChatToSubtitlesUI
         {
             try
             {
-                File.WriteAllText(settingsFileName, JsonSerializer.Serialize(settings));
+                var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
+                File.WriteAllText(settingsFile, JsonSerializer.Serialize(settings));
             }
             catch
             {
