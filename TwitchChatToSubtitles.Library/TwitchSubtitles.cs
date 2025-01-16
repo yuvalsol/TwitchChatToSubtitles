@@ -23,6 +23,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     public void WriteTwitchSubtitles(string jsonFile)
     {
+        long startTime = Stopwatch.GetTimestamp();
+
         if (string.IsNullOrEmpty(jsonFile))
             throw new ArgumentException("JSON file not specified.");
 
@@ -78,8 +80,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
 
         StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
-
-        long startTime = Stopwatch.GetTimestamp();
 
         {
             using var srtStream = File.Open(srtFile, FileMode.Create);
