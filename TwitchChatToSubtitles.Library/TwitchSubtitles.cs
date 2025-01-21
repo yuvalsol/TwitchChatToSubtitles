@@ -887,7 +887,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             Timestamp = TimeSpan.FromSeconds(comment.SelectToken("content_offset_seconds").Value<int>()),
             User = comment.SelectToken("commenter").SelectToken("display_name").Value<string>(),
-            IsModerator = comment.SelectToken("message").SelectToken("user_badges").Any(ub => ub.SelectToken("_id").Value<string>() == "moderator")
+            IsModerator = comment.SelectToken("message").SelectToken("user_badges").Any(ub =>
+                ub.SelectToken("_id").Value<string>() == "broadcaster" ||
+                ub.SelectToken("_id").Value<string>() == "moderator"
+            )
         };
 
         processedComment.Body = GetMessageBody(
