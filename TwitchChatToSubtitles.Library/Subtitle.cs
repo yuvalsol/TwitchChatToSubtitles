@@ -1,6 +1,6 @@
 ﻿namespace TwitchChatToSubtitles.Library;
 
-internal class Subtitle
+internal class Subtitle : IMessage
 {
     public readonly TimeSpan ShowTime;
     public TimeSpan HideTime { get; private set; }
@@ -181,6 +181,19 @@ internal class Subtitle
         foreach (var message in Messages)
             sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, isUsingAssaTags));
 
+        return sb.ToString();
+    }
+
+    public string ToChatLogString(TwitchSubtitlesSettings settings)
+    {
+        return ToChatLogString(settings.ShowTimestamps);
+    }
+
+    public string ToChatLogString(bool showTimestamps)
+    {
+        var sb = new StringBuilder();
+        foreach (var message in Messages)
+            sb.AppendLine(message.ToChatLogString(showTimestamps));
         return sb.ToString();
     }
 }

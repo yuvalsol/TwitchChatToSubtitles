@@ -4,10 +4,11 @@
 
 Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitle file.
 
-The program provides 3 types of subtitles:
+The program provides 3 types of subtitles and one text file:
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
 2. **Rolling Chat Subtitles**. Chat messages will roll from the bottom to top of the screen and then disappear. Past chat messages won't clutter the screen.
 3. **Static Chat Subtitles**. Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does.
+4. **Chat Text File**. Save Twitch chat to a text file.
 
 The program uses [ASSA tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA tags are what allows the program to position the subtitles in different locations on the screen. ASSA tags are not part of SubRip specification but some media players have the ability to read ASSA tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC, or at least VLC 3, ignores ASSA tags in a SubRip file. For this case, the program can create [Subtitles Without ASSA Tags](#subtitles-without-assa-tags "Subtitles Without ASSA Tags"). If the program generates subtitles with ASSA tags, it will also underline moderators and URL links.
 
@@ -133,6 +134,30 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Ch
 TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation LeftTopTwoThirds
 ```
 
+## Chat Text File
+
+Save Twitch chat to a text file.
+
+```console
+TwitchChatToSubtitles.exe --ChatTextFile
+                          --JsonFile <file>
+                          [--RemoveEmoticonNames]
+                          [--ShowTimestamps]
+```
+
+#### Usage
+
+1. Default usage:
+
+```console
+TwitchChatToSubtitles.exe --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json"
+```
+
+2. Remove emoticon names, show chat message timestamps:
+```console
+TwitchChatToSubtitles.exe --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --RemoveEmoticonNames --ShowTimestamps
+```
+
 ## Command Line Options
 
 These options select which subtitles type to convert the Twitch chat JSON file to.
@@ -141,6 +166,7 @@ These options select which subtitles type to convert the Twitch chat JSON file t
 --RegularSubtitles      Convert Twitch chat to regular subtitles.
 --RollingChatSubtitles  Convert Twitch chat to rolling chat subtitles.
 --StaticChatSubtitles   Convert Twitch chat to static chat subtitles.
+--ChatTextFile          Save Twitch chat to a text file.
 ```
 
 The full path to the Twitch chat JSON file. The name of the subtitles file is the same as the name of the JSON file with .srt extension.

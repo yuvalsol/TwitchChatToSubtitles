@@ -4,5 +4,6 @@ public enum SubtitlesType
 {
     RegularSubtitles = 1,
     RollingChatSubtitles,
-    StaticChatSubtitles
+    StaticChatSubtitles,
+    ChatTextFile
 }

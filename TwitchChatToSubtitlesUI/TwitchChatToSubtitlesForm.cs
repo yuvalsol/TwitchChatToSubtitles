@@ -109,32 +109,44 @@ namespace TwitchChatToSubtitlesUI
 
         private void ddlSubtitlesType_SelectedIndexChanged(object sender, EventArgs e)
         {
-            lblSubtitlesLocation.Enabled = false;
+            var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
+
+            if (subtitlesType == SubtitlesType.ChatTextFile)
+                btnWriteTwitchSubtitles.Text = "Write Chat Text File";
+            else
+                btnWriteTwitchSubtitles.Text = "Write Twitch Subtitles";
+
+            lblSubtitlesLocation.Enabled =
             ddlSubtitlesLocation.Enabled = false;
 
-            lblSubtitlesSpeed.Enabled = false;
+            lblSubtitlesSpeed.Enabled =
             ddlSubtitlesSpeed.Enabled = false;
 
-            lblSubtitleShowDuration.Enabled = false;
+            lblSubtitleShowDuration.Enabled =
             nudSubtitleShowDuration.Enabled = false;
 
-            var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
+            chkColorUserNames.Enabled =
+            lblSubtitlesFontSize.Enabled =
+            ddlSubtitlesFontSize.Enabled =
+            lblTimeOffset.Enabled =
+            nudTimeOffset.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
+
             if (subtitlesType == SubtitlesType.RegularSubtitles)
             {
-                lblSubtitleShowDuration.Enabled = true;
+                lblSubtitleShowDuration.Enabled =
                 nudSubtitleShowDuration.Enabled = true;
             }
             else if (subtitlesType == SubtitlesType.RollingChatSubtitles)
             {
-                lblSubtitlesLocation.Enabled = true;
+                lblSubtitlesLocation.Enabled =
                 ddlSubtitlesLocation.Enabled = true;
 
-                lblSubtitlesSpeed.Enabled = true;
+                lblSubtitlesSpeed.Enabled =
                 ddlSubtitlesSpeed.Enabled = true;
             }
             else if (subtitlesType == SubtitlesType.StaticChatSubtitles)
             {
-                lblSubtitlesLocation.Enabled = true;
+                lblSubtitlesLocation.Enabled =
                 ddlSubtitlesLocation.Enabled = true;
             }
         }
@@ -229,16 +241,25 @@ namespace TwitchChatToSubtitlesUI
 
             var settings = new TwitchSubtitlesSettings
             {
-                SubtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue,
-                SubtitleShowDuration = Convert.ToInt32(nudSubtitleShowDuration.Value),
-                SubtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue,
-                SubtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue,
-                SubtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue,
-                ShowTimestamps = chkShowTimestamps.Checked,
-                TimeOffset = Convert.ToInt32(nudTimeOffset.Value),
-                RemoveEmoticonNames = chkRemoveEmoticonNames.Checked,
-                ColorUserNames = chkColorUserNames.Checked
+                SubtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue
             };
+
+            if (chkColorUserNames.Enabled)
+                settings.ColorUserNames = chkColorUserNames.Checked;
+            if (chkRemoveEmoticonNames.Enabled)
+                settings.RemoveEmoticonNames = chkRemoveEmoticonNames.Checked;
+            if (chkShowTimestamps.Enabled)
+                settings.ShowTimestamps = chkShowTimestamps.Checked;
+            if (nudSubtitleShowDuration.Enabled)
+                settings.SubtitleShowDuration = Convert.ToInt32(nudSubtitleShowDuration.Value);
+            if (ddlSubtitlesFontSize.Enabled)
+                settings.SubtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue;
+            if (ddlSubtitlesLocation.Enabled)
+                settings.SubtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue;
+            if (ddlSubtitlesSpeed.Enabled)
+                settings.SubtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
+            if (nudTimeOffset.Enabled)
+                settings.TimeOffset = Convert.ToInt32(nudTimeOffset.Value);
 
             var twitchSubtitles = new TwitchSubtitles(settings);
 
@@ -254,6 +275,8 @@ namespace TwitchChatToSubtitlesUI
                     WriteLine("Rolling Chat Subtitles.");
                 else if (settings.StaticChatSubtitles)
                     WriteLine("Static Chat Subtitles.");
+                else if (settings.ChatTextFile)
+                    WriteLine("Chat Text File.");
 
                 Application.DoEvents();
             };
@@ -306,7 +329,8 @@ namespace TwitchChatToSubtitlesUI
                 selectionStart = txtConsole.SelectionStart;
 
                 WriteLine("Chat Messages: 0 / 0");
-                WriteLine("Subtitles: 0");
+                if (settings.ChatTextFile == false)
+                    WriteLine("Subtitles: 0");
 
                 selectionLength = txtConsole.TextLength - selectionStart;
 
@@ -321,9 +345,18 @@ namespace TwitchChatToSubtitlesUI
                 if (e.DiscardedMessagesCount > 0)
                     strMessages += $" (discarded messages {e.DiscardedMessagesCount:N0})";
 
-                var strSubtitles = $"Subtitles: {e.SubtitlesCount:N0}";
+                string strSelection = null;
 
-                var strSelection = $"{strMessages}{Environment.NewLine}{strSubtitles}{Environment.NewLine}";
+                if (settings.ChatTextFile)
+                {
+                    strSelection = $"{strMessages}{Environment.NewLine}";
+                }
+                else
+                {
+                    var strSubtitles = $"Subtitles: {e.SubtitlesCount:N0}";
+
+                    strSelection = $"{strMessages}{Environment.NewLine}{strSubtitles}{Environment.NewLine}";
+                }
 
                 lock (lockObj)
                 {
@@ -341,7 +374,11 @@ namespace TwitchChatToSubtitlesUI
                 if (e.Error == null)
                 {
                     WriteLine("Finished successfully.");
-                    WriteLine("Subtitles file: " + e.SrtFile);
+
+                    if (settings.ChatTextFile)
+                        WriteLine("Chat text file: " + e.SrtFile);
+                    else
+                        WriteLine("Subtitles file: " + e.SrtFile);
 
                     string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
                     WriteLine("Process Time: " + processTime);
@@ -362,7 +399,10 @@ namespace TwitchChatToSubtitlesUI
                     catch { }
 
 #if RELEASE
-                    WriteErrorLine("Failed to write subtitles.");
+                    if (settings.ChatTextFile)
+                        WriteErrorLine("Failed to write chat text file.");
+                    else
+                        WriteErrorLine("Failed to write subtitles.");
                     WriteErrorLine("Error: " + e.Error.Message);
 
                     Exception ex = e.Error.InnerException;
@@ -372,7 +412,10 @@ namespace TwitchChatToSubtitlesUI
                         ex = ex.InnerException;
                     }
 #elif DEBUG
-                    WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+                    if (settings.ChatTextFile)
+                        WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
+                    else
+                        WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
 #endif
                 }
 

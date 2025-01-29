@@ -192,34 +192,34 @@ public static partial class MethodInfoExtensions
 
             switch (typeName)
             {
-                case "Char":
-                case "System.Char": return "char";
-                case "String":
-                case "System.String": return "string";
                 case "Boolean":
                 case "System.Boolean": return "bool";
                 case "Byte":
                 case "System.Byte": return "byte";
-                case "SByte":
-                case "System.SByte": return "sbyte";
-                case "Int16":
-                case "System.Int16": return "short";
-                case "UInt16":
-                case "System.UInt16": return "ushort";
-                case "Int32":
-                case "System.Int32": return "int";
-                case "UInt32":
-                case "System.UInt32": return "uint";
-                case "Int64":
-                case "System.Int64": return "long";
-                case "UInt64":
-                case "System.UInt64": return "ulong";
+                case "Char":
+                case "System.Char": return "char";
                 case "Decimal":
                 case "System.Decimal": return "decimal";
                 case "Double":
                 case "System.Double": return "double";
+                case "Int32":
+                case "System.Int32": return "int";
+                case "Int64":
+                case "System.Int64": return "long";
                 case "Object":
                 case "System.Object": return "object";
+                case "SByte":
+                case "System.SByte": return "sbyte";
+                case "Int16":
+                case "System.Int16": return "short";
+                case "String":
+                case "System.String": return "string";
+                case "UInt32":
+                case "System.UInt32": return "uint";
+                case "UInt64":
+                case "System.UInt64": return "ulong";
+                case "UInt16":
+                case "System.UInt16": return "ushort";
                 case "Void": return "void";
                 default:
                     {
@@ -278,16 +278,16 @@ public static partial class MethodInfoExtensions
     {
         if (method.IsPublic)
             return "public";
-        else if (method.IsPrivate)
-            return "private";
-        else if (method.IsAssembly)
-            return "internal";
         else if (method.IsFamily)
             return "protected";
-        else if (method.IsFamilyAndAssembly)
-            return "private protected";
+        else if (method.IsAssembly)
+            return "internal";
         else if (method.IsFamilyOrAssembly)
             return "protected internal";
+        else if (method.IsFamilyAndAssembly)
+            return "private protected";
+        else if (method.IsPrivate)
+            return "private";
         else
         {
             throw new Exception("I wasn't able to parse the visibility of this method.");
@@ -325,8 +325,12 @@ public static partial class MethodInfoExtensions
             return 2;
         else if (method.IsAssembly)
             return 3;
-        else if (method.IsPrivate)
+        else if (method.IsFamilyOrAssembly)
             return 4;
+        else if (method.IsFamilyAndAssembly)
+            return 5;
+        else if (method.IsPrivate)
+            return 6;
         else
         {
             throw new Exception("I wasn't able to parse the visibility of this method.");

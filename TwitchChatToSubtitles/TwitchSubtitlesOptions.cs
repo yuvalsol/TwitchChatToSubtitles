@@ -11,20 +11,20 @@ internal interface IAllSubtitleTypesOptions
     [Option("JsonFile", Required = false, HelpText = "Path to Twitch chat JSON file.")]
     string JsonFile { get; set; }
 
-    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Bigger, Biggest.")]
-    SubtitlesFontSize SubtitlesFontSize { get; set; }
-
-    [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
-    bool ShowTimestamps { get; set; }
-
-    [Option("TimeOffset", Required = false, HelpText = "Time offset for all subtitles, in seconds.")]
-    int TimeOffset { get; set; }
+    [Option("ColorUserNames", Required = false, HelpText = "Whether to color user names.")]
+    bool ColorUserNames { get; set; }
 
     [Option("RemoveEmoticonNames", Required = false, HelpText = "Remove emoticon and badge names.")]
     bool RemoveEmoticonNames { get; set; }
 
-    [Option("ColorUserNames", Required = false, HelpText = "Whether to color user names.")]
-    bool ColorUserNames { get; set; }
+    [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
+    bool ShowTimestamps { get; set; }
+
+    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Bigger, Biggest.")]
+    SubtitlesFontSize SubtitlesFontSize { get; set; }
+
+    [Option("TimeOffset", Required = false, HelpText = "Time offset for all subtitles, in seconds.")]
+    int TimeOffset { get; set; }
 }
 
 internal interface IRegularSubtitlesOptions
@@ -55,6 +55,12 @@ internal interface IChatSubtitlesOptions
 {
     [Option("SubtitlesLocation", Required = false, HelpText = "The location of the subtitles on the screen. Valid values: Left, LeftTopHalf, LeftBottomHalf, LeftTopTwoThirds, LeftBottomTwoThirds, Right, RightTopHalf, RightBottomHalf, RightTopTwoThirds, RightBottomTwoThirds.")]
     SubtitlesLocation SubtitlesLocation { get; set; }
+}
+
+internal interface IChatTextFileOptions
+{
+    [Option("ChatTextFile", Required = false, HelpText = "Save Twitch chat to a text file.")]
+    bool ChatTextFile { get; set; }
 }
 
 #endregion
@@ -197,14 +203,46 @@ internal class StaticChatSubtitlesOptions : IStaticChatSubtitlesOptions, IChatSu
     }
 }
 
+internal class ChatTextFileOptions : IChatTextFileOptions
+{
+    public bool ChatTextFile { get; set; }
+
+    [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
+    public static IEnumerable<Example> Examples
+    {
+        get
+        {
+            yield return new Example(
+                "1. Default usage",
+                new TwitchSubtitlesOptions
+                {
+                    ChatTextFile = true,
+                    JsonFile = @"C:\Path\To\Twitch Chat.json"
+                }
+            );
+
+            yield return new Example(
+                "2. Remove emoticon names, show chat message timestamps",
+                new TwitchSubtitlesOptions
+                {
+                    ChatTextFile = true,
+                    JsonFile = @"C:\Path\To\Twitch Chat.json",
+                    RemoveEmoticonNames = true,
+                    ShowTimestamps = true
+                }
+            );
+        }
+    }
+}
+
 internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
 {
     public string JsonFile { get; set; }
-    public SubtitlesFontSize SubtitlesFontSize { get; set; }
-    public bool ShowTimestamps { get; set; }
-    public int TimeOffset { get; set; }
-    public bool RemoveEmoticonNames { get; set; }
     public bool ColorUserNames { get; set; }
+    public bool RemoveEmoticonNames { get; set; }
+    public bool ShowTimestamps { get; set; }
+    public SubtitlesFontSize SubtitlesFontSize { get; set; }
+    public int TimeOffset { get; set; }
 }
 
 #endregion
@@ -217,19 +255,21 @@ internal class TwitchSubtitlesOptions
     , IRollingChatSubtitlesOptions
     , IStaticChatSubtitlesOptions
     , IChatSubtitlesOptions
+    , IChatTextFileOptions
 {
     public string JsonFile { get; set; }
     public bool RegularSubtitles { get; set; }
-    public int SubtitleShowDuration { get; set; }
     public bool RollingChatSubtitles { get; set; }
-    public SubtitlesSpeed SubtitlesSpeed { get; set; }
     public bool StaticChatSubtitles { get; set; }
-    public SubtitlesLocation SubtitlesLocation { get; set; }
-    public SubtitlesFontSize SubtitlesFontSize { get; set; }
-    public bool ShowTimestamps { get; set; }
-    public int TimeOffset { get; set; }
-    public bool RemoveEmoticonNames { get; set; }
+    public bool ChatTextFile { get; set; }
     public bool ColorUserNames { get; set; }
+    public bool RemoveEmoticonNames { get; set; }
+    public bool ShowTimestamps { get; set; }
+    public int SubtitleShowDuration { get; set; }
+    public SubtitlesFontSize SubtitlesFontSize { get; set; }
+    public SubtitlesLocation SubtitlesLocation { get; set; }
+    public SubtitlesSpeed SubtitlesSpeed { get; set; }
+    public int TimeOffset { get; set; }
 
     public TwitchSubtitlesSettings ToSettings()
     {
@@ -238,15 +278,16 @@ internal class TwitchSubtitlesOptions
             SubtitlesType =
                 (RegularSubtitles ? SubtitlesType.RegularSubtitles :
                 (RollingChatSubtitles ? SubtitlesType.RollingChatSubtitles :
-                (StaticChatSubtitles ? SubtitlesType.StaticChatSubtitles : 0))),
-            SubtitleShowDuration = SubtitleShowDuration,
-            SubtitlesSpeed = SubtitlesSpeed,
-            SubtitlesLocation = SubtitlesLocation,
-            SubtitlesFontSize = SubtitlesFontSize,
-            ShowTimestamps = ShowTimestamps,
-            TimeOffset = TimeOffset,
+                (StaticChatSubtitles ? SubtitlesType.StaticChatSubtitles :
+                (ChatTextFile ? SubtitlesType.ChatTextFile : 0)))),
+            ColorUserNames = ColorUserNames,
             RemoveEmoticonNames = RemoveEmoticonNames,
-            ColorUserNames = ColorUserNames
+            ShowTimestamps = ShowTimestamps,
+            SubtitleShowDuration = SubtitleShowDuration,
+            SubtitlesFontSize = SubtitlesFontSize,
+            SubtitlesLocation = SubtitlesLocation,
+            SubtitlesSpeed = SubtitlesSpeed,
+            TimeOffset = TimeOffset
         };
     }
 }

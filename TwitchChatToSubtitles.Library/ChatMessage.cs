@@ -1,6 +1,6 @@
 ﻿namespace TwitchChatToSubtitles.Library;
 
-internal partial class ChatMessage
+internal partial class ChatMessage : IMessage
 {
     public readonly TimeSpan Timestamp;
     public readonly string User;
@@ -103,6 +103,11 @@ internal partial class ChatMessage
         return span.ToString(span.Days > 0 ? "d':'hh':'mm':'ss" : span.Hours > 0 ? "h':'mm':'ss" : "m':'ss");
     }
 
+    public static string ToChatLogTimestamp(TimeSpan span)
+    {
+        return span.ToString(span.Days > 0 ? "d':'hh':'mm':'ss" : "hh':'mm':'ss");
+    }
+
     public override string ToString()
     {
         return ToString(false, SubtitlesFontSize.None, false);
@@ -133,5 +138,18 @@ internal partial class ChatMessage
 
             return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
         }
+    }
+
+    public string ToChatLogString(TwitchSubtitlesSettings settings)
+    {
+        return ToChatLogString(settings.ShowTimestamps);
+    }
+
+    public string ToChatLogString(bool showTimestamps)
+    {
+        if (string.IsNullOrEmpty(User))
+            return (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
+        else
+            return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{User}:{(IsBrailleArt ? Environment.NewLine : " ")}{(IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body)}";
     }
 }

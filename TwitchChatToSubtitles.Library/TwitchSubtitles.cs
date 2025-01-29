@@ -34,7 +34,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (File.Exists(jsonFile) == false)
             throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
 
-        if ((settings.RegularSubtitles || settings.RollingChatSubtitles || settings.StaticChatSubtitles) == false)
+        if ((settings.RegularSubtitles || settings.RollingChatSubtitles || settings.StaticChatSubtitles || settings.ChatTextFile) == false)
             throw new ArgumentException("Subtitles type was not selected.");
 
         Exception error = null;
@@ -43,7 +43,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         string srtFile = Path.Combine(
             Path.GetDirectoryName(jsonFile),
-            Path.GetFileNameWithoutExtension(jsonFile) + ".srt"
+            Path.GetFileNameWithoutExtension(jsonFile) + (settings.ChatTextFile ? ".txt" : ".srt")
         );
 
         StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
@@ -57,6 +57,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
             return;
         }
+
+        if (settings.ChatTextFile)
+            settings.ColorUserNames = false;
 
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
         Dictionary<string, UserColor> userColors = null;
@@ -91,6 +94,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
             else if (settings.StaticChatSubtitles)
                 WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
+            else if (settings.ChatTextFile)
+                WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, ref error);
         }
 
         TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
@@ -761,6 +766,76 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
+    #region Chat Text File
+
+    private void WriteChatTextFile(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    {
+        Task<int> lastWritingTask = null;
+        var cts = new CancellationTokenSource();
+        var ct = cts.Token;
+
+        List<ChatMessage> ChatMessages = [];
+
+        int messagesCount = 0;
+        int discardedMessagesCount = 0;
+        int subtitlesCount = 0;
+
+        JToken comments = root.SelectToken("comments");
+        if (comments.TryGetNonEnumeratedCount(out int totalMessages) == false)
+            totalMessages = comments.Count();
+
+        ProcessCommentsInChunks(
+            comments,
+            regexEmbeddedEmoticons,
+            userColors,
+            settings,
+            ProcessComment,
+            PostProcessCommentsChunk,
+            PostProcessComments,
+            ref error,
+            cts,
+            ct
+        );
+
+        void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
+        {
+            if (string.IsNullOrEmpty(pccm.processedComment.Body))
+            {
+                discardedMessagesCount++;
+                return;
+            }
+
+            messagesCount++;
+
+            ChatMessages.Add(pccm.message);
+            subtitlesCount++;
+
+            if (ChatMessages.Count >= FLUSH_SUBTITLES_COUNT)
+            {
+                var copyChatMessages = ChatMessages.ToArray();
+                WriteChatMessages(ref lastWritingTask, copyChatMessages, settings, writer, ct);
+                ChatMessages.Clear();
+            }
+        }
+
+        void PostProcessCommentsChunk()
+        {
+            ProgressAsync.RaiseAsync(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+        }
+
+        void PostProcessComments()
+        {
+            if (ChatMessages.Count > 0)
+                WriteChatMessages(ref lastWritingTask, ChatMessages, settings, writer, ct);
+
+            lastWritingTask?.Wait(ct);
+
+            FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+        }
+    }
+
+    #endregion
+
     #region Process Comments
 
     private static void ProcessCommentsInChunks(
@@ -1036,6 +1111,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (body.Length == 0)
             return null;
 
+        if (settings.ChatTextFile)
+            return body.ToString();
+
         if (settings.RollingChatSubtitles || settings.StaticChatSubtitles)
             SplitMessageBody(body, user, timestamp, settings);
 
@@ -1207,7 +1285,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Write Subtitles
+    #region Write Subtitles & Chat Messages
 
     private static void WriteSubtitles(
         ref Task<int> lastWritingTask,
@@ -1216,30 +1294,62 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         StreamWriter writer,
         CancellationToken ct)
     {
+        WriteMessages(ref lastWritingTask, subtitles, settings, writer, false, ct);
+    }
+
+    private static void WriteChatMessages(
+        ref Task<int> lastWritingTask,
+        IEnumerable<ChatMessage> chatMessages,
+        TwitchSubtitlesSettings settings,
+        StreamWriter writer,
+        CancellationToken ct)
+    {
+        WriteMessages(ref lastWritingTask, chatMessages, settings, writer, true, ct);
+    }
+
+    private static void WriteMessages<TMessage>(
+        ref Task<int> lastWritingTask,
+        IEnumerable<TMessage> messages,
+        TwitchSubtitlesSettings settings,
+        StreamWriter writer,
+        bool toChatLogString,
+        CancellationToken ct)
+        where TMessage : IMessage
+    {
         if (lastWritingTask != null && lastWritingTask.Exception != null)
             throw lastWritingTask.Exception;
 
         if (lastWritingTask == null)
-            lastWritingTask = Task.Run(() => WriteSubtitlesAsync(subtitles, 1, settings, writer, ct), ct);
+            lastWritingTask = Task.Run(() => WriteMessagesAsync(messages, 1, settings, writer, toChatLogString, ct), ct);
         else
-            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteSubtitlesAsync(subtitles, previousTask.Result, settings, writer, ct), ct);
+            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteMessagesAsync(messages, previousTask.Result, settings, writer, toChatLogString, ct), ct);
     }
 
-    private static int WriteSubtitlesAsync(
-        IEnumerable<Subtitle> subtitles,
+    private static int WriteMessagesAsync<TMessage>(
+        IEnumerable<TMessage> messages,
         int subsCounter,
         TwitchSubtitlesSettings settings,
         StreamWriter writer,
+        bool toChatLogString,
         CancellationToken ct)
+        where TMessage : IMessage
     {
         try
         {
             ct.ThrowIfCancellationRequested();
 
-            foreach (var subtitle in subtitles)
+            foreach (var message in messages)
             {
-                writer.WriteLine(subsCounter++);
-                writer.WriteLine(subtitle.ToString(settings));
+                if (toChatLogString)
+                {
+                    subsCounter++;
+                    writer.WriteLine(message.ToChatLogString(settings));
+                }
+                else
+                {
+                    writer.WriteLine(subsCounter++);
+                    writer.WriteLine(message.ToString(settings));
+                }
             }
 
             writer.Flush();

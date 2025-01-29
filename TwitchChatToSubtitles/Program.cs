@@ -100,6 +100,8 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             Console.WriteLine("Rolling Chat Subtitles.");
         else if (settings.StaticChatSubtitles)
             Console.WriteLine("Static Chat Subtitles.");
+        else if (settings.ChatTextFile)
+            Console.WriteLine("Chat Text File.");
     };
 
     twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
@@ -150,10 +152,13 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         topMessages = Console.CursorTop;
         Console.WriteLine("0 / 0");
 
-        Console.Write("Subtitles: ");
-        leftSubtitles = Console.CursorLeft;
-        topSubtitles = Console.CursorTop;
-        Console.WriteLine("0");
+        if (settings.ChatTextFile == false)
+        {
+            Console.Write("Subtitles: ");
+            leftSubtitles = Console.CursorLeft;
+            topSubtitles = Console.CursorTop;
+            Console.WriteLine("0");
+        }
 
         leftFinish = Console.CursorLeft;
         topFinish = Console.CursorTop;
@@ -171,16 +176,23 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             strMessages += $" (discarded messages {e.DiscardedMessagesCount:N0})";
         strMessages += new string(' ', lineLength - strMessages.Length);
 
-        var strSubtitles = $"{e.SubtitlesCount:N0}";
-        strSubtitles += new string(' ', lineLength - strSubtitles.Length);
+        string strSubtitles = null;
+        if (settings.ChatTextFile == false)
+        {
+            strSubtitles = $"{e.SubtitlesCount:N0}";
+            strSubtitles += new string(' ', lineLength - strSubtitles.Length);
+        }
 
         lock (lockObj)
         {
             Console.SetCursorPosition(leftMessages, topMessages);
             Console.Write(strMessages);
 
-            Console.SetCursorPosition(leftSubtitles, topSubtitles);
-            Console.Write(strSubtitles);
+            if (settings.ChatTextFile == false)
+            {
+                Console.SetCursorPosition(leftSubtitles, topSubtitles);
+                Console.Write(strSubtitles);
+            }
         }
     }
 
@@ -197,7 +209,11 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         if (e.Error == null)
         {
             Console.WriteLine("Finished successfully.");
-            Console.WriteLine("Subtitles file: " + e.SrtFile);
+
+            if (settings.ChatTextFile)
+                Console.WriteLine("Chat text file: " + e.SrtFile);
+            else
+                Console.WriteLine("Subtitles file: " + e.SrtFile);
 
             string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
             Console.WriteLine("Process Time: " + processTime);
@@ -217,7 +233,10 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             catch { }
 
 #if RELEASE
-            Console.WriteLine("Failed to write subtitles.");
+            if (settings.ChatTextFile)
+                Console.WriteLine("Failed to write chat text file.");
+            else
+                Console.WriteLine("Failed to write subtitles.");
             Console.WriteLine("Error: " + e.Error.Message);
 
             Exception ex = e.Error.InnerException;
@@ -227,7 +246,10 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
                 ex = ex.InnerException;
             }
 #elif DEBUG
-            Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+            if (settings.ChatTextFile)
+                Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
+            else
+                Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
 #endif
 
             Console.WriteLine("Press any key to continue . . .");
@@ -246,6 +268,7 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.RegularSubtitles = false;
     //options.RollingChatSubtitles = false;
     //options.StaticChatSubtitles = true;
+    //options.ChatTextFile = false;
     //options.ColorUserNames = true;
     //options.RemoveEmoticonNames = true;
     //options.SubtitlesFontSize = SubtitlesFontSize.Bigger;
@@ -277,6 +300,7 @@ static string GetHelpMessage(Parser parser, string[] args)
     sb.AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, args, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."));
     sb.AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll from the bottom to top of the screen and then disappear.", "Past chat messages won't clutter the screen."));
     sb.AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, args, "Static Chat Subtitles", "Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does."));
+    sb.AppendLine(GetHelpText<ChatTextFileOptions>(parser, args, "Chat Text File", "Save Twitch chat to a text file."));
     return sb.ToString();
 }
 
@@ -326,9 +350,6 @@ static int CompareOptions(ComparableOption attr1, ComparableOption attr2)
 
     int value = 0;
 
-    if ((value = OrderOptions("JsonFile")) != 0)
-        return value;
-
     if ((value = OrderOptions("RegularSubtitles")) != 0)
         return value;
 
@@ -336,6 +357,12 @@ static int CompareOptions(ComparableOption attr1, ComparableOption attr2)
         return value;
 
     if ((value = OrderOptions("StaticChatSubtitles")) != 0)
+        return value;
+
+    if ((value = OrderOptions("ChatTextFile")) != 0)
+        return value;
+
+    if ((value = OrderOptions("JsonFile")) != 0)
         return value;
 
     return attr1.LongName.CompareTo(attr2.LongName);

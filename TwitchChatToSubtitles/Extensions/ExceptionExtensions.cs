@@ -9,14 +9,14 @@ public static partial class ExceptionExtensions
     public static string GetUnhandledExceptionErrorWithApplicationTerminationMessage(this Exception ex)
     {
         return GetExceptionErrorMessage(ex,
-            string.Format("An unhandled error occurred.{0}The application will terminate now.{0}", "\n")
+            string.Format("An unhandled error occurred.{0}The application will terminate now.{0}", Environment.NewLine)
         );
     }
 
     public static string GetUnhandledExceptionErrorMessage(this Exception ex)
     {
         return GetExceptionErrorMessage(ex,
-            string.Format("An unhandled error occurred.{0}", "\n")
+            string.Format("An unhandled error occurred.{0}", Environment.NewLine)
         );
     }
 
@@ -27,27 +27,35 @@ public static partial class ExceptionExtensions
 
         string errorMessage = mainMessage;
 
-        errorMessage += string.Format("{0}ERROR: {1}{0}ERROR TYPE: {2}{0}STACK TRACE:{0}{3}",
-            "\n",
-            ex.Message,
-            ex.GetType(),
-            ex.GetFormattedStackTrace()
-        );
+        AppendToExceptionErrorMessage(ref errorMessage, ex);
 
         while (ex.InnerException != null)
         {
             ex = ex.InnerException;
-            errorMessage += string.Format("{0}ERROR: {1}{0}ERROR TYPE: {2}{0}STACK TRACE:{0}{3}",
-                "\n",
-                ex.Message,
-                ex.GetType(),
-                ex.GetFormattedStackTrace()
-            );
+            AppendToExceptionErrorMessage(ref errorMessage, ex);
         }
 
         errorMessage = errorMessage.Trim();
 
         return errorMessage;
+    }
+
+    private static void AppendToExceptionErrorMessage(ref string errorMessage, Exception ex)
+    {
+        errorMessage += string.Format("{0}ERROR: {1}{0}ERROR TYPE: {2}",
+            Environment.NewLine,
+            ex.Message,
+            ex.GetType()
+        );
+
+        string formattedStackTrace = ex.GetFormattedStackTrace();
+        if (string.IsNullOrEmpty(formattedStackTrace) == false)
+        {
+            errorMessage += string.Format("{0}STACK TRACE:{0}{1}",
+                Environment.NewLine,
+                formattedStackTrace
+            );
+        }
     }
 
     public static string GetFormattedStackTrace(this Exception ex)
@@ -85,7 +93,7 @@ public static partial class ExceptionExtensions
                                     sb.Append(lineNumber);
                                 }
 
-                                sb.Append('\n');
+                                sb.Append(Environment.NewLine);
                             }
                         }
                         else
@@ -97,6 +105,9 @@ public static partial class ExceptionExtensions
             }
         }
 
-        return sb.ToString();
+        if (sb.Length == 0)
+            return null;
+
+        return sb.ToString().Trim();
     }
 }
