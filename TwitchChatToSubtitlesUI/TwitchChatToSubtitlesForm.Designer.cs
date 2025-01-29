@@ -55,6 +55,7 @@
             lblSubtitlesFontSize = new Label();
             toolTip = new ToolTip(components);
             openJsonFileDialog = new OpenFileDialog();
+            btnCommandLine = new Button();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
@@ -105,6 +106,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(btnCommandLine);
             splitContainer1.Panel2.Controls.Add(btnCopy);
             splitContainer1.Panel2.Controls.Add(chkCloseWhenFinishedSuccessfully);
             splitContainer1.Panel2.Controls.Add(btnClose);
@@ -365,6 +367,19 @@
             // 
             openJsonFileDialog.Filter = "Json files (*.json)|*.json";
             // 
+            // btnCommandLine
+            // 
+            btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnCommandLine.AutoSize = true;
+            btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            btnCommandLine.Location = new Point(471, 236);
+            btnCommandLine.Name = "btnCommandLine";
+            btnCommandLine.Size = new Size(119, 30);
+            btnCommandLine.TabIndex = 14;
+            btnCommandLine.Text = "Command Line";
+            btnCommandLine.UseVisualStyleBackColor = true;
+            btnCommandLine.Click += btnCommandLine_Click;
+            // 
             // TwitchChatToSubtitlesForm
             // 
             AllowDrop = true;
@@ -421,5 +436,6 @@
         private Button btnWriteTwitchSubtitles;
         private CheckBox chkCloseWhenFinishedSuccessfully;
         private Button btnCopy;
+        private Button btnCommandLine;
     }
 }

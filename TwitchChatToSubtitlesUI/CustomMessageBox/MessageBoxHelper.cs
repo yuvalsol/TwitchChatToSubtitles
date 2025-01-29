@@ -17,10 +17,10 @@
             );
         }
 
-        public static DialogResult ShowWithOKBtn(IWin32Window owner, string text, string caption, MessageBoxIcon icon, Color? foreColor = null)
+        public static DialogResult ShowInformation(IWin32Window owner, string text, Color? foreColor = null)
         {
             return CustomMessageBox.Show(
-                owner, text, caption, CustomMessageBoxButtons.OK, icon,
+                owner, text, null, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.Copy, MessageBoxIcon.Information,
                 GetAppearance(foreColor: foreColor, textAlign: ContentAlignment.MiddleLeft)
             );
         }

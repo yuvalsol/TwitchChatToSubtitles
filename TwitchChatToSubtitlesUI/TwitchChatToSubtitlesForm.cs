@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using TwitchChatToSubtitles.Library;
@@ -441,6 +442,77 @@ namespace TwitchChatToSubtitlesUI
             txtConsole.Select(selectionStart, selectionLength);
             txtConsole.SelectionColor = Color.Red;
             txtConsole.AppendText(Environment.NewLine);
+        }
+
+        #endregion
+
+        #region Command Line
+
+        private void btnCommandLine_Click(object sender, EventArgs e)
+        {
+            var sb = new StringBuilder("TwitchChatToSubtitles.exe");
+
+            var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
+            sb.Append($" --{subtitlesType}");
+
+            var jsonFile = txtJsonFile.Text;
+            if (string.IsNullOrEmpty(jsonFile) == false)
+                sb.Append($" --JsonFile \"{jsonFile}\"");
+
+            if (chkColorUserNames.Enabled)
+            {
+                if (chkColorUserNames.Checked)
+                    sb.Append($" --ColorUserNames");
+            }
+
+            if (chkRemoveEmoticonNames.Enabled)
+            {
+                if (chkRemoveEmoticonNames.Checked)
+                    sb.Append($" --RemoveEmoticonNames");
+            }
+
+            if (chkShowTimestamps.Enabled)
+            {
+                if (chkShowTimestamps.Checked)
+                    sb.Append($" --ShowTimestamps");
+            }
+
+            if (ddlSubtitlesLocation.Enabled)
+            {
+                var subtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue;
+                if (subtitlesLocation != SubtitlesLocation.None)
+                    sb.Append($" --SubtitlesLocation {subtitlesLocation}");
+            }
+
+            if (ddlSubtitlesFontSize.Enabled)
+            {
+                var subtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue;
+                if (subtitlesFontSize != SubtitlesFontSize.None)
+                    sb.Append($" --SubtitlesFontSize {subtitlesFontSize}");
+            }
+
+            if (ddlSubtitlesSpeed.Enabled)
+            {
+                var subtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
+                if (subtitlesSpeed != SubtitlesSpeed.None)
+                    sb.Append($" --SubtitlesSpeed {subtitlesSpeed}");
+            }
+
+            if (nudTimeOffset.Enabled)
+            {
+                int timeOffset = Convert.ToInt32(nudTimeOffset.Value);
+                if (timeOffset != 0)
+                    sb.Append($" --TimeOffset {timeOffset}");
+            }
+
+            if (nudSubtitleShowDuration.Enabled)
+            {
+                int subtitleShowDuration = Convert.ToInt32(nudSubtitleShowDuration.Value);
+                if (subtitleShowDuration > 0 && subtitleShowDuration != 5)
+                    sb.Append($" --SubtitleShowDuration {subtitleShowDuration}");
+            }
+
+            MessageBoxHelper.ShowInformation(this, sb.ToString());
         }
 
         #endregion
