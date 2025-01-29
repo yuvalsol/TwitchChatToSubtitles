@@ -50,13 +50,13 @@ namespace TwitchChatToSubtitlesUI
 
         private void TwitchChatToSubtitlesForm_Shown(object sender, EventArgs e)
         {
-            LoadUISettings();
-
             openJsonFileDialog.InitialDirectory = AppContext.BaseDirectory;
+
+            LoadUISettings();
 
             if (string.IsNullOrEmpty(argsJsonFile))
             {
-                string[] jsonFiles = Directory.GetFiles(AppContext.BaseDirectory, "*.json");
+                string[] jsonFiles = Directory.GetFiles(openJsonFileDialog.InitialDirectory, "*.json");
                 if (jsonFiles.HasAny())
                     LoadJsonFile(jsonFiles[0]);
             }
@@ -460,6 +460,7 @@ namespace TwitchChatToSubtitlesUI
             public bool chkRemoveEmoticonNames_Checked { get; set; }
             public bool chkColorUserNames_Checked { get; set; }
             public bool chkCloseWhenFinishedSuccessfully_Checked { get; set; }
+            public string JsonDirectory { get; set; }
         }
 
         private const string settingsFileName = "TwitchChatToSubtitlesUI.settings";
@@ -480,6 +481,12 @@ namespace TwitchChatToSubtitlesUI
             chkRemoveEmoticonNames.Checked = settings.chkRemoveEmoticonNames_Checked;
             chkColorUserNames.Checked = settings.chkColorUserNames_Checked;
             chkCloseWhenFinishedSuccessfully.Checked = settings.chkCloseWhenFinishedSuccessfully_Checked;
+
+            if (string.IsNullOrEmpty(settings.JsonDirectory) == false)
+            {
+                if (Directory.Exists(settings.JsonDirectory))
+                    openJsonFileDialog.InitialDirectory = settings.JsonDirectory;
+            }
         }
 
         private static UISettings DeserializeUISettings()
@@ -505,6 +512,16 @@ namespace TwitchChatToSubtitlesUI
 
         private UISettings GetUISettings()
         {
+            string jsonDirectory = null;
+            if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
+            {
+                try
+                {
+                    jsonDirectory = Path.GetDirectoryName(txtJsonFile.Text);
+                }
+                catch { }
+            }
+
             return new UISettings()
             {
                 ddlSubtitlesType_SelectedValue = (SubtitlesType)ddlSubtitlesType.SelectedValue,
@@ -516,7 +533,8 @@ namespace TwitchChatToSubtitlesUI
                 nudTimeOffset_Value = nudTimeOffset.Value,
                 chkRemoveEmoticonNames_Checked = chkRemoveEmoticonNames.Checked,
                 chkColorUserNames_Checked = chkColorUserNames.Checked,
-                chkCloseWhenFinishedSuccessfully_Checked = chkCloseWhenFinishedSuccessfully.Checked
+                chkCloseWhenFinishedSuccessfully_Checked = chkCloseWhenFinishedSuccessfully.Checked,
+                JsonDirectory = jsonDirectory
             };
         }
 
