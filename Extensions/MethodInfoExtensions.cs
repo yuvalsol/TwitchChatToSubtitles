@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace System.Reflection;
+﻿namespace System.Reflection;
 
 // https://gist.github.com/jamietre/4476307
 

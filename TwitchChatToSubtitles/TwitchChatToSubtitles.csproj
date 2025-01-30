@@ -19,11 +19,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
+    <ProjectReference Include="..\Extensions\Extensions.csproj" />
+    <ProjectReference Include="..\TwitchChatToSubtitles.Library\TwitchChatToSubtitles.Library.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TwitchChatToSubtitles.Library\TwitchChatToSubtitles.Library.csproj" />
+    <Using Include="System.Reflection" />
+    <Using Include="System.Text" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(Configuration.Contains('Release')) And '$(BuildingInsideVisualStudio)' == 'true'">

@@ -1,6 +1,3 @@
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using TwitchChatToSubtitles.Library;
 using TwitchChatToSubtitlesUI.CustomMessageBox;
 

@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-using System.Text;
-using CommandLine;
+﻿using CommandLine;
 using CommandLine.Text;
 using TwitchChatToSubtitles;
 using TwitchChatToSubtitles.Library;

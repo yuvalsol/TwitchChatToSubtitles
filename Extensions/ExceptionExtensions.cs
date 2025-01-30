@@ -1,8 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection;
-using System.Text;
-
-namespace System;
+﻿namespace System;
 
 public static partial class ExceptionExtensions
 {
