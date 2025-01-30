@@ -150,6 +150,6 @@ internal partial class ChatMessage : IMessage
         if (string.IsNullOrEmpty(User))
             return (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
         else
-            return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{User}{(IsModerator ? " (M)" : string.Empty)}:{(IsBrailleArt ? Environment.NewLine : " ")}{(IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body)}";
+            return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{(IsModerator ? "[M] " : string.Empty)}{User}:{(IsBrailleArt ? Environment.NewLine : " ")}{(IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body)}";
     }
 }

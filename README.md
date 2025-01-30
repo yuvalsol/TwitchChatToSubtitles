@@ -136,7 +136,7 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Ch
 
 ## Chat Text File
 
-Save Twitch chat to a text file. In the text file, "M" in parentheses after the user name indicates a moderator.
+Save Twitch chat to a text file. In the text file, "[M]" before the user name indicates a moderator.
 
 ```console
 TwitchChatToSubtitles.exe --ChatTextFile
