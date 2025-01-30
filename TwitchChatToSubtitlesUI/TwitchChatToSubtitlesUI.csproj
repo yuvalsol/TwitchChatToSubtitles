@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>TwitchChatToSubtitles.ico</ApplicationIcon>
     <Title>Twitch Chat To Subtitles</Title>
-    <Version>1.5</Version>
+    <Version>1.6</Version>
   </PropertyGroup>
 
   <ItemGroup>
