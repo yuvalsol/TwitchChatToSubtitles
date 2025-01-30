@@ -28,8 +28,8 @@
     <Using Include="System.Text" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(Configuration.Contains('Release')) And '$(BuildingInsideVisualStudio)' == 'true'">
+  <!--<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(Configuration.Contains('Release')) And '$(BuildingInsideVisualStudio)' == 'true'">
     <Exec Command="call Publish.bat" />
-  </Target>
+  </Target>-->
 
 </Project>
