@@ -228,7 +228,7 @@ This option determines the speed of the subtitles rolling from the bottom to the
                         Valid values: Regular, Faster, Fastest.
 ```
 
-This option determines the color of the subtitles text. If not specified, the color will be determined by the media player's default text color. Valid color values are hex format (`#000000`) or known names (`White`).
+This option determines the color of the subtitles text. If not specified, the color will be determined by the media player's default text color. Valid color values are hex format (`#000000`) or known names (`Black`).
 
 ```console
 --TextColor             The color of the subtitles text.
