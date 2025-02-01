@@ -269,6 +269,7 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.ChatTextFile = false;
     //options.ColorUserNames = true;
     //options.RemoveEmoticonNames = true;
+    //options.ShowTimestamps = false;
     //options.SubtitlesFontSize = SubtitlesFontSize.Bigger;
 }
 #endif

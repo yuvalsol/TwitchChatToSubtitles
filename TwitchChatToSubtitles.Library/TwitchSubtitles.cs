@@ -1139,7 +1139,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             {
                 if (bodyString.Contains(item.Value.User, StringComparison.OrdinalIgnoreCase))
                 {
-                    item.Value.SearchAndReplace(body);
+                    if (settings.InternalTextColor != null)
+                        item.Value.SearchAndReplace(body, $@"{{\c&{settings.InternalTextColor.BGR}&}}");
+                    else
+                        item.Value.SearchAndReplace(body);
+
                     bodyString = body.ToString();
                 }
             }

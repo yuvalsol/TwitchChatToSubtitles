@@ -33,6 +33,13 @@
             txtConsole = new RichTextBox();
             ddlSubtitlesFontSize = new ComboBox();
             splitContainer1 = new SplitContainer();
+            lblTextColor = new Label();
+            flowLayoutPanelColors = new FlowLayoutPanel();
+            rdbNoColor = new RadioButton();
+            rdbWhite = new RadioButton();
+            rdbBlack = new RadioButton();
+            btnTextColor = new Button();
+            btnCommandLine = new Button();
             btnCopy = new Button();
             chkCloseWhenFinishedSuccessfully = new CheckBox();
             btnClose = new Button();
@@ -55,11 +62,12 @@
             lblSubtitlesFontSize = new Label();
             toolTip = new ToolTip(components);
             openJsonFileDialog = new OpenFileDialog();
-            btnCommandLine = new Button();
+            colorDialog = new ColorDialog();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
+            flowLayoutPanelColors.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)nudTimeOffset).BeginInit();
             ((System.ComponentModel.ISupportInitialize)nudSubtitleShowDuration).BeginInit();
             SuspendLayout();
@@ -106,6 +114,9 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(lblTextColor);
+            splitContainer1.Panel2.Controls.Add(flowLayoutPanelColors);
+            splitContainer1.Panel2.Controls.Add(btnTextColor);
             splitContainer1.Panel2.Controls.Add(btnCommandLine);
             splitContainer1.Panel2.Controls.Add(btnCopy);
             splitContainer1.Panel2.Controls.Add(chkCloseWhenFinishedSuccessfully);
@@ -134,6 +145,90 @@
             splitContainer1.TabIndex = 0;
             splitContainer1.TabStop = false;
             // 
+            // lblTextColor
+            // 
+            lblTextColor.BorderStyle = BorderStyle.Fixed3D;
+            lblTextColor.Font = new Font("Segoe UI", 11.25F, FontStyle.Bold);
+            lblTextColor.Location = new Point(374, 165);
+            lblTextColor.Name = "lblTextColor";
+            lblTextColor.Size = new Size(317, 30);
+            lblTextColor.TabIndex = 0;
+            lblTextColor.Text = "Media Player's Default Text Color";
+            lblTextColor.TextAlign = ContentAlignment.MiddleCenter;
+            toolTip.SetToolTip(lblTextColor, "For how long a subtitle is visible on the screen, in seconds.");
+            // 
+            // flowLayoutPanelColors
+            // 
+            flowLayoutPanelColors.AutoSize = true;
+            flowLayoutPanelColors.Controls.Add(rdbNoColor);
+            flowLayoutPanelColors.Controls.Add(rdbWhite);
+            flowLayoutPanelColors.Controls.Add(rdbBlack);
+            flowLayoutPanelColors.Location = new Point(117, 165);
+            flowLayoutPanelColors.Name = "flowLayoutPanelColors";
+            flowLayoutPanelColors.Size = new Size(233, 30);
+            flowLayoutPanelColors.TabIndex = 11;
+            // 
+            // rdbNoColor
+            // 
+            rdbNoColor.AutoSize = true;
+            rdbNoColor.Checked = true;
+            rdbNoColor.Location = new Point(3, 3);
+            rdbNoColor.Name = "rdbNoColor";
+            rdbNoColor.Size = new Size(87, 24);
+            rdbNoColor.TabIndex = 1;
+            rdbNoColor.TabStop = true;
+            rdbNoColor.Text = "No Color";
+            rdbNoColor.UseVisualStyleBackColor = true;
+            rdbNoColor.CheckedChanged += rdbNoColor_CheckedChanged;
+            // 
+            // rdbWhite
+            // 
+            rdbWhite.AutoSize = true;
+            rdbWhite.Location = new Point(96, 3);
+            rdbWhite.Name = "rdbWhite";
+            rdbWhite.Size = new Size(66, 24);
+            rdbWhite.TabIndex = 2;
+            rdbWhite.Text = "White";
+            rdbWhite.UseVisualStyleBackColor = true;
+            rdbWhite.CheckedChanged += rdbWhite_CheckedChanged;
+            // 
+            // rdbBlack
+            // 
+            rdbBlack.AutoSize = true;
+            rdbBlack.Location = new Point(168, 3);
+            rdbBlack.Name = "rdbBlack";
+            rdbBlack.Size = new Size(62, 24);
+            rdbBlack.TabIndex = 3;
+            rdbBlack.Text = "Black";
+            rdbBlack.UseVisualStyleBackColor = true;
+            rdbBlack.CheckedChanged += rdbBlack_CheckedChanged;
+            // 
+            // btnTextColor
+            // 
+            btnTextColor.AutoSize = true;
+            btnTextColor.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            btnTextColor.Location = new Point(15, 165);
+            btnTextColor.Name = "btnTextColor";
+            btnTextColor.Size = new Size(86, 30);
+            btnTextColor.TabIndex = 10;
+            btnTextColor.Text = "Text Color";
+            toolTip.SetToolTip(btnTextColor, "The color of the subtitles text.");
+            btnTextColor.UseVisualStyleBackColor = true;
+            btnTextColor.Click += btnTextColor_Click;
+            // 
+            // btnCommandLine
+            // 
+            btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            btnCommandLine.AutoSize = true;
+            btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            btnCommandLine.Location = new Point(471, 236);
+            btnCommandLine.Name = "btnCommandLine";
+            btnCommandLine.Size = new Size(119, 30);
+            btnCommandLine.TabIndex = 16;
+            btnCommandLine.Text = "Command Line";
+            btnCommandLine.UseVisualStyleBackColor = true;
+            btnCommandLine.Click += btnCommandLine_Click;
+            // 
             // btnCopy
             // 
             btnCopy.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -156,7 +251,7 @@
             chkCloseWhenFinishedSuccessfully.Location = new Point(185, 239);
             chkCloseWhenFinishedSuccessfully.Name = "chkCloseWhenFinishedSuccessfully";
             chkCloseWhenFinishedSuccessfully.Size = new Size(246, 24);
-            chkCloseWhenFinishedSuccessfully.TabIndex = 13;
+            chkCloseWhenFinishedSuccessfully.TabIndex = 15;
             chkCloseWhenFinishedSuccessfully.Text = "Close When Finished Successfully";
             toolTip.SetToolTip(chkCloseWhenFinishedSuccessfully, "Whether to show chat message timestamps.");
             chkCloseWhenFinishedSuccessfully.UseVisualStyleBackColor = true;
@@ -170,7 +265,7 @@
             btnClose.Location = new Point(636, 236);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(55, 30);
-            btnClose.TabIndex = 15;
+            btnClose.TabIndex = 17;
             btnClose.Text = "Close";
             btnClose.UseVisualStyleBackColor = true;
             btnClose.Click += btnClose_Click;
@@ -183,7 +278,7 @@
             btnWriteTwitchSubtitles.Location = new Point(15, 236);
             btnWriteTwitchSubtitles.Name = "btnWriteTwitchSubtitles";
             btnWriteTwitchSubtitles.Size = new Size(162, 30);
-            btnWriteTwitchSubtitles.TabIndex = 12;
+            btnWriteTwitchSubtitles.TabIndex = 14;
             btnWriteTwitchSubtitles.Text = "Write Twitch Subtitles";
             btnWriteTwitchSubtitles.UseVisualStyleBackColor = true;
             btnWriteTwitchSubtitles.Click += btnWriteTwitchSubtitles_Click;
@@ -191,20 +286,20 @@
             // txtJsonFile
             // 
             txtJsonFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            txtJsonFile.Location = new Point(97, 190);
+            txtJsonFile.Location = new Point(97, 202);
             txtJsonFile.Name = "txtJsonFile";
             txtJsonFile.Size = new Size(594, 27);
-            txtJsonFile.TabIndex = 11;
+            txtJsonFile.TabIndex = 13;
             txtJsonFile.TextChanged += txtJsonFile_TextChanged;
             // 
             // btnJsonFile
             // 
             btnJsonFile.AutoSize = true;
             btnJsonFile.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnJsonFile.Location = new Point(15, 188);
+            btnJsonFile.Location = new Point(15, 200);
             btnJsonFile.Name = "btnJsonFile";
             btnJsonFile.Size = new Size(74, 30);
-            btnJsonFile.TabIndex = 10;
+            btnJsonFile.TabIndex = 12;
             btnJsonFile.Text = "Json File";
             btnJsonFile.UseVisualStyleBackColor = true;
             btnJsonFile.Click += btnJsonFile_Click;
@@ -213,7 +308,7 @@
             // 
             chkColorUserNames.AutoSize = true;
             chkColorUserNames.CheckAlign = ContentAlignment.MiddleRight;
-            chkColorUserNames.Location = new Point(15, 51);
+            chkColorUserNames.Location = new Point(15, 47);
             chkColorUserNames.Name = "chkColorUserNames";
             chkColorUserNames.Size = new Size(147, 24);
             chkColorUserNames.TabIndex = 2;
@@ -225,7 +320,7 @@
             // 
             chkRemoveEmoticonNames.AutoSize = true;
             chkRemoveEmoticonNames.CheckAlign = ContentAlignment.MiddleRight;
-            chkRemoveEmoticonNames.Location = new Point(15, 83);
+            chkRemoveEmoticonNames.Location = new Point(15, 76);
             chkRemoveEmoticonNames.Name = "chkRemoveEmoticonNames";
             chkRemoveEmoticonNames.Size = new Size(199, 24);
             chkRemoveEmoticonNames.TabIndex = 3;
@@ -237,7 +332,7 @@
             // 
             chkShowTimestamps.AutoSize = true;
             chkShowTimestamps.CheckAlign = ContentAlignment.MiddleRight;
-            chkShowTimestamps.Location = new Point(15, 115);
+            chkShowTimestamps.Location = new Point(15, 105);
             chkShowTimestamps.Name = "chkShowTimestamps";
             chkShowTimestamps.Size = new Size(148, 24);
             chkShowTimestamps.TabIndex = 4;
@@ -248,7 +343,7 @@
             // lblTimeOffset
             // 
             lblTimeOffset.AutoSize = true;
-            lblTimeOffset.Location = new Point(374, 106);
+            lblTimeOffset.Location = new Point(374, 96);
             lblTimeOffset.Name = "lblTimeOffset";
             lblTimeOffset.Size = new Size(153, 20);
             lblTimeOffset.TabIndex = 0;
@@ -257,7 +352,7 @@
             // 
             // nudTimeOffset
             // 
-            nudTimeOffset.Location = new Point(535, 103);
+            nudTimeOffset.Location = new Point(535, 93);
             nudTimeOffset.Maximum = new decimal(new int[] { int.MaxValue, 0, 0, 0 });
             nudTimeOffset.Minimum = new decimal(new int[] { int.MinValue, 0, 0, int.MinValue });
             nudTimeOffset.Name = "nudTimeOffset";
@@ -269,7 +364,7 @@
             // lblSubtitleShowDuration
             // 
             lblSubtitleShowDuration.AutoSize = true;
-            lblSubtitleShowDuration.Location = new Point(374, 149);
+            lblSubtitleShowDuration.Location = new Point(374, 137);
             lblSubtitleShowDuration.Name = "lblSubtitleShowDuration";
             lblSubtitleShowDuration.Size = new Size(229, 20);
             lblSubtitleShowDuration.TabIndex = 0;
@@ -278,7 +373,7 @@
             // 
             // nudSubtitleShowDuration
             // 
-            nudSubtitleShowDuration.Location = new Point(611, 146);
+            nudSubtitleShowDuration.Location = new Point(611, 134);
             nudSubtitleShowDuration.Maximum = new decimal(new int[] { int.MaxValue, 0, 0, 0 });
             nudSubtitleShowDuration.Minimum = new decimal(new int[] { int.MinValue, 0, 0, int.MinValue });
             nudSubtitleShowDuration.Name = "nudSubtitleShowDuration";
@@ -312,7 +407,7 @@
             // lblSubtitlesSpeed
             // 
             lblSubtitlesSpeed.AutoSize = true;
-            lblSubtitlesSpeed.Location = new Point(374, 63);
+            lblSubtitlesSpeed.Location = new Point(374, 57);
             lblSubtitlesSpeed.Name = "lblSubtitlesSpeed";
             lblSubtitlesSpeed.Size = new Size(112, 20);
             lblSubtitlesSpeed.TabIndex = 10;
@@ -323,7 +418,7 @@
             // 
             ddlSubtitlesSpeed.DropDownStyle = ComboBoxStyle.DropDownList;
             ddlSubtitlesSpeed.FormattingEnabled = true;
-            ddlSubtitlesSpeed.Location = new Point(494, 59);
+            ddlSubtitlesSpeed.Location = new Point(494, 53);
             ddlSubtitlesSpeed.Name = "ddlSubtitlesSpeed";
             ddlSubtitlesSpeed.Size = new Size(120, 28);
             ddlSubtitlesSpeed.TabIndex = 7;
@@ -332,7 +427,7 @@
             // lblSubtitlesLocation
             // 
             lblSubtitlesLocation.AutoSize = true;
-            lblSubtitlesLocation.Location = new Point(15, 150);
+            lblSubtitlesLocation.Location = new Point(15, 137);
             lblSubtitlesLocation.Name = "lblSubtitlesLocation";
             lblSubtitlesLocation.Size = new Size(127, 20);
             lblSubtitlesLocation.TabIndex = 0;
@@ -343,7 +438,7 @@
             // 
             ddlSubtitlesLocation.DropDownStyle = ComboBoxStyle.DropDownList;
             ddlSubtitlesLocation.FormattingEnabled = true;
-            ddlSubtitlesLocation.Location = new Point(150, 146);
+            ddlSubtitlesLocation.Location = new Point(150, 133);
             ddlSubtitlesLocation.Name = "ddlSubtitlesLocation";
             ddlSubtitlesLocation.Size = new Size(200, 28);
             ddlSubtitlesLocation.TabIndex = 5;
@@ -366,19 +461,6 @@
             // openJsonFileDialog
             // 
             openJsonFileDialog.Filter = "Json files (*.json)|*.json";
-            // 
-            // btnCommandLine
-            // 
-            btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnCommandLine.AutoSize = true;
-            btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnCommandLine.Location = new Point(471, 236);
-            btnCommandLine.Name = "btnCommandLine";
-            btnCommandLine.Size = new Size(119, 30);
-            btnCommandLine.TabIndex = 14;
-            btnCommandLine.Text = "Command Line";
-            btnCommandLine.UseVisualStyleBackColor = true;
-            btnCommandLine.Click += btnCommandLine_Click;
             // 
             // TwitchChatToSubtitlesForm
             // 
@@ -404,6 +486,8 @@
             splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
+            flowLayoutPanelColors.ResumeLayout(false);
+            flowLayoutPanelColors.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)nudTimeOffset).EndInit();
             ((System.ComponentModel.ISupportInitialize)nudSubtitleShowDuration).EndInit();
             ResumeLayout(false);
@@ -437,5 +521,12 @@
         private CheckBox chkCloseWhenFinishedSuccessfully;
         private Button btnCopy;
         private Button btnCommandLine;
+        private Button btnTextColor;
+        private ColorDialog colorDialog;
+        private FlowLayoutPanel flowLayoutPanelColors;
+        private RadioButton rdbNoColor;
+        private RadioButton rdbWhite;
+        private RadioButton rdbBlack;
+        private Label lblTextColor;
     }
 }

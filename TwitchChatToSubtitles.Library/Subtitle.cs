@@ -149,15 +149,15 @@ internal class Subtitle : IMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, false);
+        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, null, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.IsUsingAssaTags);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, bool isUsingAssaTags)
+    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, Color textColor, bool isUsingAssaTags)
     {
         var sb = new StringBuilder();
         sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
@@ -179,7 +179,7 @@ internal class Subtitle : IMessage
         }
 
         foreach (var message in Messages)
-            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, isUsingAssaTags));
+            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, textColor, isUsingAssaTags));
 
         return sb.ToString();
     }

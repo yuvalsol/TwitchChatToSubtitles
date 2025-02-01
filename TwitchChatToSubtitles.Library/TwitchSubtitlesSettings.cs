@@ -16,7 +16,23 @@ public class TwitchSubtitlesSettings
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
+    public System.Drawing.Color? TextColor { get; set; }
     public int TimeOffset { get; set; }
+
+    private Color internalTextColor;
+    internal Color InternalTextColor
+    {
+        get
+        {
+            if (TextColor == null)
+                return null;
+
+            if (internalTextColor == null)
+                internalTextColor = new Color(TextColor.Value);
+
+            return internalTextColor;
+        }
+    }
 
     internal bool IsUsingAssaTags
     {
@@ -29,7 +45,8 @@ public class TwitchSubtitlesSettings
                     StaticChatSubtitles ||
                     ColorUserNames ||
                     ShowTimestamps ||
-                    SubtitlesFontSize != SubtitlesFontSize.None
+                    SubtitlesFontSize != SubtitlesFontSize.None ||
+                    TextColor != null
                 );
         }
     }

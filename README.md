@@ -37,6 +37,7 @@ TwitchChatToSubtitles.exe --RegularSubtitles
                           [--ShowTimestamps]
                           [--SubtitleShowDuration <seconds>]
                           [--SubtitlesFontSize <fontSize>]
+                          [--TextColor <color>]
                           [--TimeOffset <seconds>]
 ```
 
@@ -78,6 +79,7 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles
                           [--SubtitlesFontSize <fontSize>]
                           [--SubtitlesLocation <location>]
                           [--SubtitlesSpeed <speed>]
+                          [--TextColor <color>]
                           [--TimeOffset <seconds>]
 ```
 
@@ -112,6 +114,7 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles
                           [--ShowTimestamps]
                           [--SubtitlesFontSize <fontSize>]
                           [--SubtitlesLocation <location>]
+                          [--TextColor <color>]
                           [--TimeOffset <seconds>]
 ```
 
@@ -223,6 +226,12 @@ This option determines the speed of the subtitles rolling from the bottom to the
 ```console
 --SubtitlesSpeed        How fast the subtitles roll.
                         Valid values: Regular, Faster, Fastest.
+```
+
+This option determines the color of the subtitles text. If not specified, the color will be determined by the media player's default text color. Valid color values are hex format (`#000000`) or known names (`White`).
+
+```console
+--TextColor             The color of the subtitles text.
 ```
 
 This option shifts the timing of all the subtitles. This option is applicable for all subtitles types but very useful for `RegularSubtitles`. For `RegularSubtitles`, the subtitles are visible only for a few seconds and then disappear. A Twitch streamer is more likely to interact with a chat message as it passes around the mid point of the chat, not when it first appears at the bottom of the chat. By adding a few seconds (3-7 seconds), the subtitles will appear **closer in time** to when the Twitch streamer have read and responded to it.

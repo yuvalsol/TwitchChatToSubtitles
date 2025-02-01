@@ -15,6 +15,16 @@ internal class Color
         BGR = string.Concat("H", B, G, R);
     }
 
+    public Color(System.Drawing.Color color)
+    {
+        var R = color.R.ToString("X2");
+        var G = color.G.ToString("X2");
+        var B = color.B.ToString("X2");
+
+        RGB = string.Concat("#", R, G, B);
+        BGR = string.Concat("H", B, G, R);
+    }
+
     public override string ToString()
     {
         return RGB;

@@ -110,19 +110,22 @@ internal partial class ChatMessage : IMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesFontSize.None, false);
+        return ToString(false, SubtitlesFontSize.None, null, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesFontSize, settings.IsUsingAssaTags);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesFontSize subtitlesFontSize, bool isUsingAssaTags)
+    public string ToString(bool showTimestamps, SubtitlesFontSize subtitlesFontSize, Color textColor, bool isUsingAssaTags)
     {
         if (string.IsNullOrEmpty(User))
         {
-            return Body;
+            if (textColor != null)
+                return $@"{{\c&{textColor.BGR}&}}" + Body;
+            else
+                return Body;
         }
         else
         {
@@ -133,10 +136,10 @@ internal partial class ChatMessage : IMessage
                 if (subtitlesFontSize != SubtitlesFontSize.None)
                     fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
-                timestampStr = $@"{{\fs6}}{ToTimestamp(Timestamp)}{{\rfs{fontSizeStr}\bord0\shad0}} ";
+                timestampStr = $@"{{\fs6{(textColor != null ? $@"\c&{textColor.BGR}&" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(textColor != null ? @"\c" : string.Empty)}\rfs{fontSizeStr}\bord0\shad0}} ";
             }
 
-            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}{(textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
         }
     }
 

@@ -103,16 +103,103 @@ namespace TwitchChatToSubtitlesUI
 
         #endregion
 
+        #region Text Color
+
+        private Color? textColor = null;
+
+        private void btnTextColor_Click(object sender, EventArgs e)
+        {
+            if (colorDialog.ShowDialog(this) == DialogResult.OK)
+                SetTextColorControls(colorDialog.Color);
+        }
+
+        private void SetTextColorControls(Color? color)
+        {
+            if (color == null || color.Value.IsEmpty)
+            {
+                rdbNoColor.Checked = true;
+            }
+            else if (color == Color.White)
+            {
+                rdbWhite.Checked = true;
+            }
+            else if (color == Color.Black)
+            {
+                rdbBlack.Checked = true;
+            }
+            else
+            {
+                rdbNoColor.Checked =
+                rdbWhite.Checked =
+                rdbBlack.Checked = false;
+
+                SetTextColor(color);
+            }
+        }
+
+        private void rdbNoColor_CheckedChanged(object sender, EventArgs e)
+        {
+            SetTextColor(null);
+        }
+
+        private void rdbWhite_CheckedChanged(object sender, EventArgs e)
+        {
+            SetTextColor(Color.White);
+        }
+
+        private void rdbBlack_CheckedChanged(object sender, EventArgs e)
+        {
+            SetTextColor(Color.Black);
+        }
+
+        private void SetTextColor(Color? color)
+        {
+            textColor = color;
+
+            if (color != null)
+            {
+                lblTextColor.Text = ColorToHex(color.Value);
+
+                if (color.Value.IsNamedColor)
+                    lblTextColor.Text = color.Value.Name + " " + lblTextColor.Text;
+
+                lblTextColor.ForeColor = color.Value;
+                lblTextColor.BackColor = (lblTextColor.ForeColor.GetBrightness() > 0.4 ? Color.Black : Color.FromName("Control"));
+            }
+            else
+            {
+                lblTextColor.Text = "Media Player's Default Text Color";
+                lblTextColor.ForeColor = Color.FromName("ControlText");
+                lblTextColor.BackColor = Color.FromName("Control");
+            }
+        }
+
+        private static string ColorToHex(Color color)
+        {
+            return "#" +
+                color.R.ToString("X2") +
+                color.G.ToString("X2") +
+                color.B.ToString("X2");
+        }
+
+        #endregion
+
         #region Controls
 
         private void ddlSubtitlesType_SelectedIndexChanged(object sender, EventArgs e)
         {
             var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
 
-            if (subtitlesType == SubtitlesType.ChatTextFile)
-                btnWriteTwitchSubtitles.Text = "Write Chat Text File";
-            else
-                btnWriteTwitchSubtitles.Text = "Write Twitch Subtitles";
+            btnWriteTwitchSubtitles.Text = (subtitlesType == SubtitlesType.ChatTextFile ? "Write Chat Text File" : "Write Twitch Subtitles");
+
+            chkColorUserNames.Enabled =
+            lblSubtitlesFontSize.Enabled =
+            ddlSubtitlesFontSize.Enabled =
+            lblTimeOffset.Enabled =
+            nudTimeOffset.Enabled =
+            btnTextColor.Enabled =
+            flowLayoutPanelColors.Enabled =
+            lblTextColor.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
 
             lblSubtitlesLocation.Enabled =
             ddlSubtitlesLocation.Enabled = false;
@@ -122,12 +209,6 @@ namespace TwitchChatToSubtitlesUI
 
             lblSubtitleShowDuration.Enabled =
             nudSubtitleShowDuration.Enabled = false;
-
-            chkColorUserNames.Enabled =
-            lblSubtitlesFontSize.Enabled =
-            ddlSubtitlesFontSize.Enabled =
-            lblTimeOffset.Enabled =
-            nudTimeOffset.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
 
             if (subtitlesType == SubtitlesType.RegularSubtitles)
             {
@@ -256,6 +337,8 @@ namespace TwitchChatToSubtitlesUI
                 settings.SubtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue;
             if (ddlSubtitlesSpeed.Enabled)
                 settings.SubtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
+            if (btnTextColor.Enabled)
+                settings.TextColor = textColor;
             if (nudTimeOffset.Enabled)
                 settings.TimeOffset = Convert.ToInt32(nudTimeOffset.Value);
 
@@ -452,9 +535,8 @@ namespace TwitchChatToSubtitlesUI
             var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
             sb.Append($" --{subtitlesType}");
 
-            var jsonFile = txtJsonFile.Text;
-            if (string.IsNullOrEmpty(jsonFile) == false)
-                sb.Append($" --JsonFile \"{jsonFile}\"");
+            if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
+                sb.Append($" --JsonFile \"{txtJsonFile.Text}\"");
 
             if (chkColorUserNames.Enabled)
             {
@@ -509,6 +591,17 @@ namespace TwitchChatToSubtitlesUI
                     sb.Append($" --SubtitleShowDuration {subtitleShowDuration}");
             }
 
+            if (btnTextColor.Enabled)
+            {
+                if (textColor != null)
+                {
+                    string color = ColorToHex(textColor.Value);
+                    if (textColor.Value.IsNamedColor)
+                        color = textColor.Value.Name;
+                    sb.Append($" --TextColor \"{color}\"");
+                }
+            }
+
             MessageBoxHelper.ShowInformation(this, sb.ToString());
         }
 
@@ -520,14 +613,15 @@ namespace TwitchChatToSubtitlesUI
         private class UISettings
         {
             public SubtitlesType ddlSubtitlesType_SelectedValue { get; set; }
-            public decimal nudSubtitleShowDuration_Value { get; set; }
-            public SubtitlesSpeed ddlSubtitlesSpeed_SelectedValue { get; set; }
+            public bool chkColorUserNames_Checked { get; set; }
+            public bool chkRemoveEmoticonNames_Checked { get; set; }
+            public bool chkShowTimestamps_Checked { get; set; }
             public SubtitlesLocation ddlSubtitlesLocation_SelectedValue { get; set; }
             public SubtitlesFontSize ddlSubtitlesFontSize_SelectedValue { get; set; }
-            public bool chkShowTimestamps_Checked { get; set; }
+            public SubtitlesSpeed ddlSubtitlesSpeed_SelectedValue { get; set; }
             public decimal nudTimeOffset_Value { get; set; }
-            public bool chkRemoveEmoticonNames_Checked { get; set; }
-            public bool chkColorUserNames_Checked { get; set; }
+            public decimal nudSubtitleShowDuration_Value { get; set; }
+            public string TextColor { get; set; }
             public bool chkCloseWhenFinishedSuccessfully_Checked { get; set; }
             public string JsonDirectory { get; set; }
         }
@@ -541,15 +635,22 @@ namespace TwitchChatToSubtitlesUI
                 return;
 
             ddlSubtitlesType.SelectedValue = settings.ddlSubtitlesType_SelectedValue;
-            nudSubtitleShowDuration.Value = settings.nudSubtitleShowDuration_Value;
-            ddlSubtitlesSpeed.SelectedValue = settings.ddlSubtitlesSpeed_SelectedValue;
+            chkColorUserNames.Checked = settings.chkColorUserNames_Checked;
+            chkRemoveEmoticonNames.Checked = settings.chkRemoveEmoticonNames_Checked;
+            chkShowTimestamps.Checked = settings.chkShowTimestamps_Checked;
             ddlSubtitlesLocation.SelectedValue = settings.ddlSubtitlesLocation_SelectedValue;
             ddlSubtitlesFontSize.SelectedValue = settings.ddlSubtitlesFontSize_SelectedValue;
-            chkShowTimestamps.Checked = settings.chkShowTimestamps_Checked;
+            ddlSubtitlesSpeed.SelectedValue = settings.ddlSubtitlesSpeed_SelectedValue;
             nudTimeOffset.Value = settings.nudTimeOffset_Value;
-            chkRemoveEmoticonNames.Checked = settings.chkRemoveEmoticonNames_Checked;
-            chkColorUserNames.Checked = settings.chkColorUserNames_Checked;
+            nudSubtitleShowDuration.Value = settings.nudSubtitleShowDuration_Value;
             chkCloseWhenFinishedSuccessfully.Checked = settings.chkCloseWhenFinishedSuccessfully_Checked;
+
+            if (string.IsNullOrEmpty(settings.TextColor) == false)
+            {
+                TypeConverter tc = TypeDescriptor.GetConverter(typeof(Color));
+                var color = tc.ConvertFromString(settings.TextColor) as Color?;
+                SetTextColorControls(color);
+            }
 
             if (string.IsNullOrEmpty(settings.JsonDirectory) == false)
             {
@@ -594,14 +695,15 @@ namespace TwitchChatToSubtitlesUI
             return new UISettings()
             {
                 ddlSubtitlesType_SelectedValue = (SubtitlesType)ddlSubtitlesType.SelectedValue,
-                nudSubtitleShowDuration_Value = nudSubtitleShowDuration.Value,
-                ddlSubtitlesSpeed_SelectedValue = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue,
+                chkColorUserNames_Checked = chkColorUserNames.Checked,
+                chkRemoveEmoticonNames_Checked = chkRemoveEmoticonNames.Checked,
+                chkShowTimestamps_Checked = chkShowTimestamps.Checked,
                 ddlSubtitlesLocation_SelectedValue = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue,
                 ddlSubtitlesFontSize_SelectedValue = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue,
-                chkShowTimestamps_Checked = chkShowTimestamps.Checked,
+                ddlSubtitlesSpeed_SelectedValue = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue,
                 nudTimeOffset_Value = nudTimeOffset.Value,
-                chkRemoveEmoticonNames_Checked = chkRemoveEmoticonNames.Checked,
-                chkColorUserNames_Checked = chkColorUserNames.Checked,
+                nudSubtitleShowDuration_Value = nudSubtitleShowDuration.Value,
+                TextColor = (textColor != null ? ColorToHex(textColor.Value) : null),
                 chkCloseWhenFinishedSuccessfully_Checked = chkCloseWhenFinishedSuccessfully.Checked,
                 JsonDirectory = jsonDirectory
             };

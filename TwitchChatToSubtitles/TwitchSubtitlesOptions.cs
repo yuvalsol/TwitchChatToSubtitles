@@ -23,6 +23,9 @@ internal interface IAllSubtitleTypesOptions
     [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Bigger, Biggest.")]
     SubtitlesFontSize SubtitlesFontSize { get; set; }
 
+    [Option("TextColor", Required = false, HelpText = "The color of the subtitles text.")]
+    string TextColor { get; set; }
+
     [Option("TimeOffset", Required = false, HelpText = "Time offset for all subtitles, in seconds.")]
     int TimeOffset { get; set; }
 }
@@ -242,6 +245,7 @@ internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
+    public string TextColor { get; set; }
     public int TimeOffset { get; set; }
 }
 
@@ -249,7 +253,7 @@ internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
 
 #region Twitch Subtitles Options
 
-internal class TwitchSubtitlesOptions
+internal partial class TwitchSubtitlesOptions
     : IAllSubtitleTypesOptions
     , IRegularSubtitlesOptions
     , IRollingChatSubtitlesOptions
@@ -269,6 +273,7 @@ internal class TwitchSubtitlesOptions
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
+    public string TextColor { get; set; }
     public int TimeOffset { get; set; }
 
     public TwitchSubtitlesSettings ToSettings()
@@ -287,8 +292,29 @@ internal class TwitchSubtitlesOptions
             SubtitlesFontSize = SubtitlesFontSize,
             SubtitlesLocation = SubtitlesLocation,
             SubtitlesSpeed = SubtitlesSpeed,
+            TextColor = StringToColor(TextColor),
             TimeOffset = TimeOffset
         };
+    }
+
+    [GeneratedRegex(@"^(?:[a-fA-F0-9]{6}|[a-fA-F0-9]{8})$")]
+    private static partial Regex RegexColorInHex();
+
+    private static Color? StringToColor(string colorStr)
+    {
+        try
+        {
+            if (RegexColorInHex().IsMatch(colorStr))
+                colorStr = "#" + colorStr;
+
+            TypeConverter tc = TypeDescriptor.GetConverter(typeof(Color));
+            var color = tc.ConvertFromString(colorStr) as Color?;
+            return color;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
 
