@@ -7,7 +7,7 @@
     <Nullable>disable</Nullable>
     <ApplicationIcon>TwitchChatToSubtitles.ico</ApplicationIcon>
     <Title>Twitch Chat To Subtitles</Title>
-    <Version>1.6</Version>
+    <Version>1.7</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,9 +30,5 @@
     <Using Include="System.Text" />
     <Using Include="System.Text.RegularExpressions" />
   </ItemGroup>
-
-  <!--<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="$(Configuration.Contains('Release')) And '$(BuildingInsideVisualStudio)' == 'true'">
-    <Exec Command="call Publish.bat" />
-  </Target>-->
 
 </Project>
