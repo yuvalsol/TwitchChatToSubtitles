@@ -184,7 +184,7 @@ Users, who post in Twitch chat, have an assigned color to their name. This optio
 --ColorUserNames        Whether to color user names.
 ```
 
-SubRip specification doesn't support displaying images. As a result of that, emoticons show up as a text of the emoticon name in the chat message, not the image itself. This option removes the emoticon and badge names from chat messages and leaves in only the text.
+SubRip specification doesn't support displaying images. As a result of that, emoticons are written by their name in the chat message. This option removes the emoticon and badge names from chat messages.
 
 If you are downloading chat JSON file using [Twitch Downloader](https://github.com/lay295/TwitchDownloader "Twitch Downloader"), I suggest to check the boxes "Embed Images" and all the "3rd Party Emotes" boxes. Twitch Chat To Subtitles retrieves the names of the emoticon and badge names from the list of embed emoticons in the JSON file.
 
