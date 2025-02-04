@@ -139,7 +139,7 @@ internal partial class ChatMessage : IMessage
                 timestampStr = $@"{{\fs6{(textColor != null ? $@"\c&{textColor.BGR}&" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(textColor != null ? @"\c" : string.Empty)}\rfs{fontSizeStr}\bord0\shad0}} ";
             }
 
-            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : string.Empty)}{User}{(UserColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}{(textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : (textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty))}{User}{(UserColor != null || textColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}{(textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
         }
     }
 
