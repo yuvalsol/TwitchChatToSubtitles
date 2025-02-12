@@ -1167,17 +1167,31 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             string bodyString = body.ToString();
 
-            var tasks = regexEmbeddedEmoticons
-                .Chunk(EMBEDDED_EMOTICONS_CHUNK_SIZE)
-                .Select(items => Task.Run(() => IsBodyHasEmbeddedEmoticons(bodyString, items, ct), ct))
-                .ToArray();
-
-            Task.WaitAll(tasks, ct);
-
-            foreach (var task in tasks.Where(x => x.Result.HasAny()))
+            if (regexEmbeddedEmoticons.Length <= EMBEDDED_EMOTICONS_CHUNK_SIZE)
             {
-                foreach (var (emoticon, regex) in task.Result)
-                    regex.Replace(body, " ");
+                foreach (var (emoticon, regex) in regexEmbeddedEmoticons)
+                {
+                    if (bodyString.Contains(emoticon, StringComparison.OrdinalIgnoreCase))
+                    {
+                        regex.Replace(body, " ");
+                        bodyString = body.ToString();
+                    }
+                }
+            }
+            else
+            {
+                var tasks = regexEmbeddedEmoticons
+                    .Chunk(EMBEDDED_EMOTICONS_CHUNK_SIZE)
+                    .Select(items => Task.Run(() => IsBodyHasEmbeddedEmoticons(bodyString, items, ct), ct))
+                    .ToArray();
+
+                Task.WaitAll(tasks, ct);
+
+                foreach (var task in tasks.Where(x => x.Result.HasAny()))
+                {
+                    foreach (var (emoticon, regex) in task.Result)
+                        regex.Replace(body, " ");
+                }
             }
         }
 
@@ -1213,24 +1227,42 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             string bodyString = body.ToString();
 
-            var tasks = userColors
-                .Chunk(USER_COLORS_CHUNK_SIZE)
-                .Select(items => Task.Run(() => IsBodyHasUserNames(bodyString, items, ct), ct))
-                .ToArray();
-
-            Task.WaitAll(tasks, ct);
-
-            foreach (var task in tasks.Where(x => x.Result.HasAny()))
+            if (userColors.Count <= USER_COLORS_CHUNK_SIZE)
             {
-                foreach (var item in task.Result)
+                foreach (var item in userColors)
                 {
-                    if (settings.InternalTextColor != null)
-                        item.Value.SearchAndReplace(body, $@"{{\c&{settings.InternalTextColor.BGR}&}}");
-                    else
-                        item.Value.SearchAndReplace(body);
+                    if (bodyString.Contains(item.Value.User, StringComparison.OrdinalIgnoreCase))
+                    {
+                        ColorUserNames(item.Value);
+                        bodyString = body.ToString();
+                    }
                 }
             }
+            else
+            {
+                var tasks = userColors
+                    .Chunk(USER_COLORS_CHUNK_SIZE)
+                    .Select(items => Task.Run(() => IsBodyHasUserNames(bodyString, items, ct), ct))
+                    .ToArray();
+
+                Task.WaitAll(tasks, ct);
+
+                foreach (var task in tasks.Where(x => x.Result.HasAny()))
+                {
+                    foreach (var item in task.Result)
+                        ColorUserNames(item.Value);
+                }
+            }
+
+            void ColorUserNames(UserColor userColor)
+            {
+                if (settings.InternalTextColor != null)
+                    userColor.SearchAndReplace(body, $@"{{\c&{settings.InternalTextColor.BGR}&}}");
+                else
+                    userColor.SearchAndReplace(body);
+            }
         }
+
         return body.ToString();
     }
 
