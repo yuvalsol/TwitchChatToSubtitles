@@ -57,3 +57,10 @@ public sealed class FinishEventArgs(string srtFile, TimeSpan processTime, Except
 
     public static new readonly FinishEventArgs Empty = new(default, default, default);
 }
+
+public sealed class TracepointEventArgs(string message) : EventArgs
+{
+    public string Message { get; private set; } = message;
+
+    public static new readonly TracepointEventArgs Empty = new(default);
+}

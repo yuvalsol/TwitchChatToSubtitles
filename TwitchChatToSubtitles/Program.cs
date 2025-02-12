@@ -255,6 +255,11 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         }
     };
 
+    twitchSubtitles.Tracepoint += (object sender, TracepointEventArgs e) =>
+    {
+        Console.WriteLine(e.Message);
+    };
+
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);
 }
 

@@ -16,6 +16,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     public EventHandler<ProgressEventArgs> ProgressAsync;
     public EventHandler<ProgressEventArgs> FinishWritingSubtitles;
     public EventHandler<FinishEventArgs> Finish;
+    public EventHandler<TracepointEventArgs> Tracepoint;
 
     private const int COMMENTS_CHUNK_SIZE = 100;
     private const int FLUSH_SUBTITLES_COUNT = 1000;

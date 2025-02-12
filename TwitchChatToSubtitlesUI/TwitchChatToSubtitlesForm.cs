@@ -505,6 +505,11 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
+            twitchSubtitles.Tracepoint += (object sender, TracepointEventArgs e) =>
+            {
+                WriteLine(e.Message);
+            };
+
             twitchSubtitles.WriteTwitchSubtitles(jsonFile);
         }
 
