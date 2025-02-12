@@ -19,6 +19,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     public EventHandler<TracepointEventArgs> Tracepoint;
 
     private const int COMMENTS_CHUNK_SIZE = 100;
+    private const int EMBEDDED_EMOTICONS_CHUNK_SIZE = 500;
+    private const int USER_COLORS_CHUNK_SIZE = 500;
     private const int FLUSH_SUBTITLES_COUNT = 1000;
 
     public void WriteTwitchSubtitles(string jsonFile)
@@ -187,6 +189,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     {
         try
         {
+            ct.ThrowIfCancellationRequested();
+
             var emoticonIds =
                 Enumerable.Empty<JToken>()
                 .Concat(root.SelectTokens("embeddedData.thirdParty[*].id"))
@@ -215,6 +219,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 .Cast<JValue>()
                 .Select(node => node.Value<string>())
                 .Where(name => string.IsNullOrEmpty(name) == false);
+
+            ct.ThrowIfCancellationRequested();
 
             return
                 Enumerable.Empty<string>()
@@ -256,6 +262,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     {
         try
         {
+            ct.ThrowIfCancellationRequested();
+
             var userColors = new Dictionary<string, UserColor>(StringComparer.OrdinalIgnoreCase);
 
             foreach (JToken comment in root.SelectToken("comments"))
@@ -298,6 +306,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     }
                 }
             }
+
+            ct.ThrowIfCancellationRequested();
 
             return userColors;
         }
@@ -931,7 +941,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     processCommentsTask = Task.Run(() => ProcessCommentsAsync(chunk /* second chunk */, regexEmbeddedEmoticons, userColors, settings, ct), ct);
 
                     foreach (JToken comment in firstChunk)
-                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings));
+                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings, ct));
                     PostProcessCommentsChunk();
 
                     firstChunk = null;
@@ -963,7 +973,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 else
                 {
                     foreach (JToken comment in firstChunk)
-                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings));
+                        ProcessComment(GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings, ct));
                     PostProcessCommentsChunk();
                 }
             }
@@ -997,7 +1007,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             ct.ThrowIfCancellationRequested();
 
-            return comments.Select(comment => GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings)).ToArray();
+            return comments.Select(comment => GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings, ct)).ToArray();
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
@@ -1015,7 +1025,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         JToken comment,
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         Dictionary<string, UserColor> userColors,
-        TwitchSubtitlesSettings settings)
+        TwitchSubtitlesSettings settings,
+        CancellationToken ct)
     {
         var processedComment = new ProcessedComment
         {
@@ -1034,7 +1045,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             userColors,
             processedComment.Timestamp,
             settings,
-            out processedComment.IsBrailleArt
+            out processedComment.IsBrailleArt,
+            ct
         );
 
         if (string.IsNullOrEmpty(processedComment.Body))
@@ -1092,7 +1104,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         Dictionary<string, UserColor> userColors,
         TimeSpan timestamp,
         TwitchSubtitlesSettings settings,
-        out bool isBrailleArt)
+        out bool isBrailleArt,
+        CancellationToken ct)
     {
         var body = new StringBuilder();
 
@@ -1153,13 +1166,18 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (settings.RemoveEmoticonNames)
         {
             string bodyString = body.ToString();
-            foreach (var (emoticon, regex) in regexEmbeddedEmoticons)
+
+            var tasks = regexEmbeddedEmoticons
+                .Chunk(EMBEDDED_EMOTICONS_CHUNK_SIZE)
+                .Select(items => Task.Run(() => IsBodyHasEmbeddedEmoticons(bodyString, items, ct), ct))
+                .ToArray();
+
+            Task.WaitAll(tasks, ct);
+
+            foreach (var task in tasks.Where(x => x.Result.HasAny()))
             {
-                if (bodyString.Contains(emoticon, StringComparison.OrdinalIgnoreCase))
-                {
+                foreach (var (emoticon, regex) in task.Result)
                     regex.Replace(body, " ");
-                    bodyString = body.ToString();
-                }
             }
         }
 
@@ -1194,21 +1212,66 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (settings.ColorUserNames)
         {
             string bodyString = body.ToString();
-            foreach (var item in userColors)
+
+            var tasks = userColors
+                .Chunk(USER_COLORS_CHUNK_SIZE)
+                .Select(items => Task.Run(() => IsBodyHasUserNames(bodyString, items, ct), ct))
+                .ToArray();
+
+            Task.WaitAll(tasks, ct);
+
+            foreach (var task in tasks.Where(x => x.Result.HasAny()))
             {
-                if (bodyString.Contains(item.Value.User, StringComparison.OrdinalIgnoreCase))
+                foreach (var item in task.Result)
                 {
                     if (settings.InternalTextColor != null)
                         item.Value.SearchAndReplace(body, $@"{{\c&{settings.InternalTextColor.BGR}&}}");
                     else
                         item.Value.SearchAndReplace(body);
-
-                    bodyString = body.ToString();
                 }
             }
         }
-
         return body.ToString();
+    }
+
+    private static (string emoticon, Regex regex)[] IsBodyHasEmbeddedEmoticons(string bodyString, (string emoticon, Regex regex)[] emoticons, CancellationToken ct)
+    {
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+
+            return emoticons.Where(x => bodyString.Contains(x.emoticon, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish the task gracefully
+            return null;
+        }
+        catch
+        {
+            throw;
+        }
+    }
+
+    private static KeyValuePair<string, UserColor>[] IsBodyHasUserNames(string bodyString, KeyValuePair<string, UserColor>[] userColors, CancellationToken ct)
+    {
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+
+            return userColors.Where(x => bodyString.Contains(x.Value.User, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish the task gracefully
+            return null;
+        }
+        catch
+        {
+            throw;
+        }
     }
 
     private const int SPLIT_ON_N_CHARS = 45;
