@@ -1,6 +1,4 @@
-﻿using System.Media;
-
-namespace System.Windows.Forms
+﻿namespace System.Windows.Forms
 {
     public partial class CustomMessageBox : Form
     {

@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="System.Diagnostics" />
     <Using Include="System.Text" />
     <Using Include="System.Text.RegularExpressions" />
   </ItemGroup>
