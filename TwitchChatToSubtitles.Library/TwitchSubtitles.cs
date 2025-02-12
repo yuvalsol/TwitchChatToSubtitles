@@ -34,7 +34,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (File.Exists(jsonFile) == false)
             throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
 
-        if ((settings.RegularSubtitles || settings.RollingChatSubtitles || settings.StaticChatSubtitles || settings.ChatTextFile) == false)
+        if (settings.IsAnySubtitlesTypeSelected == false)
             throw new ArgumentException("Subtitles type was not selected.");
 
         Exception error = null;
@@ -63,15 +63,12 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
         Dictionary<string, UserColor> userColors = null;
+
         if (settings.RemoveEmoticonNames || settings.ColorUserNames)
         {
             StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
 
-            if (settings.RemoveEmoticonNames)
-                regexEmbeddedEmoticons = GetEmbeddedEmoticons(root, ref error);
-
-            if (settings.ColorUserNames && error == null)
-                userColors = GetUserColors(root, ref error);
+            WritingPreparations(root, ref regexEmbeddedEmoticons, ref userColors, ref error);
 
             FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames, error));
 
@@ -128,13 +125,65 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
+    #region Writing Preparations
+
+    private void WritingPreparations(
+        JToken root,
+        ref (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
+        ref Dictionary<string, UserColor> userColors,
+        ref Exception error)
+    {
+        var cts = new CancellationTokenSource();
+        var ct = cts.Token;
+
+        try
+        {
+            Task<(string emoticon, Regex regex)[]> taskRemoveEmoticonNames = null;
+            if (settings.RemoveEmoticonNames)
+                taskRemoveEmoticonNames = Task.Run(() => GetEmbeddedEmoticons(root, ct), ct);
+
+            Task<Dictionary<string, UserColor>> taskColorUserNames = null;
+            if (settings.ColorUserNames)
+                taskColorUserNames = Task.Run(() => GetUserColors(root, ct), ct);
+
+            if (settings.RemoveEmoticonNames && settings.ColorUserNames)
+                Task.WaitAll([taskRemoveEmoticonNames, taskColorUserNames], ct);
+            else if (settings.RemoveEmoticonNames)
+                taskRemoveEmoticonNames.Wait(ct);
+            else if (settings.ColorUserNames)
+                taskColorUserNames.Wait(ct);
+
+            if (settings.RemoveEmoticonNames)
+                regexEmbeddedEmoticons = taskRemoveEmoticonNames.Result;
+
+            if (settings.ColorUserNames)
+                userColors = taskColorUserNames.Result;
+        }
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
+        {
+            // swallow the exception
+            // and finish gracefully
+        }
+        catch (AggregateException aex)
+        {
+            error = aex.InnerException;
+        }
+        catch (Exception ex)
+        {
+            cts.Cancel();
+            error = ex;
+        }
+    }
+
+    #endregion
+
     #region Embedded Emoticons
 
     // https://en.wikipedia.org/wiki/List_of_emoticons
     [GeneratedRegex(@"^([A-Z])?[-—–―‒_`~!@#$%^&*()=+[\]{};:'""\\|,.<>/?‘’“”0-9]+([A-Z])?$|^\\o/$|^\(\.Y\.\)$|^\(o\)\(o\)$|^DX$|^XD$|^XP$", RegexOptions.IgnoreCase)]
     private static partial Regex RegexTextEmoticon();
 
-    private static (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root, ref Exception error)
+    private static (string emoticon, Regex regex)[] GetEmbeddedEmoticons(JToken root, CancellationToken ct)
     {
         try
         {
@@ -178,10 +227,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 .Select(emoticon => (emoticon, new Regex($@"\b{Regex.Escape(emoticon)}\b", RegexOptions.Compiled)))
                 .ToArray();
         }
-        catch (Exception ex)
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
-            error = ex;
+            // swallow the exception
+            // and finish the task gracefully
             return null;
+        }
+        catch
+        {
+            throw;
         }
     }
 
@@ -198,7 +252,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     [GeneratedRegex(@"(?<=^|\b|\s)@[A-Za-z0-9_]+(?=$|\b|\s)", RegexOptions.IgnoreCase)]
     private static partial Regex RegexUserName();
 
-    private static Dictionary<string, UserColor> GetUserColors(JToken root, ref Exception error)
+    private static Dictionary<string, UserColor> GetUserColors(JToken root, CancellationToken ct)
     {
         try
         {
@@ -247,10 +301,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             return userColors;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
-            error = ex;
+            // swallow the exception
+            // and finish the task gracefully
             return null;
+        }
+        catch
+        {
+            throw;
         }
     }
 

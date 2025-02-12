@@ -9,6 +9,18 @@ public class TwitchSubtitlesSettings
     public bool StaticChatSubtitles { get { return SubtitlesType == SubtitlesType.StaticChatSubtitles; } }
     public bool ChatTextFile { get { return SubtitlesType == SubtitlesType.ChatTextFile; } }
 
+    internal bool IsAnySubtitlesTypeSelected
+    {
+        get
+        {
+            return
+                RegularSubtitles ||
+                RollingChatSubtitles ||
+                StaticChatSubtitles ||
+                ChatTextFile;
+        }
+    }
+
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -27,8 +39,7 @@ public class TwitchSubtitlesSettings
             if (TextColor == null)
                 return null;
 
-            if (internalTextColor == null)
-                internalTextColor = new Color(TextColor.Value);
+            internalTextColor ??= new Color(TextColor.Value);
 
             return internalTextColor;
         }
