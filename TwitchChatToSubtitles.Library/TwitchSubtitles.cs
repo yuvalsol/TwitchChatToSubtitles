@@ -1160,6 +1160,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             SplitMessageBodyForBrailleArt(body);
 
+            if (settings.IsUsingAssaTags == false)
+                body.Replace(@"\N", Environment.NewLine);
+
             return body.ToString();
         }
 
