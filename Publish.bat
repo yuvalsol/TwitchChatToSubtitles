@@ -28,8 +28,10 @@ set "runtime=%~3"
 set "framework=%~4"
 set "arguments=%~5"
 
-echo dotnet publish %project% --output "%publishDir%\%runtime%" --runtime %runtime% --framework %framework% %arguments%
+echo %project% %runtime% %framework%
 echo.
+:: echo dotnet publish %project% --output "%publishDir%\%runtime%" --runtime %runtime% --framework %framework% %arguments%
+:: echo.
 call dotnet publish %project% --output "%publishDir%\%runtime%" --runtime %runtime% --framework %framework% %arguments%
 echo.
 
