@@ -330,7 +330,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
         Task<int> lastWritingTask = null;
         var cts = new CancellationTokenSource();
@@ -342,9 +341,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        JToken comments = root.SelectToken("comments");
-        if (comments.TryGetNonEnumeratedCount(out int totalMessages) == false)
-            totalMessages = comments.Count();
+        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
 
         bool isWriteSubtitles = false;
 
@@ -506,8 +503,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
         if (settings.SubtitlesSpeed == SubtitlesSpeed.None)
             settings.SubtitlesSpeed = SubtitlesSpeed.Regular;
         TimeSpan timeStep = TimeSpan.FromSeconds(1.0 / (int)settings.SubtitlesSpeed);
@@ -531,9 +526,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        JToken comments = root.SelectToken("comments");
-        if (comments.TryGetNonEnumeratedCount(out int totalMessages) == false)
-            totalMessages = comments.Count();
+        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
 
         TimeSpan nextTimeSlot = TimeSpan.MinValue;
         bool isWriteSubtitles = false;
@@ -676,8 +669,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
         if (settings.SubtitlesFontSize == SubtitlesFontSize.None)
             settings.SubtitlesFontSize = SubtitlesFontSize.Regular;
         int fontSize = (int)settings.SubtitlesFontSize;
@@ -705,9 +696,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        JToken comments = root.SelectToken("comments");
-        if (comments.TryGetNonEnumeratedCount(out int totalMessages) == false)
-            totalMessages = comments.Count();
+        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
 
         Subtitle prevSubtitle = null;
 
@@ -849,9 +838,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        JToken comments = root.SelectToken("comments");
-        if (comments.TryGetNonEnumeratedCount(out int totalMessages) == false)
-            totalMessages = comments.Count();
+        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
 
         ProcessCommentsInChunks(
             comments,
@@ -900,6 +887,30 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             lastWritingTask?.Wait(ct);
 
             FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
+        }
+    }
+
+    #endregion
+
+    #region Get Comments
+
+    private static void GetComments(JToken root, TwitchSubtitlesSettings settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset)
+    {
+        comments = root.SelectToken("comments");
+        if (comments.TryGetNonEnumeratedCount(out totalMessages) == false)
+            totalMessages = comments.Count();
+
+        timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
+
+        if (settings.TimeOffset < 0)
+        {
+            JToken firstComment = comments.FirstOrDefault();
+            if (firstComment != null)
+            {
+                int seconds = firstComment.SelectToken("content_offset_seconds").Value<int>();
+                if (seconds + settings.TimeOffset < 0)
+                    timeOffset = TimeSpan.FromSeconds(-seconds);
+            }
         }
     }
 
