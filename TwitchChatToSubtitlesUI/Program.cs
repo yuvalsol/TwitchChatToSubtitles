@@ -30,10 +30,9 @@ namespace TwitchChatToSubtitlesUI
         {
             try
             {
-                MessageBoxHelper.Show(
+                MessageBoxHelper.ShowError(
                     GetUnhandledExceptionMessage(ex),
-                    $"Unhandled Error - {Version()}",
-                    MessageBoxIcon.Error
+                    $"Unhandled Error - {Version()}"
                 );
             }
             catch

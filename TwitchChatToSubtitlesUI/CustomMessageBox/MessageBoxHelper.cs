@@ -4,37 +4,54 @@
 
     internal static class MessageBoxHelper
     {
-        public static DialogResult Show(string text, string caption, MessageBoxIcon icon, Color? foreColor = null)
+        public static DialogResult ShowError(string text, string caption)
         {
-            return Show(null, text, caption, icon, foreColor);
+            return ShowError(null, text, caption);
         }
 
-        public static DialogResult Show(IWin32Window owner, string text, string caption, MessageBoxIcon icon, Color? foreColor = null)
+        public static DialogResult ShowError(IWin32Window owner, string text, string caption)
         {
-            return CustomMessageBox.Show(
-                owner, text, caption, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.Copy, icon,
-                GetAppearance(foreColor: foreColor)
+            return Show(owner, text, caption, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.Copy, MessageBoxIcon.Error, Color.DarkRed);
+        }
+
+        public static DialogResult ShowInformation(IWin32Window owner, string text, string caption)
+        {
+            return Show(owner, text, caption, CustomMessageBoxButtons.OK, MessageBoxIcon.Information, textAlign: ContentAlignment.MiddleLeft,
+                customButtons: [
+                    new CustomButton("Copy", DialogResult.None, (sender, e) =>
+                    {
+                        try
+                        {
+                            Clipboard.SetText((e.Text).Trim());
+                            SystemSounds.Hand.Play();
+                        }
+                        catch { }
+                    })
+                ]
             );
         }
 
-        public static DialogResult ShowInformation(IWin32Window owner, string text, Color? foreColor = null)
+        private static DialogResult Show(IWin32Window owner, string text, string caption, CustomMessageBoxButtons buttons, MessageBoxIcon icon, Color? foreColor = null, ContentAlignment? textAlign = null, CustomButton[] customButtons = null)
         {
-            return CustomMessageBox.Show(
-                owner, text, null, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.Copy, MessageBoxIcon.Information,
-                GetAppearance(foreColor: foreColor, textAlign: ContentAlignment.MiddleLeft)
-            );
-        }
+            if (textAlign == null)
+            {
+                int linesCount = text.ToCharArray().Count(c => c == '\n') + 1;
+                if (linesCount <= 4)
+                    textAlign = ContentAlignment.MiddleLeft;
+            }
 
-        private static CustomAppearance GetAppearance(Color? foreColor = null, ContentAlignment? textAlign = null)
-        {
-            return new CustomAppearance(
-                foreColor: foreColor,
-                textAlign: textAlign,
-                buttonsAppearance: new CustomButtonAppearance(
-                     buttonsPanelBackColor: Color.FromArgb(238, 244, 249),
-                     backColor: Color.White,
-                     foreColor: Color.Black
-                )
+            return CustomMessageBox.Show(
+                owner, text, caption, buttons, icon,
+                new CustomAppearance(
+                    foreColor: foreColor,
+                    textAlign: textAlign,
+                    buttonsAppearance: new CustomButtonAppearance(
+                        buttonsPanelBackColor: Color.FromArgb(238, 244, 249),
+                        backColor: Color.White,
+                        foreColor: Color.Black
+                    )
+                ),
+                customButtons
             );
         }
     }

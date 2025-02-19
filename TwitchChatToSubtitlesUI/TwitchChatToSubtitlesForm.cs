@@ -308,11 +308,10 @@ namespace TwitchChatToSubtitlesUI
 
             if (IsJsonFile(jsonFile) == false)
             {
-                MessageBoxHelper.Show(
+                MessageBoxHelper.ShowError(
                     this,
                     "Not a JSON file." + Environment.NewLine + jsonFile,
-                    $"File Error - {Program.Version()}",
-                    MessageBoxIcon.Error
+                    $"File Error - {Program.Version()}"
                 );
 
                 return;
@@ -607,7 +606,7 @@ namespace TwitchChatToSubtitlesUI
                 }
             }
 
-            MessageBoxHelper.ShowInformation(this, sb.ToString());
+            MessageBoxHelper.ShowInformation(this, sb.ToString(), "Command Line");
         }
 
         #endregion
