@@ -628,7 +628,7 @@ namespace TwitchChatToSubtitlesUI
                 }
             }
 
-            MessageBoxHelper.ShowInformation(this, sb.ToString(), "Command Line");
+            MessageBoxHelper.ShowCommandLine(this, sb.ToString(), "Command Line");
         }
 
         #endregion

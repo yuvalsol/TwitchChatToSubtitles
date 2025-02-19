@@ -37,11 +37,11 @@
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
-        private void CopyToClipboard()
+        private void CopyToClipboard(bool copyText = false)
         {
             try
             {
-                Clipboard.SetText((this.Text + Environment.NewLine + Environment.NewLine + lblMessage.Text).Trim());
+                Clipboard.SetText(((copyText ? string.Empty : this.Text + Environment.NewLine + Environment.NewLine) + lblMessage.Text).Trim());
                 if (this.Quiet == false)
                     SystemSounds.Hand.Play();
             }
@@ -159,6 +159,11 @@
                 AddButton(btns, buttons, CustomMessageBoxButtons.Copy, DialogResult.None, "Copy", buttonTexts, (object sender, CustomMessageBoxEventArgs e) =>
                 {
                     CopyToClipboard();
+                });
+
+                AddButton(btns, buttons, CustomMessageBoxButtons.CopyText, DialogResult.None, "Copy", buttonTexts, (object sender, CustomMessageBoxEventArgs e) =>
+                {
+                    CopyToClipboard(true);
                 });
 
                 if (hasCustomButtons)
@@ -466,6 +471,7 @@
         No = 1 << 5,
         Cancel = 1 << 6,
         Copy = 1 << 7,
+        CopyText = 1 << 8,
         OKCancel = OK | Cancel,
         AbortRetryIgnore = Abort | Retry | Ignore,
         YesNoCancel = Yes | No | Cancel,
@@ -610,9 +616,10 @@
                 button == CustomMessageBoxButtons.Yes ||
                 button == CustomMessageBoxButtons.No ||
                 button == CustomMessageBoxButtons.Cancel ||
-                button == CustomMessageBoxButtons.Copy) == false)
+                button == CustomMessageBoxButtons.Copy ||
+                button == CustomMessageBoxButtons.CopyText) == false)
             {
-                throw new ArgumentOutOfRangeException(nameof(button), "Valid values are OK, Abort, Retry, Ignore, Yes, No, Cancel, Copy");
+                throw new ArgumentOutOfRangeException(nameof(button), "Valid values are OK, Abort, Retry, Ignore, Yes, No, Cancel, Copy, CopyText");
             }
 
             Button = button;

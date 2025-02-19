@@ -14,24 +14,12 @@
             return Show(owner, text, caption, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.Copy, MessageBoxIcon.Error, Color.DarkRed);
         }
 
-        public static DialogResult ShowInformation(IWin32Window owner, string text, string caption)
+        public static DialogResult ShowCommandLine(IWin32Window owner, string text, string caption)
         {
-            return Show(owner, text, caption, CustomMessageBoxButtons.OK, MessageBoxIcon.Information, textAlign: ContentAlignment.MiddleLeft,
-                customButtons: [
-                    new CustomButton("Copy", DialogResult.None, (sender, e) =>
-                    {
-                        try
-                        {
-                            Clipboard.SetText((e.Text).Trim());
-                            SystemSounds.Hand.Play();
-                        }
-                        catch { }
-                    })
-                ]
-            );
+            return Show(owner, text, caption, CustomMessageBoxButtons.OK | CustomMessageBoxButtons.CopyText, MessageBoxIcon.None, textAlign: ContentAlignment.MiddleLeft);
         }
 
-        private static DialogResult Show(IWin32Window owner, string text, string caption, CustomMessageBoxButtons buttons, MessageBoxIcon icon, Color? foreColor = null, ContentAlignment? textAlign = null, CustomButton[] customButtons = null)
+        private static DialogResult Show(IWin32Window owner, string text, string caption, CustomMessageBoxButtons buttons, MessageBoxIcon icon, Color? foreColor = null, ContentAlignment? textAlign = null)
         {
             if (textAlign == null)
             {
@@ -50,8 +38,7 @@
                         backColor: Color.White,
                         foreColor: Color.Black
                     )
-                ),
-                customButtons
+                )
             );
         }
     }
