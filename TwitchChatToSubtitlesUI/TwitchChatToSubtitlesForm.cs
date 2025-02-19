@@ -232,8 +232,11 @@ namespace TwitchChatToSubtitlesUI
 
         private void txtJsonFile_TextChanged(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtJsonFile.Text))
-                ResetFormTitle();
+            streamerName = null;
+            ResetFormTitle();
+
+            if (string.IsNullOrWhiteSpace(txtJsonFile.Text) == false)
+                LoadJsonFile(txtJsonFile.Text);
         }
 
         private void btnCopy_Click(object sender, EventArgs e)
@@ -281,13 +284,21 @@ namespace TwitchChatToSubtitlesUI
             if (IsJsonFile(jsonFile) == false)
                 return;
 
+            streamerName = null;
+            GetStreamerName(jsonFile);
+            if (string.IsNullOrEmpty(streamerName) == false)
+                LoadStreamerUISettings();
+
             txtJsonFile.Text = jsonFile;
 
             openJsonFileDialog.FileName = Path.GetFileName(jsonFile);
             openJsonFileDialog.InitialDirectory = Path.GetDirectoryName(jsonFile);
 
             ResetFormTitle();
-            Text = openJsonFileDialog.FileName + " - " + Text;
+            Text =
+                openJsonFileDialog.FileName +
+                (string.IsNullOrEmpty(streamerName) ? null : " - " + streamerName) +
+                " - " + Text;
         }
 
         private static bool IsJsonFile(string jsonFile)
@@ -296,6 +307,17 @@ namespace TwitchChatToSubtitlesUI
                 string.IsNullOrEmpty(jsonFile) == false &&
                 string.Compare(Path.GetExtension(jsonFile), ".json") == 0 &&
                 File.Exists(jsonFile);
+        }
+
+        private string streamerName;
+
+        private void GetStreamerName(string jsonFile)
+        {
+            try
+            {
+                streamerName = TwitchSubtitles.GetStreamerName(jsonFile);
+            }
+            catch { }
         }
 
         #endregion
@@ -630,11 +652,81 @@ namespace TwitchChatToSubtitlesUI
             public string JsonDirectory { get; set; }
         }
 
-        private const string settingsFileName = "TwitchChatToSubtitlesUI.settings";
+        #region Settings File Name
+
+        private const string DEFAULT_SETTINGS_FILE_NAME = "TwitchChatToSubtitlesUI.settings";
+
+        private string GetSettingsFileName()
+        {
+            if (string.IsNullOrEmpty(streamerName))
+                return DEFAULT_SETTINGS_FILE_NAME;
+
+            return string.Join("_", streamerName.Split(Path.GetInvalidFileNameChars())) + ".settings";
+        }
+
+        private string GetSettingsFile(bool checkIfFileExists)
+        {
+            var settingsFileName = GetSettingsFileName();
+            var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
+
+            if (checkIfFileExists == false)
+                return settingsFile;
+
+            if (File.Exists(settingsFile))
+                return settingsFile;
+
+            if (settingsFileName == DEFAULT_SETTINGS_FILE_NAME)
+                return null;
+
+            settingsFile = Path.Combine(AppContext.BaseDirectory, DEFAULT_SETTINGS_FILE_NAME);
+            if (File.Exists(settingsFile))
+                return settingsFile;
+
+            return null;
+        }
+
+        #endregion
+
+        #region Load UI
 
         private void LoadUISettings()
         {
-            UISettings settings = DeserializeUISettings();
+            var settingsFile = GetSettingsFile(true);
+            UISettings settings = DeserializeUISettings(settingsFile);
+            SetUISettings(settings);
+        }
+
+        private void LoadStreamerUISettings()
+        {
+            var settingsFileName = GetSettingsFileName();
+            if (settingsFileName == DEFAULT_SETTINGS_FILE_NAME)
+                return;
+
+            var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
+            if (File.Exists(settingsFile) == false)
+                return;
+
+            UISettings settings = DeserializeUISettings(settingsFile);
+            SetUISettings(settings);
+        }
+
+        private static UISettings DeserializeUISettings(string settingsFile)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(settingsFile))
+                    return null;
+
+                return JsonSerializer.Deserialize<UISettings>(File.ReadAllText(settingsFile));
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private void SetUISettings(UISettings settings)
+        {
             if (settings == null)
                 return;
 
@@ -663,21 +755,9 @@ namespace TwitchChatToSubtitlesUI
             }
         }
 
-        private static UISettings DeserializeUISettings()
-        {
-            try
-            {
-                var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
-                if (File.Exists(settingsFile) == false)
-                    return null;
+        #endregion
 
-                return JsonSerializer.Deserialize<UISettings>(File.ReadAllText(settingsFile));
-            }
-            catch
-            {
-                return null;
-            }
-        }
+        #region Save UI
 
         private void TwitchChatToSubtitlesForm_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -713,17 +793,19 @@ namespace TwitchChatToSubtitlesUI
             };
         }
 
-        private static void SerializeUISettings(UISettings settings)
+        private void SerializeUISettings(UISettings settings)
         {
             try
             {
-                var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
+                var settingsFile = GetSettingsFile(false);
                 File.WriteAllText(settingsFile, JsonSerializer.Serialize(settings));
             }
             catch
             {
             }
         }
+
+        #endregion
 
         #endregion
     }

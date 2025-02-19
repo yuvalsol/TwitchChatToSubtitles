@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace TwitchChatToSubtitles.Library;
@@ -50,8 +51,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
         JToken root = LoadJsonFile(jsonFile, ref error);
-        if (IsTwitchChatJsonFile(root) == false)
-            error = new Exception("Malformed or not a Twitch chat JSON file.");
         FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
 
         if (error != null)
@@ -106,12 +105,22 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private static JToken LoadJsonFile(string jsonFile, ref Exception error)
     {
-        using var jsonStream = new StreamReader(jsonFile);
-        using var reader = new JsonTextReader(jsonStream);
-
         try
         {
-            return JToken.Load(reader);
+            using var jsonStream = new StreamReader(jsonFile);
+            using var reader = new JsonTextReader(jsonStream);
+
+            JToken root = JToken.Load(reader);
+
+            if (IsTwitchChatJsonFile(root))
+            {
+                return root;
+            }
+            else
+            {
+                error = new Exception("Malformed or not a Twitch chat JSON file.");
+                return null;
+            }
         }
         catch (Exception ex)
         {
@@ -321,6 +330,33 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             throw;
         }
+    }
+
+    #endregion
+
+    #region Get Streamer Name
+
+    public static string GetStreamerName(string jsonFile)
+    {
+        using var fs = new FileStream(jsonFile, FileMode.Open, FileAccess.Read);
+        using var document = JsonDocument.Parse(fs);
+
+        JsonElement root = document.RootElement;
+        
+        JsonProperty streamerJsonProperty = root.EnumerateObject().FirstOrDefault(property => property.Name == "streamer");
+        if (streamerJsonProperty.Name != "streamer")
+            return null;
+        
+        JsonProperty nameJsonProperty = streamerJsonProperty.Value.EnumerateObject().FirstOrDefault(property => property.Name == "name");
+        if (nameJsonProperty.Name != "name")
+            return null;
+        
+        string streamer = nameJsonProperty.Value.ToString();
+        
+        if (streamer.StartsWith('@'))
+            streamer = streamer[1..];
+        
+        return streamer;
     }
 
     #endregion
