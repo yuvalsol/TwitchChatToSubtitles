@@ -29,16 +29,16 @@ namespace TwitchChatToSubtitlesUI
 
         #endregion
 
-        #region Form Load
+        #region Form Events
 
         private void TwitchChatToSubtitlesForm_Load(object sender, EventArgs e)
         {
             ResetFormTitle();
-            BindDdlDataSource<SubtitlesType>(ddlSubtitlesType);
-            BindDdlDataSource<SubtitlesLocation>(ddlSubtitlesLocation);
-            BindDdlDataSource<SubtitlesFontSize>(ddlSubtitlesFontSize);
-            BindDdlDataSource<SubtitlesSpeed>(ddlSubtitlesSpeed);
-            ddlSubtitlesType.SelectedValue = SubtitlesType.RegularSubtitles;
+            BindDdlDataSource<SubtitlesType>(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, SubtitlesType.RegularSubtitles);
+            BindDdlDataSource<SubtitlesLocation>(ddlSubtitlesLocation, ddl_SelectedIndexChanged);
+            BindDdlDataSource<SubtitlesFontSize>(ddlSubtitlesFontSize, ddl_SelectedIndexChanged);
+            BindDdlDataSource<SubtitlesSpeed>(ddlSubtitlesSpeed, ddl_SelectedIndexChanged);
+            SubtitlesTypeChanged();
         }
 
         private void ResetFormTitle()
@@ -66,6 +66,12 @@ namespace TwitchChatToSubtitlesUI
             ddlSubtitlesType.Focus();
         }
 
+        private void TwitchChatToSubtitlesForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            SetUISettings();
+            SaveUISettings();
+        }
+
         #endregion
 
         #region Enum ComboBox
@@ -76,11 +82,15 @@ namespace TwitchChatToSubtitlesUI
             public string Name { get; set; }
         }
 
-        private static void BindDdlDataSource<TEnum>(ComboBox ddl) where TEnum : Enum
+        private static void BindDdlDataSource<TEnum>(ComboBox ddl, EventHandler selectedIndexChangedHandler, object selectedValue = null) where TEnum : Enum
         {
+            ddl.SelectedIndexChanged -= selectedIndexChangedHandler;
             ddl.ValueMember = "Value";
             ddl.DisplayMember = "Name";
             ddl.DataSource = GetEnumDataSource<TEnum>().ToList();
+            if (selectedValue != null)
+                ddl.SelectedValue = selectedValue;
+            ddl.SelectedIndexChanged += selectedIndexChangedHandler;
         }
 
         [GeneratedRegex(@"([a-z])([A-Z])")]
@@ -115,41 +125,53 @@ namespace TwitchChatToSubtitlesUI
 
         private void SetTextColorControls(Color? color)
         {
+            SetRadioButton(rdbNoColor, rdbNoColor_CheckedChanged, false);
+            SetRadioButton(rdbWhite, rdbWhite_CheckedChanged, false);
+            SetRadioButton(rdbBlack, rdbBlack_CheckedChanged, false);
+
             if (color == null || color.Value.IsEmpty)
             {
-                rdbNoColor.Checked = true;
+                color = null;
+                SetRadioButton(rdbNoColor, rdbNoColor_CheckedChanged, true);
             }
             else if (color == Color.White)
             {
-                rdbWhite.Checked = true;
+                SetRadioButton(rdbWhite, rdbWhite_CheckedChanged, true);
             }
             else if (color == Color.Black)
             {
-                rdbBlack.Checked = true;
+                SetRadioButton(rdbBlack, rdbBlack_CheckedChanged, true);
             }
-            else
-            {
-                rdbNoColor.Checked =
-                rdbWhite.Checked =
-                rdbBlack.Checked = false;
 
-                SetTextColor(color);
-            }
+            SetTextColor(color);
+            SetUISettings();
         }
 
         private void rdbNoColor_CheckedChanged(object sender, EventArgs e)
         {
-            SetTextColor(null);
+            if (rdbNoColor.Checked)
+            {
+                SetTextColor(null);
+                SetUISettings();
+            }
         }
 
         private void rdbWhite_CheckedChanged(object sender, EventArgs e)
         {
-            SetTextColor(Color.White);
+            if (rdbWhite.Checked)
+            {
+                SetTextColor(Color.White);
+                SetUISettings();
+            }
         }
 
         private void rdbBlack_CheckedChanged(object sender, EventArgs e)
         {
-            SetTextColor(Color.Black);
+            if (rdbBlack.Checked)
+            {
+                SetTextColor(Color.Black);
+                SetUISettings();
+            }
         }
 
         private void SetTextColor(Color? color)
@@ -186,7 +208,58 @@ namespace TwitchChatToSubtitlesUI
 
         #region Controls
 
+        private static void SetComboBox(ComboBox ddl, EventHandler selectedIndexChangedHandler, object selectedValue)
+        {
+            if (ddl.SelectedValue == selectedValue)
+                return;
+            ddl.SelectedIndexChanged -= selectedIndexChangedHandler;
+            ddl.SelectedValue = selectedValue;
+            ddl.SelectedIndexChanged += selectedIndexChangedHandler;
+        }
+
+        private static void SetCheckBox(CheckBox chk, EventHandler checkedChangedHandler, bool isChecked)
+        {
+            if (chk.Checked == isChecked)
+                return;
+            chk.CheckedChanged -= checkedChangedHandler;
+            chk.Checked = isChecked;
+            chk.CheckedChanged += checkedChangedHandler;
+        }
+
+        private static void SetNumericUpDown(NumericUpDown nud, EventHandler valueChangedHandler, decimal value)
+        {
+            if (nud.Value == value)
+                return;
+            nud.ValueChanged -= valueChangedHandler;
+            nud.Value = value;
+            nud.ValueChanged += valueChangedHandler;
+        }
+
+        private static void SetRadioButton(RadioButton rdb, EventHandler checkedChangedHandler, bool isChecked)
+        {
+            if (rdb.Checked == isChecked)
+                return;
+            rdb.CheckedChanged -= checkedChangedHandler;
+            rdb.Checked = isChecked;
+            rdb.CheckedChanged += checkedChangedHandler;
+        }
+
+        private static void SetTextBox(TextBox txt, EventHandler textChangedHandler, string text)
+        {
+            if ((txt.Text ?? string.Empty) == (text ?? string.Empty))
+                return;
+            txt.TextChanged -= textChangedHandler;
+            txt.Text = text;
+            txt.TextChanged += textChangedHandler;
+        }
+
         private void ddlSubtitlesType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SubtitlesTypeChanged();
+            SetUISettings();
+        }
+
+        private void SubtitlesTypeChanged()
         {
             var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
 
@@ -230,13 +303,28 @@ namespace TwitchChatToSubtitlesUI
             }
         }
 
+        private void ddl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SetUISettings();
+        }
+
+        private void chk_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUISettings();
+        }
+
+        private void nud_ValueChanged(object sender, EventArgs e)
+        {
+            SetUISettings();
+        }
+
         private void txtJsonFile_TextChanged(object sender, EventArgs e)
         {
-            streamerName = null;
             ResetFormTitle();
-
+            streamerName = null;
             if (string.IsNullOrWhiteSpace(txtJsonFile.Text) == false)
                 LoadJsonFile(txtJsonFile.Text);
+            SetUISettings();
         }
 
         private void btnCopy_Click(object sender, EventArgs e)
@@ -279,17 +367,23 @@ namespace TwitchChatToSubtitlesUI
                 LoadJsonFile(openJsonFileDialog.FileName);
         }
 
+        private string streamerName;
+
         private void LoadJsonFile(string jsonFile)
         {
             if (IsJsonFile(jsonFile) == false)
                 return;
 
             streamerName = null;
-            GetStreamerName(jsonFile);
-            if (string.IsNullOrEmpty(streamerName) == false)
-                LoadStreamerUISettings();
+            try
+            {
+                streamerName = TwitchSubtitles.GetStreamerName(jsonFile);
+            }
+            catch { }
 
-            txtJsonFile.Text = jsonFile;
+            SetUISettingsToForm(GetUISettings());
+
+            SetTextBox(txtJsonFile, txtJsonFile_TextChanged, jsonFile);
 
             openJsonFileDialog.FileName = Path.GetFileName(jsonFile);
             openJsonFileDialog.InitialDirectory = Path.GetDirectoryName(jsonFile);
@@ -307,17 +401,6 @@ namespace TwitchChatToSubtitlesUI
                 string.IsNullOrEmpty(jsonFile) == false &&
                 string.Compare(Path.GetExtension(jsonFile), ".json") == 0 &&
                 File.Exists(jsonFile);
-        }
-
-        private string streamerName;
-
-        private void GetStreamerName(string jsonFile)
-        {
-            try
-            {
-                streamerName = TwitchSubtitles.GetStreamerName(jsonFile);
-            }
-            catch { }
         }
 
         #endregion
@@ -635,111 +718,83 @@ namespace TwitchChatToSubtitlesUI
 
         #region UI Settings
 
-        [Serializable]
-        private class UISettings
+        private Dictionary<string, UISettings> StreamersUISettings = new(StringComparer.OrdinalIgnoreCase);
+        private const string SETTINGS_KEY = "DefaultUISettings";
+
+        private void SetUISettings()
         {
-            public SubtitlesType ddlSubtitlesType_SelectedValue { get; set; }
-            public bool chkColorUserNames_Checked { get; set; }
-            public bool chkRemoveEmoticonNames_Checked { get; set; }
-            public bool chkShowTimestamps_Checked { get; set; }
-            public SubtitlesLocation ddlSubtitlesLocation_SelectedValue { get; set; }
-            public SubtitlesFontSize ddlSubtitlesFontSize_SelectedValue { get; set; }
-            public SubtitlesSpeed ddlSubtitlesSpeed_SelectedValue { get; set; }
-            public decimal nudTimeOffset_Value { get; set; }
-            public decimal nudSubtitleShowDuration_Value { get; set; }
-            public string TextColor { get; set; }
-            public bool chkCloseWhenFinishedSuccessfully_Checked { get; set; }
-            public string JsonDirectory { get; set; }
+            string settingsKey = (string.IsNullOrEmpty(streamerName) ? SETTINGS_KEY : streamerName);
+
+            if (StreamersUISettings.ContainsKey(settingsKey))
+                GetUISettingsFromForm(StreamersUISettings[settingsKey]);
+            else
+                StreamersUISettings.Add(settingsKey, GetUISettingsFromForm());
         }
 
-        #region Settings File Name
-
-        private const string DEFAULT_SETTINGS_FILE_NAME = "TwitchChatToSubtitlesUI.settings";
-
-        private string GetSettingsFileName()
+        private UISettings GetUISettings()
         {
-            if (string.IsNullOrEmpty(streamerName))
-                return DEFAULT_SETTINGS_FILE_NAME;
+            string settingsKey = (string.IsNullOrEmpty(streamerName) ? SETTINGS_KEY : streamerName);
 
-            return string.Join("_", streamerName.Split(Path.GetInvalidFileNameChars())) + ".settings";
-        }
+            if (StreamersUISettings.TryGetValue(settingsKey, out UISettings settings))
+                return settings;
 
-        private string GetSettingsFile(bool checkIfFileExists)
-        {
-            var settingsFileName = GetSettingsFileName();
-            var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
-
-            if (checkIfFileExists == false)
-                return settingsFile;
-
-            if (File.Exists(settingsFile))
-                return settingsFile;
-
-            if (settingsFileName == DEFAULT_SETTINGS_FILE_NAME)
-                return null;
-
-            settingsFile = Path.Combine(AppContext.BaseDirectory, DEFAULT_SETTINGS_FILE_NAME);
-            if (File.Exists(settingsFile))
-                return settingsFile;
-
-            return null;
-        }
-
-        #endregion
-
-        #region Load UI
-
-        private void LoadUISettings()
-        {
-            var settingsFile = GetSettingsFile(true);
-            UISettings settings = DeserializeUISettings(settingsFile);
-            SetUISettings(settings);
-        }
-
-        private void LoadStreamerUISettings()
-        {
-            var settingsFileName = GetSettingsFileName();
-            if (settingsFileName == DEFAULT_SETTINGS_FILE_NAME)
-                return;
-
-            var settingsFile = Path.Combine(AppContext.BaseDirectory, settingsFileName);
-            if (File.Exists(settingsFile) == false)
-                return;
-
-            UISettings settings = DeserializeUISettings(settingsFile);
-            SetUISettings(settings);
-        }
-
-        private static UISettings DeserializeUISettings(string settingsFile)
-        {
-            try
+            if (settingsKey != SETTINGS_KEY)
             {
-                if (string.IsNullOrEmpty(settingsFile))
-                    return null;
+                if (StreamersUISettings.TryGetValue(SETTINGS_KEY, out settings))
+                    return settings;
+            }
 
-                return JsonSerializer.Deserialize<UISettings>(File.ReadAllText(settingsFile));
-            }
-            catch
-            {
-                return null;
-            }
+            settings = GetUISettingsFromForm();
+            StreamersUISettings.Add(SETTINGS_KEY, settings);
+            return settings;
         }
 
-        private void SetUISettings(UISettings settings)
+        private UISettings GetUISettingsFromForm(UISettings settings = null)
+        {
+            settings ??= new();
+
+            string jsonDirectory = null;
+            if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
+            {
+                try
+                {
+                    jsonDirectory = Path.GetDirectoryName(txtJsonFile.Text);
+                }
+                catch { }
+            }
+
+            settings.SubtitlesType = (SubtitlesType)(ddlSubtitlesType.SelectedValue ?? SubtitlesType.RegularSubtitles);
+            settings.ColorUserNames = chkColorUserNames.Checked;
+            settings.RemoveEmoticonNames = chkRemoveEmoticonNames.Checked;
+            settings.ShowTimestamps = chkShowTimestamps.Checked;
+            settings.SubtitlesLocation = (SubtitlesLocation)(ddlSubtitlesLocation.SelectedValue ?? SubtitlesLocation.None);
+            settings.SubtitlesFontSize = (SubtitlesFontSize)(ddlSubtitlesFontSize.SelectedValue ?? SubtitlesFontSize.None);
+            settings.SubtitlesSpeed = (SubtitlesSpeed)(ddlSubtitlesSpeed.SelectedValue ?? SubtitlesSpeed.None);
+            settings.TimeOffset = nudTimeOffset.Value;
+            settings.SubtitleShowDuration = nudSubtitleShowDuration.Value;
+            settings.TextColor = (textColor != null ? ColorToHex(textColor.Value) : null);
+            settings.CloseWhenFinishedSuccessfully = chkCloseWhenFinishedSuccessfully.Checked;
+            settings.JsonDirectory = jsonDirectory;
+
+            return settings;
+        }
+
+        private void SetUISettingsToForm(UISettings settings)
         {
             if (settings == null)
                 return;
 
-            ddlSubtitlesType.SelectedValue = settings.ddlSubtitlesType_SelectedValue;
-            chkColorUserNames.Checked = settings.chkColorUserNames_Checked;
-            chkRemoveEmoticonNames.Checked = settings.chkRemoveEmoticonNames_Checked;
-            chkShowTimestamps.Checked = settings.chkShowTimestamps_Checked;
-            ddlSubtitlesLocation.SelectedValue = settings.ddlSubtitlesLocation_SelectedValue;
-            ddlSubtitlesFontSize.SelectedValue = settings.ddlSubtitlesFontSize_SelectedValue;
-            ddlSubtitlesSpeed.SelectedValue = settings.ddlSubtitlesSpeed_SelectedValue;
-            nudTimeOffset.Value = settings.nudTimeOffset_Value;
-            nudSubtitleShowDuration.Value = settings.nudSubtitleShowDuration_Value;
-            chkCloseWhenFinishedSuccessfully.Checked = settings.chkCloseWhenFinishedSuccessfully_Checked;
+            SetComboBox(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, settings.SubtitlesType);
+            SubtitlesTypeChanged();
+            SetCheckBox(chkColorUserNames, chk_CheckedChanged, settings.ColorUserNames);
+            SetCheckBox(chkRemoveEmoticonNames, chk_CheckedChanged, settings.RemoveEmoticonNames);
+            SetCheckBox(chkShowTimestamps, chk_CheckedChanged, settings.ShowTimestamps);
+            SetComboBox(ddlSubtitlesLocation, ddl_SelectedIndexChanged, settings.SubtitlesLocation);
+            SetComboBox(ddlSubtitlesFontSize, ddl_SelectedIndexChanged, settings.SubtitlesFontSize);
+            SetComboBox(ddlSubtitlesSpeed, ddl_SelectedIndexChanged, settings.SubtitlesSpeed);
+            SetNumericUpDown(nudTimeOffset, nud_ValueChanged, settings.TimeOffset);
+            SetNumericUpDown(nudSubtitleShowDuration, nud_ValueChanged, settings.SubtitleShowDuration);
+            SetCheckBox(chkCloseWhenFinishedSuccessfully, chk_CheckedChanged, settings.CloseWhenFinishedSuccessfully);
 
             if (string.IsNullOrEmpty(settings.TextColor) == false)
             {
@@ -757,55 +812,64 @@ namespace TwitchChatToSubtitlesUI
 
         #endregion
 
-        #region Save UI
+        #region Load UI Settings
 
-        private void TwitchChatToSubtitlesForm_FormClosing(object sender, FormClosingEventArgs e)
+        private const string SETTINGS_FILE_NAME = "TwitchChatToSubtitlesUI.settings";
+        private static readonly JsonSerializerOptions jsonSerializerOptions = new() { WriteIndented = true };
+
+        private void LoadUISettings()
         {
-            SerializeUISettings(GetUISettings());
+            var settingsFile = Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);
+            Dictionary<string, UISettings> tempUISettings = DeserializeUISettings(settingsFile);
+            if (tempUISettings.HasAny())
+                StreamersUISettings = new(tempUISettings, StringComparer.OrdinalIgnoreCase);
         }
 
-        private UISettings GetUISettings()
-        {
-            string jsonDirectory = null;
-            if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
-            {
-                try
-                {
-                    jsonDirectory = Path.GetDirectoryName(txtJsonFile.Text);
-                }
-                catch { }
-            }
-
-            return new UISettings()
-            {
-                ddlSubtitlesType_SelectedValue = (SubtitlesType)ddlSubtitlesType.SelectedValue,
-                chkColorUserNames_Checked = chkColorUserNames.Checked,
-                chkRemoveEmoticonNames_Checked = chkRemoveEmoticonNames.Checked,
-                chkShowTimestamps_Checked = chkShowTimestamps.Checked,
-                ddlSubtitlesLocation_SelectedValue = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue,
-                ddlSubtitlesFontSize_SelectedValue = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue,
-                ddlSubtitlesSpeed_SelectedValue = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue,
-                nudTimeOffset_Value = nudTimeOffset.Value,
-                nudSubtitleShowDuration_Value = nudSubtitleShowDuration.Value,
-                TextColor = (textColor != null ? ColorToHex(textColor.Value) : null),
-                chkCloseWhenFinishedSuccessfully_Checked = chkCloseWhenFinishedSuccessfully.Checked,
-                JsonDirectory = jsonDirectory
-            };
-        }
-
-        private void SerializeUISettings(UISettings settings)
+        private static Dictionary<string, UISettings> DeserializeUISettings(string settingsFile)
         {
             try
             {
-                var settingsFile = GetSettingsFile(false);
-                File.WriteAllText(settingsFile, JsonSerializer.Serialize(settings));
+                if (string.IsNullOrEmpty(settingsFile))
+                    return null;
+
+                if (File.Exists(settingsFile) == false)
+                    return null;
+
+                return JsonSerializer.Deserialize<Dictionary<string, UISettings>>(File.ReadAllText(settingsFile), jsonSerializerOptions);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        #endregion
+
+        #region Save UI Settings
+
+        private void SaveUISettings()
+        {
+            var settingsFile = Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);
+            SerializeUISettings(settingsFile, StreamersUISettings);
+        }
+
+        private static void SerializeUISettings(string settingsFile, Dictionary<string, UISettings> settings)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(settingsFile))
+                    return;
+
+                string directory = Path.GetDirectoryName(settingsFile);
+                if (Directory.Exists(directory) == false)
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(settingsFile, JsonSerializer.Serialize(settings, jsonSerializerOptions));
             }
             catch
             {
             }
         }
-
-        #endregion
 
         #endregion
     }

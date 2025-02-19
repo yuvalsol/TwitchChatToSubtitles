@@ -123,6 +123,9 @@
   <metadata name="splitContainer1.Locked" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
+  <metadata name="toolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
   <data name="lblSubtitlesType.ToolTip" xml:space="preserve">
     <value>Regular Subtitles: Chat messages will appear at the center-bottom of the screen.
 Rolling Chat Subtitles: Chat messages will roll from the bottom to top of the screen and then disappear. Past chat messages won't clutter the screen.

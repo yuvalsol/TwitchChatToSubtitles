@@ -28,8 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(TwitchChatToSubtitlesForm));
+            components = new Container();
+            ComponentResourceManager resources = new ComponentResourceManager(typeof(TwitchChatToSubtitlesForm));
             txtConsole = new RichTextBox();
             ddlSubtitlesFontSize = new ComboBox();
             splitContainer1 = new SplitContainer();
@@ -63,13 +63,13 @@
             toolTip = new ToolTip(components);
             openJsonFileDialog = new OpenFileDialog();
             colorDialog = new ColorDialog();
-            ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
+            ((ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
             splitContainer1.Panel2.SuspendLayout();
             splitContainer1.SuspendLayout();
             flowLayoutPanelColors.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)nudTimeOffset).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)nudSubtitleShowDuration).BeginInit();
+            ((ISupportInitialize)nudTimeOffset).BeginInit();
+            ((ISupportInitialize)nudSubtitleShowDuration).BeginInit();
             SuspendLayout();
             // 
             // txtConsole
@@ -98,6 +98,7 @@
             ddlSubtitlesFontSize.Size = new Size(120, 28);
             ddlSubtitlesFontSize.TabIndex = 6;
             toolTip.SetToolTip(ddlSubtitlesFontSize, "The font size of the subtitles.");
+            ddlSubtitlesFontSize.SelectedIndexChanged += ddl_SelectedIndexChanged;
             // 
             // splitContainer1
             // 
@@ -221,7 +222,7 @@
             btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnCommandLine.AutoSize = true;
             btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnCommandLine.Location = new Point(471, 236);
+            btnCommandLine.Location = new Point(485, 236);
             btnCommandLine.Name = "btnCommandLine";
             btnCommandLine.Size = new Size(119, 30);
             btnCommandLine.TabIndex = 16;
@@ -248,13 +249,14 @@
             chkCloseWhenFinishedSuccessfully.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             chkCloseWhenFinishedSuccessfully.AutoSize = true;
             chkCloseWhenFinishedSuccessfully.CheckAlign = ContentAlignment.MiddleRight;
-            chkCloseWhenFinishedSuccessfully.Location = new Point(185, 239);
+            chkCloseWhenFinishedSuccessfully.Location = new Point(208, 239);
             chkCloseWhenFinishedSuccessfully.Name = "chkCloseWhenFinishedSuccessfully";
             chkCloseWhenFinishedSuccessfully.Size = new Size(246, 24);
             chkCloseWhenFinishedSuccessfully.TabIndex = 15;
             chkCloseWhenFinishedSuccessfully.Text = "Close When Finished Successfully";
             toolTip.SetToolTip(chkCloseWhenFinishedSuccessfully, "Whether to show chat message timestamps.");
             chkCloseWhenFinishedSuccessfully.UseVisualStyleBackColor = true;
+            chkCloseWhenFinishedSuccessfully.CheckedChanged += chk_CheckedChanged;
             // 
             // btnClose
             // 
@@ -262,7 +264,7 @@
             btnClose.AutoSize = true;
             btnClose.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             btnClose.DialogResult = DialogResult.Cancel;
-            btnClose.Location = new Point(636, 236);
+            btnClose.Location = new Point(635, 236);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(55, 30);
             btnClose.TabIndex = 17;
@@ -315,6 +317,7 @@
             chkColorUserNames.Text = "Color User Names";
             toolTip.SetToolTip(chkColorUserNames, "Whether to color user names.");
             chkColorUserNames.UseVisualStyleBackColor = true;
+            chkColorUserNames.CheckedChanged += chk_CheckedChanged;
             // 
             // chkRemoveEmoticonNames
             // 
@@ -327,6 +330,7 @@
             chkRemoveEmoticonNames.Text = "Remove Emoticon Names";
             toolTip.SetToolTip(chkRemoveEmoticonNames, "Remove emoticon and badge names.");
             chkRemoveEmoticonNames.UseVisualStyleBackColor = true;
+            chkRemoveEmoticonNames.CheckedChanged += chk_CheckedChanged;
             // 
             // chkShowTimestamps
             // 
@@ -339,6 +343,7 @@
             chkShowTimestamps.Text = "Show Timestamps";
             toolTip.SetToolTip(chkShowTimestamps, "Whether to show chat message timestamps.");
             chkShowTimestamps.UseVisualStyleBackColor = true;
+            chkShowTimestamps.CheckedChanged += chk_CheckedChanged;
             // 
             // lblTimeOffset
             // 
@@ -360,6 +365,7 @@
             nudTimeOffset.TabIndex = 8;
             nudTimeOffset.TextAlign = HorizontalAlignment.Center;
             toolTip.SetToolTip(nudTimeOffset, "Time offset for all subtitles, in seconds.");
+            nudTimeOffset.ValueChanged += nud_ValueChanged;
             // 
             // lblSubtitleShowDuration
             // 
@@ -382,6 +388,7 @@
             nudSubtitleShowDuration.TextAlign = HorizontalAlignment.Center;
             toolTip.SetToolTip(nudSubtitleShowDuration, "For how long a subtitle is visible on the screen, in seconds.");
             nudSubtitleShowDuration.Value = new decimal(new int[] { 5, 0, 0, 0 });
+            nudSubtitleShowDuration.ValueChanged += nud_ValueChanged;
             // 
             // lblSubtitlesType
             // 
@@ -423,6 +430,7 @@
             ddlSubtitlesSpeed.Size = new Size(120, 28);
             ddlSubtitlesSpeed.TabIndex = 7;
             toolTip.SetToolTip(ddlSubtitlesSpeed, "How fast the subtitles roll.");
+            ddlSubtitlesSpeed.SelectedIndexChanged += ddl_SelectedIndexChanged;
             // 
             // lblSubtitlesLocation
             // 
@@ -443,6 +451,7 @@
             ddlSubtitlesLocation.Size = new Size(200, 28);
             ddlSubtitlesLocation.TabIndex = 5;
             toolTip.SetToolTip(ddlSubtitlesLocation, "The location of the subtitles on the screen.");
+            ddlSubtitlesLocation.SelectedIndexChanged += ddl_SelectedIndexChanged;
             // 
             // lblSubtitlesFontSize
             // 
@@ -484,12 +493,12 @@
             splitContainer1.Panel1.ResumeLayout(false);
             splitContainer1.Panel2.ResumeLayout(false);
             splitContainer1.Panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)splitContainer1).EndInit();
+            ((ISupportInitialize)splitContainer1).EndInit();
             splitContainer1.ResumeLayout(false);
             flowLayoutPanelColors.ResumeLayout(false);
             flowLayoutPanelColors.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)nudTimeOffset).EndInit();
-            ((System.ComponentModel.ISupportInitialize)nudSubtitleShowDuration).EndInit();
+            ((ISupportInitialize)nudTimeOffset).EndInit();
+            ((ISupportInitialize)nudSubtitleShowDuration).EndInit();
             ResumeLayout(false);
         }
 
