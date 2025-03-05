@@ -302,7 +302,7 @@ static string GetHelpMessage(Parser parser, string[] args)
     var sb = new StringBuilder();
     sb.AppendLine(GetHelpText<AllSubtitleTypesOptions>(parser, args, GetVersion()));
     sb.AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, args, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."));
-    sb.AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll from the bottom to top of the screen and then disappear.", "Past chat messages won't clutter the screen."));
+    sb.AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll vertically across the screen and then disappear.", "Past chat messages won't clutter the screen."));
     sb.AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, args, "Static Chat Subtitles", "Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does."));
     sb.AppendLine(GetHelpText<ChatTextFileOptions>(parser, args, "Chat Text File", "Save Twitch chat to a text file."));
     return sb.ToString();

@@ -72,25 +72,25 @@ internal class Subtitle : IMessage
 
     public Subtitle ShaveLineFromTheTop()
     {
-        return ShaveLinesFromTheTop(ShowTime, HideTime, 1);
+        return ShaveLinesFromTheTop(ShowTime, HideTime, 1, null);
     }
 
-    public Subtitle ShaveLineFromTheTop(TimeSpan showTime, TimeSpan hideTime)
+    public Subtitle ShaveLineFromTheTop(TimeSpan showTime, TimeSpan hideTime, int? posY = null)
     {
-        return ShaveLinesFromTheTop(showTime, hideTime, 1);
+        return ShaveLinesFromTheTop(showTime, hideTime, 1, posY);
     }
 
-    public Subtitle ShaveLinesFromTheTop(int shaveCount)
+    public Subtitle ShaveLinesFromTheTop(int shaveCount, int? posY = null)
     {
-        return ShaveLinesFromTheTop(ShowTime, HideTime, shaveCount);
+        return ShaveLinesFromTheTop(ShowTime, HideTime, shaveCount, posY);
     }
 
-    public Subtitle ShaveLinesFromTheTop(TimeSpan showTime, TimeSpan hideTime, int shaveCount)
+    public Subtitle ShaveLinesFromTheTop(TimeSpan showTime, TimeSpan hideTime, int shaveCount, int? posY = null)
     {
         if (Messages.IsNullOrEmpty())
             return null;
 
-        var subtitle = new Subtitle(showTime, hideTime, PosY);
+        var subtitle = new Subtitle(showTime, hideTime, posY ?? PosY);
 
         int messageIndex = 0;
         while (shaveCount > 0)
@@ -118,6 +118,66 @@ internal class Subtitle : IMessage
             else if (shaveCount > linesCount)
             {
                 messageIndex++;
+                shaveCount -= linesCount;
+            }
+        }
+
+        // shaveCount == 1 && Messages.Count == 1 && Messages[0].LinesCount == 1
+        if (subtitle.Messages.IsNullOrEmpty())
+            return null;
+
+        return subtitle;
+    }
+
+    public Subtitle ShaveLineFromTheBottom()
+    {
+        return ShaveLinesFromTheBottom(ShowTime, HideTime, 1, null);
+    }
+
+    public Subtitle ShaveLineFromTheBottom(TimeSpan showTime, TimeSpan hideTime, int? posY = null)
+    {
+        return ShaveLinesFromTheBottom(showTime, hideTime, 1, posY);
+    }
+
+    public Subtitle ShaveLinesFromTheBottom(int shaveCount, int? posY = null)
+    {
+        return ShaveLinesFromTheBottom(ShowTime, HideTime, shaveCount, posY);
+    }
+
+    public Subtitle ShaveLinesFromTheBottom(TimeSpan showTime, TimeSpan hideTime, int shaveCount, int? posY = null)
+    {
+        if (Messages.IsNullOrEmpty())
+            return null;
+
+        var subtitle = new Subtitle(showTime, hideTime, posY ?? PosY);
+
+        int messageIndex = Messages.Count - 1;
+        while (shaveCount > 0)
+        {
+            if (messageIndex < 0)
+                return null;
+
+            var message = Messages[messageIndex];
+            int linesCount = message.LinesCount;
+
+            if (shaveCount <= linesCount)
+            {
+                var firstMessages = Messages.SkipLast(Messages.Count - messageIndex);
+                if (firstMessages.HasAny())
+                    subtitle.AddMessages(firstMessages);
+
+                if (shaveCount < linesCount)
+                {
+                    var shavedMessage = message.ShaveLinesFromTheBottom(shaveCount);
+                    if (shavedMessage != null)
+                        subtitle.AddMessage(shavedMessage);
+                }
+
+                shaveCount = 0;
+            }
+            else if (shaveCount > linesCount)
+            {
+                messageIndex--;
                 shaveCount -= linesCount;
             }
         }

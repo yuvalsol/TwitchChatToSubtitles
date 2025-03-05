@@ -11,6 +11,7 @@ internal class UISettings
     public bool ShowTimestamps { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
+    public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
     public decimal TimeOffset { get; set; }
     public decimal SubtitleShowDuration { get; set; }

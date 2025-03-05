@@ -27,6 +27,7 @@ public class TwitchSubtitlesSettings
     public int SubtitleShowDuration { get; set; } = 5;
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
+    public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
     public System.Drawing.Color? TextColor { get; set; }
     public int TimeOffset { get; set; }

@@ -33,6 +33,8 @@
             txtConsole = new RichTextBox();
             ddlSubtitlesFontSize = new ComboBox();
             splitContainer1 = new SplitContainer();
+            ddlSubtitlesRollingDirection = new ComboBox();
+            lblSubtitlesRollingDirection = new Label();
             lblTextColor = new Label();
             flowLayoutPanelColors = new FlowLayoutPanel();
             rdbNoColor = new RadioButton();
@@ -93,7 +95,7 @@
             // 
             ddlSubtitlesFontSize.DropDownStyle = ComboBoxStyle.DropDownList;
             ddlSubtitlesFontSize.FormattingEnabled = true;
-            ddlSubtitlesFontSize.Location = new Point(512, 15);
+            ddlSubtitlesFontSize.Location = new Point(512, 10);
             ddlSubtitlesFontSize.Name = "ddlSubtitlesFontSize";
             ddlSubtitlesFontSize.Size = new Size(120, 28);
             ddlSubtitlesFontSize.TabIndex = 6;
@@ -115,6 +117,8 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(ddlSubtitlesRollingDirection);
+            splitContainer1.Panel2.Controls.Add(lblSubtitlesRollingDirection);
             splitContainer1.Panel2.Controls.Add(lblTextColor);
             splitContainer1.Panel2.Controls.Add(flowLayoutPanelColors);
             splitContainer1.Panel2.Controls.Add(btnTextColor);
@@ -146,6 +150,27 @@
             splitContainer1.TabIndex = 0;
             splitContainer1.TabStop = false;
             // 
+            // ddlSubtitlesRollingDirection
+            // 
+            ddlSubtitlesRollingDirection.DropDownStyle = ComboBoxStyle.DropDownList;
+            ddlSubtitlesRollingDirection.FormattingEnabled = true;
+            ddlSubtitlesRollingDirection.Location = new Point(564, 41);
+            ddlSubtitlesRollingDirection.Name = "ddlSubtitlesRollingDirection";
+            ddlSubtitlesRollingDirection.Size = new Size(127, 28);
+            ddlSubtitlesRollingDirection.TabIndex = 7;
+            toolTip.SetToolTip(ddlSubtitlesRollingDirection, "The direction that the subtitles roll.");
+            ddlSubtitlesRollingDirection.SelectedIndexChanged += ddl_SelectedIndexChanged;
+            // 
+            // lblSubtitlesRollingDirection
+            // 
+            lblSubtitlesRollingDirection.AutoSize = true;
+            lblSubtitlesRollingDirection.Location = new Point(374, 45);
+            lblSubtitlesRollingDirection.Name = "lblSubtitlesRollingDirection";
+            lblSubtitlesRollingDirection.Size = new Size(182, 20);
+            lblSubtitlesRollingDirection.TabIndex = 0;
+            lblSubtitlesRollingDirection.Text = "Subtitles Rolling Direction";
+            toolTip.SetToolTip(lblSubtitlesRollingDirection, "The direction that the subtitles roll.");
+            // 
             // lblTextColor
             // 
             lblTextColor.BorderStyle = BorderStyle.Fixed3D;
@@ -167,7 +192,7 @@
             flowLayoutPanelColors.Location = new Point(117, 165);
             flowLayoutPanelColors.Name = "flowLayoutPanelColors";
             flowLayoutPanelColors.Size = new Size(233, 30);
-            flowLayoutPanelColors.TabIndex = 11;
+            flowLayoutPanelColors.TabIndex = 12;
             // 
             // rdbNoColor
             // 
@@ -211,7 +236,7 @@
             btnTextColor.Location = new Point(15, 165);
             btnTextColor.Name = "btnTextColor";
             btnTextColor.Size = new Size(86, 30);
-            btnTextColor.TabIndex = 10;
+            btnTextColor.TabIndex = 11;
             btnTextColor.Text = "Text Color";
             toolTip.SetToolTip(btnTextColor, "The color of the subtitles text.");
             btnTextColor.UseVisualStyleBackColor = true;
@@ -225,7 +250,7 @@
             btnCommandLine.Location = new Point(485, 236);
             btnCommandLine.Name = "btnCommandLine";
             btnCommandLine.Size = new Size(119, 30);
-            btnCommandLine.TabIndex = 16;
+            btnCommandLine.TabIndex = 17;
             btnCommandLine.Text = "Command Line";
             btnCommandLine.UseVisualStyleBackColor = true;
             btnCommandLine.Click += btnCommandLine_Click;
@@ -239,7 +264,7 @@
             btnCopy.Location = new Point(668, 2);
             btnCopy.Name = "btnCopy";
             btnCopy.Size = new Size(43, 23);
-            btnCopy.TabIndex = 14;
+            btnCopy.TabIndex = 18;
             btnCopy.Text = "Copy";
             btnCopy.UseVisualStyleBackColor = true;
             btnCopy.Click += btnCopy_Click;
@@ -252,7 +277,7 @@
             chkCloseWhenFinishedSuccessfully.Location = new Point(208, 239);
             chkCloseWhenFinishedSuccessfully.Name = "chkCloseWhenFinishedSuccessfully";
             chkCloseWhenFinishedSuccessfully.Size = new Size(246, 24);
-            chkCloseWhenFinishedSuccessfully.TabIndex = 15;
+            chkCloseWhenFinishedSuccessfully.TabIndex = 16;
             chkCloseWhenFinishedSuccessfully.Text = "Close When Finished Successfully";
             toolTip.SetToolTip(chkCloseWhenFinishedSuccessfully, "Whether to show chat message timestamps.");
             chkCloseWhenFinishedSuccessfully.UseVisualStyleBackColor = true;
@@ -267,7 +292,7 @@
             btnClose.Location = new Point(635, 236);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(55, 30);
-            btnClose.TabIndex = 17;
+            btnClose.TabIndex = 19;
             btnClose.Text = "Close";
             btnClose.UseVisualStyleBackColor = true;
             btnClose.Click += btnClose_Click;
@@ -280,7 +305,7 @@
             btnWriteTwitchSubtitles.Location = new Point(15, 236);
             btnWriteTwitchSubtitles.Name = "btnWriteTwitchSubtitles";
             btnWriteTwitchSubtitles.Size = new Size(162, 30);
-            btnWriteTwitchSubtitles.TabIndex = 14;
+            btnWriteTwitchSubtitles.TabIndex = 15;
             btnWriteTwitchSubtitles.Text = "Write Twitch Subtitles";
             btnWriteTwitchSubtitles.UseVisualStyleBackColor = true;
             btnWriteTwitchSubtitles.Click += btnWriteTwitchSubtitles_Click;
@@ -291,7 +316,7 @@
             txtJsonFile.Location = new Point(97, 202);
             txtJsonFile.Name = "txtJsonFile";
             txtJsonFile.Size = new Size(594, 27);
-            txtJsonFile.TabIndex = 13;
+            txtJsonFile.TabIndex = 14;
             txtJsonFile.TextChanged += txtJsonFile_TextChanged;
             // 
             // btnJsonFile
@@ -301,7 +326,7 @@
             btnJsonFile.Location = new Point(15, 200);
             btnJsonFile.Name = "btnJsonFile";
             btnJsonFile.Size = new Size(74, 30);
-            btnJsonFile.TabIndex = 12;
+            btnJsonFile.TabIndex = 13;
             btnJsonFile.Text = "Json File";
             btnJsonFile.UseVisualStyleBackColor = true;
             btnJsonFile.Click += btnJsonFile_Click;
@@ -310,7 +335,7 @@
             // 
             chkColorUserNames.AutoSize = true;
             chkColorUserNames.CheckAlign = ContentAlignment.MiddleRight;
-            chkColorUserNames.Location = new Point(15, 47);
+            chkColorUserNames.Location = new Point(15, 43);
             chkColorUserNames.Name = "chkColorUserNames";
             chkColorUserNames.Size = new Size(147, 24);
             chkColorUserNames.TabIndex = 2;
@@ -323,7 +348,7 @@
             // 
             chkRemoveEmoticonNames.AutoSize = true;
             chkRemoveEmoticonNames.CheckAlign = ContentAlignment.MiddleRight;
-            chkRemoveEmoticonNames.Location = new Point(15, 76);
+            chkRemoveEmoticonNames.Location = new Point(15, 74);
             chkRemoveEmoticonNames.Name = "chkRemoveEmoticonNames";
             chkRemoveEmoticonNames.Size = new Size(199, 24);
             chkRemoveEmoticonNames.TabIndex = 3;
@@ -336,7 +361,7 @@
             // 
             chkShowTimestamps.AutoSize = true;
             chkShowTimestamps.CheckAlign = ContentAlignment.MiddleRight;
-            chkShowTimestamps.Location = new Point(15, 105);
+            chkShowTimestamps.Location = new Point(15, 104);
             chkShowTimestamps.Name = "chkShowTimestamps";
             chkShowTimestamps.Size = new Size(148, 24);
             chkShowTimestamps.TabIndex = 4;
@@ -348,7 +373,7 @@
             // lblTimeOffset
             // 
             lblTimeOffset.AutoSize = true;
-            lblTimeOffset.Location = new Point(374, 96);
+            lblTimeOffset.Location = new Point(374, 106);
             lblTimeOffset.Name = "lblTimeOffset";
             lblTimeOffset.Size = new Size(153, 20);
             lblTimeOffset.TabIndex = 0;
@@ -357,12 +382,12 @@
             // 
             // nudTimeOffset
             // 
-            nudTimeOffset.Location = new Point(535, 93);
+            nudTimeOffset.Location = new Point(535, 103);
             nudTimeOffset.Maximum = new decimal(new int[] { int.MaxValue, 0, 0, 0 });
             nudTimeOffset.Minimum = new decimal(new int[] { int.MinValue, 0, 0, int.MinValue });
             nudTimeOffset.Name = "nudTimeOffset";
             nudTimeOffset.Size = new Size(80, 27);
-            nudTimeOffset.TabIndex = 8;
+            nudTimeOffset.TabIndex = 9;
             nudTimeOffset.TextAlign = HorizontalAlignment.Center;
             toolTip.SetToolTip(nudTimeOffset, "Time offset for all subtitles, in seconds.");
             nudTimeOffset.ValueChanged += nud_ValueChanged;
@@ -384,7 +409,7 @@
             nudSubtitleShowDuration.Minimum = new decimal(new int[] { int.MinValue, 0, 0, int.MinValue });
             nudSubtitleShowDuration.Name = "nudSubtitleShowDuration";
             nudSubtitleShowDuration.Size = new Size(80, 27);
-            nudSubtitleShowDuration.TabIndex = 9;
+            nudSubtitleShowDuration.TabIndex = 10;
             nudSubtitleShowDuration.TextAlign = HorizontalAlignment.Center;
             toolTip.SetToolTip(nudSubtitleShowDuration, "For how long a subtitle is visible on the screen, in seconds.");
             nudSubtitleShowDuration.Value = new decimal(new int[] { 5, 0, 0, 0 });
@@ -393,7 +418,7 @@
             // lblSubtitlesType
             // 
             lblSubtitlesType.AutoSize = true;
-            lblSubtitlesType.Location = new Point(15, 19);
+            lblSubtitlesType.Location = new Point(15, 14);
             lblSubtitlesType.Name = "lblSubtitlesType";
             lblSubtitlesType.Size = new Size(101, 20);
             lblSubtitlesType.TabIndex = 0;
@@ -404,7 +429,7 @@
             // 
             ddlSubtitlesType.DropDownStyle = ComboBoxStyle.DropDownList;
             ddlSubtitlesType.FormattingEnabled = true;
-            ddlSubtitlesType.Location = new Point(124, 15);
+            ddlSubtitlesType.Location = new Point(124, 10);
             ddlSubtitlesType.Name = "ddlSubtitlesType";
             ddlSubtitlesType.Size = new Size(180, 28);
             ddlSubtitlesType.TabIndex = 1;
@@ -414,10 +439,10 @@
             // lblSubtitlesSpeed
             // 
             lblSubtitlesSpeed.AutoSize = true;
-            lblSubtitlesSpeed.Location = new Point(374, 57);
+            lblSubtitlesSpeed.Location = new Point(374, 76);
             lblSubtitlesSpeed.Name = "lblSubtitlesSpeed";
             lblSubtitlesSpeed.Size = new Size(112, 20);
-            lblSubtitlesSpeed.TabIndex = 10;
+            lblSubtitlesSpeed.TabIndex = 0;
             lblSubtitlesSpeed.Text = "Subtitles Speed";
             toolTip.SetToolTip(lblSubtitlesSpeed, "How fast the subtitles roll.");
             // 
@@ -425,10 +450,10 @@
             // 
             ddlSubtitlesSpeed.DropDownStyle = ComboBoxStyle.DropDownList;
             ddlSubtitlesSpeed.FormattingEnabled = true;
-            ddlSubtitlesSpeed.Location = new Point(494, 53);
+            ddlSubtitlesSpeed.Location = new Point(494, 72);
             ddlSubtitlesSpeed.Name = "ddlSubtitlesSpeed";
             ddlSubtitlesSpeed.Size = new Size(120, 28);
-            ddlSubtitlesSpeed.TabIndex = 7;
+            ddlSubtitlesSpeed.TabIndex = 8;
             toolTip.SetToolTip(ddlSubtitlesSpeed, "How fast the subtitles roll.");
             ddlSubtitlesSpeed.SelectedIndexChanged += ddl_SelectedIndexChanged;
             // 
@@ -456,10 +481,10 @@
             // lblSubtitlesFontSize
             // 
             lblSubtitlesFontSize.AutoSize = true;
-            lblSubtitlesFontSize.Location = new Point(374, 19);
+            lblSubtitlesFontSize.Location = new Point(374, 14);
             lblSubtitlesFontSize.Name = "lblSubtitlesFontSize";
             lblSubtitlesFontSize.Size = new Size(130, 20);
-            lblSubtitlesFontSize.TabIndex = 8;
+            lblSubtitlesFontSize.TabIndex = 0;
             lblSubtitlesFontSize.Text = "Subtitles Font Size";
             toolTip.SetToolTip(lblSubtitlesFontSize, "The font size of the subtitles.");
             // 
@@ -537,5 +562,7 @@
         private RadioButton rdbWhite;
         private RadioButton rdbBlack;
         private Label lblTextColor;
+        private Label lblSubtitlesRollingDirection;
+        private ComboBox ddlSubtitlesRollingDirection;
     }
 }

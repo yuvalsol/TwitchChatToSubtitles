@@ -6,7 +6,7 @@ Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitl
 
 The program provides 3 types of subtitles and one text file:
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
-2. **Rolling Chat Subtitles**. Chat messages will roll from the bottom to top of the screen and then disappear. Past chat messages won't clutter the screen.
+2. **Rolling Chat Subtitles**. Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
 3. **Static Chat Subtitles**. Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does.
 4. **Chat Text File**. Save Twitch chat to a text file.
 
@@ -36,7 +36,7 @@ TwitchChatToSubtitles.exe --RegularSubtitles
                           [--RemoveEmoticonNames]
                           [--ShowTimestamps]
                           [--SubtitleShowDuration <seconds>]
-                          [--SubtitlesFontSize <fontSize>]
+                          [--SubtitlesFontSize <font size>]
                           [--TextColor <color>]
                           [--TimeOffset <seconds>]
 ```
@@ -68,7 +68,7 @@ TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.
 
 ## Rolling Chat Subtitles
 
-Chat messages will roll from the bottom to top of the screen and then disappear. Past chat messages won't clutter the screen.
+Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
 
 ```console
 TwitchChatToSubtitles.exe --RollingChatSubtitles
@@ -76,8 +76,9 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles
                           [--ColorUserNames]
                           [--RemoveEmoticonNames]
                           [--ShowTimestamps]
-                          [--SubtitlesFontSize <fontSize>]
+                          [--SubtitlesFontSize <font size>]
                           [--SubtitlesLocation <location>]
+                          [--SubtitlesRollingDirection <rolling direction>]
                           [--SubtitlesSpeed <speed>]
                           [--TextColor <color>]
                           [--TimeOffset <seconds>]
@@ -112,7 +113,7 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles
                           [--ColorUserNames]
                           [--RemoveEmoticonNames]
                           [--ShowTimestamps]
-                          [--SubtitlesFontSize <fontSize>]
+                          [--SubtitlesFontSize <font size>]
                           [--SubtitlesLocation <location>]
                           [--TextColor <color>]
                           [--TimeOffset <seconds>]
@@ -221,7 +222,14 @@ This option determines where the subtitles are displayed on the screen. This opt
                         RightBottomHalf,RightTopTwoThirds, RightBottomTwoThirds.
 ```
 
-This option determines the speed of the subtitles rolling from the bottom to the top of the screen. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `Regular` speed.
+This option determines the direction that the subtitles roll from the bottom to the top of the screen or from the top to the bottom of the screen. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `BottomToTop` direction.
+
+```console
+--SubtitlesRollingDirection     The direction that the subtitles roll.
+                                Valid values: BottomToTop, TopToBottom.
+```
+
+This option determines the speed of the subtitles rolling vertically across the screen. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `Regular` speed.
 
 ```console
 --SubtitlesSpeed        How fast the subtitles roll.

@@ -37,6 +37,7 @@ namespace TwitchChatToSubtitlesUI
             BindDdlDataSource<SubtitlesType>(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, SubtitlesType.RegularSubtitles);
             BindDdlDataSource<SubtitlesLocation>(ddlSubtitlesLocation, ddl_SelectedIndexChanged);
             BindDdlDataSource<SubtitlesFontSize>(ddlSubtitlesFontSize, ddl_SelectedIndexChanged);
+            BindDdlDataSource<SubtitlesRollingDirection>(ddlSubtitlesRollingDirection, ddl_SelectedIndexChanged);
             BindDdlDataSource<SubtitlesSpeed>(ddlSubtitlesSpeed, ddl_SelectedIndexChanged);
             SubtitlesTypeChanged();
         }
@@ -277,6 +278,9 @@ namespace TwitchChatToSubtitlesUI
             lblSubtitlesLocation.Enabled =
             ddlSubtitlesLocation.Enabled = false;
 
+            lblSubtitlesRollingDirection.Enabled =
+            ddlSubtitlesRollingDirection.Enabled = false;
+
             lblSubtitlesSpeed.Enabled =
             ddlSubtitlesSpeed.Enabled = false;
 
@@ -292,6 +296,9 @@ namespace TwitchChatToSubtitlesUI
             {
                 lblSubtitlesLocation.Enabled =
                 ddlSubtitlesLocation.Enabled = true;
+
+                lblSubtitlesRollingDirection.Enabled =
+                ddlSubtitlesRollingDirection.Enabled = true;
 
                 lblSubtitlesSpeed.Enabled =
                 ddlSubtitlesSpeed.Enabled = true;
@@ -439,6 +446,8 @@ namespace TwitchChatToSubtitlesUI
                 settings.SubtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue;
             if (ddlSubtitlesLocation.Enabled)
                 settings.SubtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue;
+            if (ddlSubtitlesRollingDirection.Enabled)
+                settings.SubtitlesRollingDirection = (SubtitlesRollingDirection)ddlSubtitlesRollingDirection.SelectedValue;
             if (ddlSubtitlesSpeed.Enabled)
                 settings.SubtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
             if (btnTextColor.Enabled)
@@ -679,6 +688,13 @@ namespace TwitchChatToSubtitlesUI
                     sb.Append($" --SubtitlesFontSize {subtitlesFontSize}");
             }
 
+            if (ddlSubtitlesRollingDirection.Enabled)
+            {
+                var subtitlesRollingDirection = (SubtitlesRollingDirection)ddlSubtitlesRollingDirection.SelectedValue;
+                if (subtitlesRollingDirection != SubtitlesRollingDirection.None)
+                    sb.Append($" --SubtitlesRollingDirection {subtitlesRollingDirection}");
+            }
+
             if (ddlSubtitlesSpeed.Enabled)
             {
                 var subtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
@@ -769,6 +785,7 @@ namespace TwitchChatToSubtitlesUI
             settings.ShowTimestamps = chkShowTimestamps.Checked;
             settings.SubtitlesLocation = (SubtitlesLocation)(ddlSubtitlesLocation.SelectedValue ?? SubtitlesLocation.None);
             settings.SubtitlesFontSize = (SubtitlesFontSize)(ddlSubtitlesFontSize.SelectedValue ?? SubtitlesFontSize.None);
+            settings.SubtitlesRollingDirection = (SubtitlesRollingDirection)(ddlSubtitlesRollingDirection.SelectedValue ?? SubtitlesRollingDirection.None);
             settings.SubtitlesSpeed = (SubtitlesSpeed)(ddlSubtitlesSpeed.SelectedValue ?? SubtitlesSpeed.None);
             settings.TimeOffset = nudTimeOffset.Value;
             settings.SubtitleShowDuration = nudSubtitleShowDuration.Value;
@@ -791,6 +808,7 @@ namespace TwitchChatToSubtitlesUI
             SetCheckBox(chkShowTimestamps, chk_CheckedChanged, settings.ShowTimestamps);
             SetComboBox(ddlSubtitlesLocation, ddl_SelectedIndexChanged, settings.SubtitlesLocation);
             SetComboBox(ddlSubtitlesFontSize, ddl_SelectedIndexChanged, settings.SubtitlesFontSize);
+            SetComboBox(ddlSubtitlesRollingDirection, ddl_SelectedIndexChanged, settings.SubtitlesRollingDirection);
             SetComboBox(ddlSubtitlesSpeed, ddl_SelectedIndexChanged, settings.SubtitlesSpeed);
             SetNumericUpDown(nudTimeOffset, nud_ValueChanged, settings.TimeOffset);
             SetNumericUpDown(nudSubtitleShowDuration, nud_ValueChanged, settings.SubtitleShowDuration);

@@ -44,6 +44,9 @@ internal interface IRollingChatSubtitlesOptions
     [Option("RollingChatSubtitles", Required = false, HelpText = "Convert Twitch chat to rolling chat subtitles.")]
     bool RollingChatSubtitles { get; set; }
 
+    [Option("SubtitlesRollingDirection", Required = false, HelpText = "The direction that the subtitles roll. Valid values: BottomToTop, TopToBottom.")]
+    SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
+
     [Option("SubtitlesSpeed", Required = false, HelpText = "How fast the subtitles roll. Valid values: Regular, Faster, Fastest.")]
     SubtitlesSpeed SubtitlesSpeed { get; set; }
 }
@@ -119,6 +122,7 @@ internal class RegularSubtitlesOptions : IRegularSubtitlesOptions
 internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChatSubtitlesOptions
 {
     public bool RollingChatSubtitles { get; set; }
+    public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
 
@@ -272,6 +276,7 @@ internal partial class TwitchSubtitlesOptions
     public int SubtitleShowDuration { get; set; }
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
+    public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
     public string TextColor { get; set; }
     public int TimeOffset { get; set; }
@@ -291,6 +296,7 @@ internal partial class TwitchSubtitlesOptions
             SubtitleShowDuration = SubtitleShowDuration,
             SubtitlesFontSize = SubtitlesFontSize,
             SubtitlesLocation = SubtitlesLocation,
+            SubtitlesRollingDirection = SubtitlesRollingDirection,
             SubtitlesSpeed = SubtitlesSpeed,
             TextColor = StringToColor(TextColor),
             TimeOffset = TimeOffset

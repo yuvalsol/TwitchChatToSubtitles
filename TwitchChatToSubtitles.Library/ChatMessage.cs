@@ -48,10 +48,20 @@ internal partial class ChatMessage : IMessage
         {
             if (linesCount == 0)
             {
-                if (string.IsNullOrEmpty(User))
-                    linesCount = RegexHardNewLine().Matches(Body).Count + 1;
+                if (string.IsNullOrEmpty(Body))
+                {
+                    if (string.IsNullOrEmpty(User))
+                        linesCount = 0;
+                    else
+                        linesCount = (IsBrailleArt ? 1 : 0);
+                }
                 else
-                    linesCount = RegexHardNewLine().Matches(Body).Count + 1 + (IsBrailleArt ? 1 : 0);
+                {
+                    if (string.IsNullOrEmpty(User))
+                        linesCount = RegexHardNewLine().Matches(Body).Count + 1;
+                    else
+                        linesCount = RegexHardNewLine().Matches(Body).Count + 1 + (IsBrailleArt ? 1 : 0);
+                }
             }
 
             return linesCount;
@@ -96,6 +106,35 @@ internal partial class ChatMessage : IMessage
             return null;
 
         return new ChatMessage(shavedBody);
+    }
+
+    public ChatMessage ShaveLineFromTheBottom()
+    {
+        return ShaveLinesFromTheBottom(1);
+    }
+
+    public ChatMessage ShaveLinesFromTheBottom(int shaveCount)
+    {
+        if (shaveCount <= 0)
+            return new ChatMessage(Timestamp, User, IsModerator, UserColor, Body, IsBrailleArt);
+
+        if (shaveCount >= LinesCount)
+            return null;
+
+        int lastIndex = Body.LastIndexOf("\\N");
+        for (int i = 0; i < shaveCount - 1 && lastIndex != -1; i++)
+            lastIndex = Body.LastIndexOf("\\N", lastIndex);
+
+        if (lastIndex == -1)
+        {
+            if (IsBrailleArt)
+                return new ChatMessage(Timestamp, User, IsModerator, UserColor, string.Empty, IsBrailleArt);
+            else
+                return null;
+        }
+
+        string shavedBody = Body[..lastIndex];
+        return new ChatMessage(Timestamp, User, IsModerator, UserColor, shavedBody, IsBrailleArt);
     }
 
     public static string ToTimestamp(TimeSpan span)
