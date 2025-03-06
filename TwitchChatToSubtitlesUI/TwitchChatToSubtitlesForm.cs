@@ -648,7 +648,19 @@ namespace TwitchChatToSubtitlesUI
 
         private void btnCommandLine_Click(object sender, EventArgs e)
         {
-            var sb = new StringBuilder("TwitchChatToSubtitles.exe");
+            ShowCommandLine();
+        }
+
+        private void ShowCommandLine()
+        {
+            var sb = new StringBuilder();
+
+            if (OperatingSystem.IsWindows())
+                sb.Append("TwitchChatToSubtitles.exe");
+            else if (OperatingSystem.IsLinux())
+                sb.Append("./TwitchChatToSubtitles");
+            else
+                sb.Append("TwitchChatToSubtitles");
 
             var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
             sb.Append($" --{subtitlesType}");
