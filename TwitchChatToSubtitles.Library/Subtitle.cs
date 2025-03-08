@@ -1,23 +1,58 @@
 ﻿namespace TwitchChatToSubtitles.Library;
 
-internal class Subtitle : IMessage
+internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 {
-    public readonly TimeSpan ShowTime;
-    public TimeSpan HideTime { get; private set; }
+    public readonly TimeSpan ShowTime = showTime;
+    public TimeSpan HideTime { get; private set; } = hideTime;
     public readonly int PosY;
     private readonly List<ChatMessage> Messages = [];
 
-    public Subtitle(TimeSpan showTime, TimeSpan hideTime, params ChatMessage[] messages)
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, ChatMessage message)
+        : this(showTime, hideTime)
     {
-        ShowTime = showTime;
-        HideTime = hideTime;
-        AddMessages(messages);
+        Messages.Add(message);
     }
 
-    public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, params ChatMessage[] messages)
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, IEnumerable<ChatMessage> messages)
+        : this(showTime, hideTime)
+    {
+        Messages.AddRange(messages);
+    }
+
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, Subtitle subtitle)
+        : this(showTime, hideTime, subtitle.Messages)
+    { }
+
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY)
+        : this(showTime, hideTime)
+    {
+        PosY = posY;
+    }
+
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, ChatMessage message)
+        : this(showTime, hideTime, message)
+    {
+        PosY = posY;
+    }
+
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, IEnumerable<ChatMessage> messages)
         : this(showTime, hideTime, messages)
     {
         PosY = posY;
+    }
+
+    public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, Subtitle subtitle)
+        : this(showTime, hideTime, subtitle)
+    {
+        PosY = posY;
+    }
+
+    public bool IsEmpty
+    {
+        get
+        {
+            return Messages.IsNullOrEmpty();
+        }
     }
 
     public void AddMessage(ChatMessage message)
@@ -70,123 +105,96 @@ internal class Subtitle : IMessage
         return true;
     }
 
-    public Subtitle ShaveLineFromTheTop()
+    public Subtitle ShaveLinesFromTheTop(int shaveCount)
     {
-        return ShaveLinesFromTheTop(ShowTime, HideTime, 1, null);
-    }
+        if (shaveCount <= 0)
+            return this;
 
-    public Subtitle ShaveLineFromTheTop(TimeSpan showTime, TimeSpan hideTime, int? posY = null)
-    {
-        return ShaveLinesFromTheTop(showTime, hideTime, 1, posY);
-    }
+        if (IsEmpty)
+            return this;
 
-    public Subtitle ShaveLinesFromTheTop(int shaveCount, int? posY = null)
-    {
-        return ShaveLinesFromTheTop(ShowTime, HideTime, shaveCount, posY);
-    }
-
-    public Subtitle ShaveLinesFromTheTop(TimeSpan showTime, TimeSpan hideTime, int shaveCount, int? posY = null)
-    {
-        if (Messages.IsNullOrEmpty())
-            return null;
-
-        var subtitle = new Subtitle(showTime, hideTime, posY ?? PosY);
-
-        int messageIndex = 0;
         while (shaveCount > 0)
         {
-            if (messageIndex >= Messages.Count)
-                return null;
+            var message = Messages[0];
+            int messageLinesCount = message.LinesCount;
 
-            var message = Messages[messageIndex];
-            int linesCount = message.LinesCount;
-
-            if (shaveCount <= linesCount)
+            if (shaveCount < messageLinesCount)
             {
-                if (shaveCount < linesCount)
-                {
-                    var shavedMessage = message.ShaveLinesFromTheTop(shaveCount);
-                    if (shavedMessage != null)
-                        subtitle.AddMessage(shavedMessage);
-                }
-
-                var nextMessages = Messages.Skip(messageIndex + 1);
-                if (nextMessages.HasAny())
-                    subtitle.AddMessages(nextMessages);
-                shaveCount = 0;
+                Messages[0] = message.ShaveLinesFromTheTop(shaveCount);
+                linesCount = 0;
+                return this;
             }
-            else if (shaveCount > linesCount)
+            else if (shaveCount == messageLinesCount)
             {
-                messageIndex++;
-                shaveCount -= linesCount;
+                Messages.RemoveAt(0);
+                linesCount = 0;
+                return this;
+            }
+            else if (shaveCount > messageLinesCount)
+            {
+                Messages.RemoveAt(0);
+                linesCount = 0;
+                if (IsEmpty)
+                    return this;
+                shaveCount -= messageLinesCount;
             }
         }
 
-        // shaveCount == 1 && Messages.Count == 1 && Messages[0].LinesCount == 1
-        if (subtitle.Messages.IsNullOrEmpty())
-            return null;
-
-        return subtitle;
+        return this;
     }
 
-    public Subtitle ShaveLineFromTheBottom()
+    public Subtitle ShaveLinesFromTheBottom(int shaveCount)
     {
-        return ShaveLinesFromTheBottom(ShowTime, HideTime, 1, null);
-    }
+        if (shaveCount <= 0)
+            return this;
 
-    public Subtitle ShaveLineFromTheBottom(TimeSpan showTime, TimeSpan hideTime, int? posY = null)
-    {
-        return ShaveLinesFromTheBottom(showTime, hideTime, 1, posY);
-    }
+        if (IsEmpty)
+            return this;
 
-    public Subtitle ShaveLinesFromTheBottom(int shaveCount, int? posY = null)
-    {
-        return ShaveLinesFromTheBottom(ShowTime, HideTime, shaveCount, posY);
-    }
-
-    public Subtitle ShaveLinesFromTheBottom(TimeSpan showTime, TimeSpan hideTime, int shaveCount, int? posY = null)
-    {
-        if (Messages.IsNullOrEmpty())
-            return null;
-
-        var subtitle = new Subtitle(showTime, hideTime, posY ?? PosY);
-
-        int messageIndex = Messages.Count - 1;
         while (shaveCount > 0)
         {
-            if (messageIndex < 0)
-                return null;
+            var message = Messages[^1];
+            int messageLinesCount = message.LinesCount;
 
-            var message = Messages[messageIndex];
-            int linesCount = message.LinesCount;
-
-            if (shaveCount <= linesCount)
+            if (shaveCount < messageLinesCount)
             {
-                var firstMessages = Messages.SkipLast(Messages.Count - messageIndex);
-                if (firstMessages.HasAny())
-                    subtitle.AddMessages(firstMessages);
-
-                if (shaveCount < linesCount)
-                {
-                    var shavedMessage = message.ShaveLinesFromTheBottom(shaveCount);
-                    if (shavedMessage != null)
-                        subtitle.AddMessage(shavedMessage);
-                }
-
-                shaveCount = 0;
+                Messages[^1] = message.ShaveLinesFromTheBottom(shaveCount);
+                linesCount = 0;
+                return this;
             }
-            else if (shaveCount > linesCount)
+            else if (shaveCount == messageLinesCount)
             {
-                messageIndex--;
-                shaveCount -= linesCount;
+                Messages.RemoveAt(Messages.Count - 1);
+                linesCount = 0;
+                return this;
+            }
+            else if (shaveCount > messageLinesCount)
+            {
+                Messages.RemoveAt(Messages.Count - 1);
+                linesCount = 0;
+                if (IsEmpty)
+                    return this;
+                shaveCount -= messageLinesCount;
             }
         }
 
-        // shaveCount == 1 && Messages.Count == 1 && Messages[0].LinesCount == 1
-        if (subtitle.Messages.IsNullOrEmpty())
-            return null;
+        return this;
+    }
 
-        return subtitle;
+    public Subtitle KeepLinesFromTheTop(int keepCount)
+    {
+        if (keepCount < 0)
+            return this;
+
+        return ShaveLinesFromTheBottom(LinesCount - keepCount);
+    }
+
+    public Subtitle KeepLinesFromTheBottom(int keepCount)
+    {
+        if (keepCount < 0)
+            return this;
+
+        return ShaveLinesFromTheTop(LinesCount - keepCount);
     }
 
     private static int PosX(SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize)

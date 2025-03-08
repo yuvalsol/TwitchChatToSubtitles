@@ -1,12 +1,11 @@
-﻿namespace TwitchChatToSubtitles.Library
+﻿namespace TwitchChatToSubtitles.Library;
+
+internal struct ProcessedComment
 {
-    internal struct ProcessedComment
-    {
-        public TimeSpan Timestamp;
-        public string User;
-        public bool IsModerator;
-        public string Body;
-        public bool IsBrailleArt;
-        public Color Color;
-    }
+    public TimeSpan Timestamp;
+    public string User;
+    public bool IsModerator;
+    public string Body;
+    public bool IsBrailleArt;
+    public Color Color;
 }

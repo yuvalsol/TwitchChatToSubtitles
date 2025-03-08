@@ -68,15 +68,10 @@ internal partial class ChatMessage : IMessage
         }
     }
 
-    public ChatMessage ShaveLineFromTheTop()
-    {
-        return ShaveLinesFromTheTop(1);
-    }
-
     public ChatMessage ShaveLinesFromTheTop(int shaveCount)
     {
         if (shaveCount <= 0)
-            return new ChatMessage(Timestamp, User, IsModerator, UserColor, Body, IsBrailleArt);
+            return this;
 
         if (shaveCount >= LinesCount)
             return null;
@@ -108,15 +103,10 @@ internal partial class ChatMessage : IMessage
         return new ChatMessage(shavedBody);
     }
 
-    public ChatMessage ShaveLineFromTheBottom()
-    {
-        return ShaveLinesFromTheBottom(1);
-    }
-
     public ChatMessage ShaveLinesFromTheBottom(int shaveCount)
     {
         if (shaveCount <= 0)
-            return new ChatMessage(Timestamp, User, IsModerator, UserColor, Body, IsBrailleArt);
+            return this;
 
         if (shaveCount >= LinesCount)
             return null;
@@ -190,8 +180,18 @@ internal partial class ChatMessage : IMessage
     public string ToChatLogString(bool showTimestamps)
     {
         if (string.IsNullOrEmpty(User))
-            return (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
+            return ChatLogBody();
         else
-            return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{(IsModerator ? "[M] " : string.Empty)}{User}:{(IsBrailleArt ? Environment.NewLine : " ")}{(IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body)}";
+            return $"{ChatLogTimestampAndUser(showTimestamps)}:{(IsBrailleArt ? Environment.NewLine : " ")}{ChatLogBody()}";
+    }
+
+    public string ChatLogTimestampAndUser(bool showTimestamps)
+    {
+        return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{(IsModerator ? "[M] " : string.Empty)}{User}";
+    }
+
+    public string ChatLogBody()
+    {
+        return (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
     }
 }

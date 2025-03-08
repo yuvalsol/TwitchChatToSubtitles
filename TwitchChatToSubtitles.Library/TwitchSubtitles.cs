@@ -601,11 +601,140 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 showTime = nextTimeSlot;
             nextTimeSlot = showTime + TimeSpan.FromSeconds(linesCount);
 
+            IEnumerable<Subtitle> subtitles = null;
+
+            if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
+            {
+                var timeAndPos =
+                    Enumerable.Range(1, posYCount + (linesCount - 1))
+                    .Select(n => new
+                    {
+                        n,
+                        showTime = showTime + ((n - 1) * timeStep),
+                        hideTime = showTime + (n * timeStep),
+                        posY = (n <= linesCount ? topPosY : topPosY + ((n - linesCount) * fontSize))
+                    });
+
+                IEnumerable<RollingSubtitleInfoTopToBottom> subsInfo = null;
+
+                if (linesCount <= posYCount)
+                {
+                    subsInfo = timeAndPos.Select(x => new RollingSubtitleInfoTopToBottom
+                    {
+                        N = x.n,
+                        ShowTime = x.showTime,
+                        HideTime = x.hideTime,
+                        PosY = x.posY,
+
+                        // subtitle roll in from the top
+                        KeepCount_Bottom_RollIn = (x.n < linesCount ? x.n : -1),
+
+                        // subtitle roll out from the bottom
+                        ShaveCount_Bottom_RollOut = (x.n > posYCount ? x.n - posYCount : -1),
+                        KeepCount_Bottom_RollOut = -1
+                    });
+                }
+                else
+                {
+                    subsInfo = timeAndPos.Select(x => new RollingSubtitleInfoTopToBottom
+                    {
+                        N = x.n,
+                        ShowTime = x.showTime,
+                        HideTime = x.hideTime,
+                        PosY = x.posY,
+
+                        // subtitle roll in from the top
+                        KeepCount_Bottom_RollIn = (x.n < posYCount ? x.n : -1),
+
+                        // subtitle roll out from the bottom
+                        ShaveCount_Bottom_RollOut = (x.n > posYCount ? x.n - posYCount : -1),
+                        KeepCount_Bottom_RollOut = (x.n >= posYCount && x.n < linesCount ? posYCount : -1)
+                    });
+                }
+
+                subtitles = subsInfo.Select(info =>
+                {
+                    var sub =
+                        new Subtitle(info.ShowTime, info.HideTime, info.PosY, pccm.message)
+                        .KeepLinesFromTheBottom(info.KeepCount_Bottom_RollIn)
+                        .ShaveLinesFromTheBottom(info.ShaveCount_Bottom_RollOut)
+                        .KeepLinesFromTheBottom(info.KeepCount_Bottom_RollOut);
+
+                    if (sub.IsEmpty)
+                        throw GetEmptyRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
+
+                    return sub;
+                });
+            }
+            else
+            {
+                var timeAndPos =
+                    Enumerable.Range(1, posYCount + (linesCount - 1))
+                    .Select(n => new
+                    {
+                        n,
+                        showTime = showTime + ((n - 1) * timeStep),
+                        hideTime = showTime + (n * timeStep),
+                        posY = (n >= posYCount ? topPosY : bottomPosY - ((n - 1) * fontSize))
+                    });
+
+                IEnumerable<RollingSubtitleInfoBottomToTop> subsInfo = null;
+
+                if (linesCount <= posYCount)
+                {
+                    subsInfo = timeAndPos.Select(x => new RollingSubtitleInfoBottomToTop
+                    {
+                        N = x.n,
+                        ShowTime = x.showTime,
+                        HideTime = x.hideTime,
+                        PosY = x.posY,
+
+                        // subtitle roll in from the bottom
+                        KeepCount_Top_RollIn = (x.n < linesCount ? x.n : -1),
+
+                        // subtitle roll out from the top
+                        ShaveCount_Top_RollOut = (x.n > posYCount ? x.n - posYCount : -1),
+                        KeepCount_Top_RollOut = -1
+                    });
+                }
+                else
+                {
+                    subsInfo = timeAndPos.Select(x => new RollingSubtitleInfoBottomToTop
+                    {
+                        N = x.n,
+                        ShowTime = x.showTime,
+                        HideTime = x.hideTime,
+                        PosY = x.posY,
+
+                        // subtitle roll in from the bottom
+                        KeepCount_Top_RollIn = (x.n < posYCount ? x.n : -1),
+
+                        // subtitle roll out from the top
+                        ShaveCount_Top_RollOut = (x.n > posYCount ? x.n - posYCount : -1),
+                        KeepCount_Top_RollOut = (x.n >= posYCount && x.n < linesCount ? posYCount : -1)
+                    });
+                }
+
+                subtitles = subsInfo.Select(info =>
+                {
+                    var sub =
+                        new Subtitle(info.ShowTime, info.HideTime, info.PosY, pccm.message)
+                        .KeepLinesFromTheTop(info.KeepCount_Top_RollIn)
+                        .ShaveLinesFromTheTop(info.ShaveCount_Top_RollOut)
+                        .KeepLinesFromTheTop(info.KeepCount_Top_RollOut);
+
+                    if (sub.IsEmpty)
+                        throw GetEmptyRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
+
+                    return sub;
+                });
+            }
+
             if (isWriteSubtitles)
             {
                 if (maxShowTime < showTime)
                 {
-                    TimeSpan projectedLastShowTime = showTime + (((posYCount - 1) + (linesCount - 1)) * timeStep);
+                    TimeSpan projectedLastShowTime = subtitles.Last().ShowTime;
 
                     if (maxShowTime < projectedLastShowTime)
                     {
@@ -629,102 +758,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 }
             }
 
-            if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
-            {
-                int fromTopPosY = topPosY;
-                int toBottomPosY = bottomPosY;
-
-                if (linesCount > 1)
-                {
-                    // Top To Bottom, Appear On Screen:
-                    showTime += (linesCount - 1) * timeStep;
-
-                    // Top To Bottom, Disappear From Screen:
-                    toBottomPosY -= (linesCount - 1) * fontSize;
-
-                    for (int posY = fromTopPosY; posY <= toBottomPosY; posY += fontSize)
-                    {
-                        TimeSpan hideTime = showTime + timeStep;
-                        var subtitle = new Subtitle(showTime, hideTime, posY, pccm.message);
-                        Subtitles.Add(subtitle);
-                        subtitlesCount++;
-
-                        if (posY == fromTopPosY)
-                        {
-                            int countBefore = Subtitles.Count;
-                            Subtitles.AddRange(GetSubtitles_TopToBottom_AppearOnScreen(subtitle, timeStep));
-                            subtitlesCount += Subtitles.Count - countBefore;
-                        }
-                        else if (posY == toBottomPosY)
-                        {
-                            int countBefore = Subtitles.Count;
-                            Subtitles.AddRange(GetSubtitles_TopToBottom_DisappearFromScreen(subtitle, timeStep, fontSize));
-                            subtitlesCount += Subtitles.Count - countBefore;
-                        }
-
-                        showTime = hideTime;
-                    }
-                }
-                else
-                {
-                    for (int posY = fromTopPosY; posY <= toBottomPosY; posY += fontSize)
-                    {
-                        TimeSpan hideTime = showTime + timeStep;
-                        var subtitle = new Subtitle(showTime, hideTime, posY, pccm.message);
-                        Subtitles.Add(subtitle);
-                        subtitlesCount++;
-
-                        showTime = hideTime;
-                    }
-                }
-            }
-            else
-            {
-                int fromBottomPosY = bottomPosY;
-                int toTopPosY = topPosY;
-
-                if (linesCount > 1)
-                {
-                    // Bottom To Top, Appear On Screen:
-                    showTime += (linesCount - 1) * timeStep;
-                    fromBottomPosY -= (linesCount - 1) * fontSize;
-
-                    for (int posY = fromBottomPosY; posY >= toTopPosY; posY -= fontSize)
-                    {
-                        TimeSpan hideTime = showTime + timeStep;
-                        var subtitle = new Subtitle(showTime, hideTime, posY, pccm.message);
-                        Subtitles.Add(subtitle);
-                        subtitlesCount++;
-
-                        if (posY == fromBottomPosY)
-                        {
-                            int countBefore = Subtitles.Count;
-                            Subtitles.AddRange(GetSubtitles_BottomToTop_AppearOnScreen(subtitle, timeStep, fontSize));
-                            subtitlesCount += Subtitles.Count - countBefore;
-                        }
-                        else if (posY == toTopPosY)
-                        {
-                            int countBefore = Subtitles.Count;
-                            Subtitles.AddRange(GetSubtitles_BottomToTop_DisappearFromScreen(subtitle, timeStep));
-                            subtitlesCount += Subtitles.Count - countBefore;
-                        }
-
-                        showTime = hideTime;
-                    }
-                }
-                else
-                {
-                    for (int posY = fromBottomPosY; posY >= toTopPosY; posY -= fontSize)
-                    {
-                        TimeSpan hideTime = showTime + timeStep;
-                        var subtitle = new Subtitle(showTime, hideTime, posY, pccm.message);
-                        Subtitles.Add(subtitle);
-                        subtitlesCount++;
-
-                        showTime = hideTime;
-                    }
-                }
-            }
+            int countBefore = Subtitles.Count;
+            Subtitles.AddRange(subtitles);
+            subtitlesCount += Subtitles.Count - countBefore;
 
             if (Subtitles.Count >= FLUSH_SUBTITLES_COUNT)
             {
@@ -753,102 +789,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             lastWritingTask?.Wait(ct);
 
             FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
-        }
-    }
-
-    // Top To Bottom, Appear On Screen:
-    // Line 3 <- currentSubtitle.ShowTime [Top]
-    // 
-    // Line 2 <- currentSubtitle.ShowTime + timeStep [Top]
-    // Line 3
-    // 
-    // [subtitle]
-    // Line 1 <- currentSubtitle.ShowTime + (2 * timeStep) [Top]
-    // Line 2
-    // Line 3
-    private static IEnumerable<Subtitle> GetSubtitles_TopToBottom_AppearOnScreen(Subtitle subtitle, TimeSpan timeStep)
-    {
-        var currentSubtitle = subtitle;
-        while (currentSubtitle != null)
-        {
-            TimeSpan showTime = currentSubtitle.ShowTime - timeStep;
-            TimeSpan hideTime = showTime + timeStep;
-            currentSubtitle = currentSubtitle.ShaveLineFromTheTop(showTime, hideTime);
-            if (currentSubtitle != null)
-                yield return currentSubtitle;
-        }
-    }
-
-    // Top To Bottom, Disappear From Screen:
-    // [subtitle]
-    // Line 1 <- currentSubtitle.ShowTime [Bottom - (2 * fontSize)]
-    // Line 2
-    // Line 3
-    // 
-    // Line 1 <- currentSubtitle.ShowTime + timeStep [Bottom - fontSize]
-    // Line 2
-    // 
-    // Line 1 <- currentSubtitle.ShowTime + (2 * timeStep) [Bottom]
-    private static IEnumerable<Subtitle> GetSubtitles_TopToBottom_DisappearFromScreen(Subtitle subtitle, TimeSpan timeStep, int fontSize)
-    {
-        int posY = subtitle.PosY;
-        var currentSubtitle = subtitle;
-        while (currentSubtitle != null)
-        {
-            TimeSpan showTime = currentSubtitle.ShowTime + timeStep;
-            TimeSpan hideTime = showTime + timeStep;
-            posY += fontSize;
-            currentSubtitle = currentSubtitle.ShaveLineFromTheBottom(showTime, hideTime, posY);
-            if (currentSubtitle != null)
-                yield return currentSubtitle;
-        }
-    }
-
-    // Bottom To Top, Appear On Screen:
-    // Line 1 <- currentSubtitle.ShowTime [Bottom]
-    // 
-    // Line 1 <- currentSubtitle.ShowTime + timeStep [Bottom - fontSize]
-    // Line 2
-    // 
-    // [subtitle]
-    // Line 1 <- currentSubtitle.ShowTime + (2 * timeStep) [Bottom - (2 * fontSize)]
-    // Line 2
-    // Line 3
-    private static IEnumerable<Subtitle> GetSubtitles_BottomToTop_AppearOnScreen(Subtitle subtitle, TimeSpan timeStep, int fontSize)
-    {
-        int posY = subtitle.PosY;
-        var currentSubtitle = subtitle;
-        while (currentSubtitle != null)
-        {
-            TimeSpan showTime = currentSubtitle.ShowTime - timeStep;
-            TimeSpan hideTime = showTime + timeStep;
-            posY += fontSize;
-            currentSubtitle = currentSubtitle.ShaveLineFromTheBottom(showTime, hideTime, posY);
-            if (currentSubtitle != null)
-                yield return currentSubtitle;
-        }
-    }
-
-    // Bottom To Top, Disappear From Screen:
-    // [subtitle]
-    // Line 1 <- currentSubtitle.ShowTime [Top]
-    // Line 2
-    // Line 3
-    // 
-    // Line 2 <- currentSubtitle.ShowTime + timeStep [Top]
-    // Line 3
-    // 
-    // Line 3 <- currentSubtitle.ShowTime + (2 * timeStep) [Top]
-    private static IEnumerable<Subtitle> GetSubtitles_BottomToTop_DisappearFromScreen(Subtitle subtitle, TimeSpan timeStep)
-    {
-        var currentSubtitle = subtitle;
-        while (currentSubtitle != null)
-        {
-            TimeSpan showTime = currentSubtitle.ShowTime + timeStep;
-            TimeSpan hideTime = showTime + timeStep;
-            currentSubtitle = currentSubtitle.ShaveLineFromTheTop(showTime, hideTime);
-            if (currentSubtitle != null)
-                yield return currentSubtitle;
         }
     }
 
@@ -882,6 +822,21 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             return x.PosY.CompareTo(y.PosY);
         });
+    }
+
+    private static Exception GetEmptyRollingSubtitleException(
+        ChatMessage message,
+        SubtitlesRollingDirection subtitlesRollingDirection,
+        int linesCount,
+        int posYCount,
+        RollingSubtitleInfo info)
+    {
+        return new Exception(string.Join(Environment.NewLine,
+            "Rolling subtitle is empty.",
+            message.ChatLogTimestampAndUser(true),
+            $"{subtitlesRollingDirection}, {nameof(linesCount)}={linesCount} {(linesCount <= posYCount ? "<=" : ">")} {nameof(posYCount)}={posYCount}",
+            info.ToString()
+        ));
     }
 
     #endregion
@@ -957,16 +912,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             else
             {
                 TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
-                var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY);
-                subtitle.AddMessages(prevSubtitle);
+                var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, prevSubtitle);
                 subtitle.AddMessage(pccm.message);
 
-                int linesCount = subtitle.LinesCount;
-                if (linesCount > posYCount)
-                {
-                    int shaveCount = linesCount - posYCount;
-                    subtitle = subtitle.ShaveLinesFromTheTop(shaveCount);
-                }
+                if (subtitle.LinesCount > posYCount)
+                    subtitle.KeepLinesFromTheBottom(posYCount);
 
                 subtitle.SetSubtitlesConsecutively(prevSubtitle);
 
