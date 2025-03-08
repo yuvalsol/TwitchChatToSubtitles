@@ -94,9 +94,6 @@ namespace TwitchChatToSubtitlesUI
             ddl.SelectedIndexChanged += selectedIndexChangedHandler;
         }
 
-        [GeneratedRegex(@"([a-z])([A-Z])")]
-        private static partial Regex RegexCamelCase();
-
         private static IEnumerable<EnumItem<TEnum>> GetEnumDataSource<TEnum>() where TEnum : Enum
         {
             foreach (TEnum value in Enum.GetValues(typeof(TEnum)))
@@ -104,12 +101,20 @@ namespace TwitchChatToSubtitlesUI
                 yield return new EnumItem<TEnum>
                 {
                     Value = value,
-                    Name = RegexCamelCase().Replace(
-                        Enum.GetName(typeof(TEnum), value),
-                        "$1 $2"
-                    )
+                    Name = GetEnumName(value)
                 };
             }
+        }
+
+        [GeneratedRegex(@"([a-z])([A-Z])")]
+        private static partial Regex RegexCamelCase();
+
+        public static string GetEnumName<TEnum>(TEnum value) where TEnum : Enum
+        {
+            return RegexCamelCase().Replace(
+                Enum.GetName(typeof(TEnum), value),
+                "$1 $2"
+            );
         }
 
         #endregion
