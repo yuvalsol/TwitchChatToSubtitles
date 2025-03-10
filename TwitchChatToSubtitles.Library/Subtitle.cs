@@ -201,13 +201,29 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
     {
         if (subtitlesLocation.IsRight())
         {
-            // all measurements are for font Calibri and SPLIT_ON_N_CHARS = 45
-            if (subtitlesFontSize == SubtitlesFontSize.Regular)
-                return 384 - 115;
-            else if (subtitlesFontSize == SubtitlesFontSize.Bigger)
-                return 384 - 129;
-            else // if (subtitlesFontSize == SubtitlesFontSize.Biggest)
-                return 384 - 143;
+            /*
+            measurement is for Calibri font and BIGGER_LINE_LENGTH = 45.
+            REGULAR_LINE_LENGTH = 50 has more chars and BIGGEST_LINE_LENGTH = 40 has less chars,
+            so, although they both are positioned at X = 255,
+            they don't overflow out of the right side of the screen
+
+            1
+            00:00:00,000 --> 99:59:59,999
+            {\a5\an7\pos(255,65)\fs8\bord0\shad0}
+            12345678901234567890123456789012345678901234567890
+
+            2
+            00:00:00,000 --> 99:59:59,999
+            {\a5\an7\pos(255,70)\fs9\bord0\shad0}
+            123456789012345678901234567890123456789012340
+
+            3
+            00:00:00,000 --> 99:59:59,999
+            {\a5\an7\pos(255,76)\fs10\bord0\shad0}
+            1234567890123456789012345678901234567890
+            */
+
+            return 255; // = 384 - 129
         }
         else
         {

@@ -1491,14 +1491,28 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
     }
 
-    private const int SPLIT_ON_N_CHARS = 45;
+    private const int REGULAR_LINE_LENGTH = 50;
+    private const int BIGGER_LINE_LENGTH = 45;
+    private const int BIGGEST_LINE_LENGTH = 40;
+
+    private static int GetBodyLineLength(SubtitlesFontSize subtitlesFontSize)
+    {
+        if (subtitlesFontSize == SubtitlesFontSize.Regular)
+            return REGULAR_LINE_LENGTH;
+        else if (subtitlesFontSize == SubtitlesFontSize.Bigger)
+            return BIGGER_LINE_LENGTH;
+        else /*if (subtitlesFontSize == SubtitlesFontSize.Biggest)*/
+            return BIGGEST_LINE_LENGTH;
+    }
 
     private static void SplitMessageBody(StringBuilder body, string user, TimeSpan timestamp, TwitchSubtitlesSettings settings)
     {
+        int bodyLineLength = GetBodyLineLength(settings.SubtitlesFontSize);
+
         int startIndex = 0;
         while (startIndex < body.Length)
         {
-            int endIndex = startIndex + SPLIT_ON_N_CHARS - 1;
+            int endIndex = startIndex + bodyLineLength - 1;
 
             if (startIndex == 0)
             {
@@ -1597,13 +1611,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             body.Insert(index, "\\N");
     }
 
-    private const int CHARS_PER_BRAILLE_LINE = 30;
+    private const int BRAILLE_LINE_LENGTH = 30;
 
     private static (int charsPerLine, int splitCount, int charsInLastLine, int charsMissingInLastLine) GetBestFitBrailleMeasurement(int bodyLength)
     {
         var measurements = new List<(int charsPerLine, int splitCount, int charsInLastLine, int charsMissingInLastLine)>();
 
-        for (int charsPerLine = CHARS_PER_BRAILLE_LINE - 5; charsPerLine <= CHARS_PER_BRAILLE_LINE + 5; charsPerLine++)
+        for (int charsPerLine = BRAILLE_LINE_LENGTH - 5; charsPerLine <= BRAILLE_LINE_LENGTH + 5; charsPerLine++)
         {
             int splitCount = Math.DivRem(bodyLength, charsPerLine, out int charsInLastLine);
             int charsMissingInLastLine = (charsPerLine - charsInLastLine) % charsPerLine;
