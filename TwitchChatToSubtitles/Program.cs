@@ -30,41 +30,41 @@ try
             {
                 returnCode = -1;
 
-                Console.Error.WriteLine(GetVersion());
-                Console.Error.WriteLine();
+                WriteErrorLine(GetVersion());
+                WriteErrorLine();
 
-                Console.Error.WriteLine("TwitchChatToSubtitles Errors:");
+                WriteErrorLine("TwitchChatToSubtitles Errors:");
                 foreach (Error error in errors)
                 {
                     if (error is TokenError tokenError)
-                        Console.Error.WriteLine(tokenError.Tag + " " + tokenError.Token);
+                        WriteErrorLine(tokenError.Tag + " " + tokenError.Token);
                     else if (error is NamedError namedError)
-                        Console.Error.WriteLine(namedError.Tag + " " + namedError.NameInfo.NameText);
+                        WriteErrorLine(namedError.Tag + " " + namedError.NameInfo.NameText);
                     else
-                        Console.Error.WriteLine(error.Tag);
+                        WriteErrorLine(error.Tag.ToString());
                 }
-                Console.Error.WriteLine();
+                WriteErrorLine();
             }
         });
 }
 catch (ArgumentException ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine(HandledArgumentException(ex));
+    WriteErrorLine(HandledArgumentException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
 }
 catch (FileNotFoundException ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine(HandledArgumentException(ex));
+    WriteErrorLine(HandledArgumentException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
 }
 catch (Exception ex)
 {
     returnCode = -1;
-    Console.Error.WriteLine(UnhandledException(ex));
+    WriteErrorLine(UnhandledException(ex));
     Console.WriteLine("Press any key to continue . . .");
     Console.ReadKey(true);
 }
@@ -110,10 +110,15 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
     {
         if (e.Error == null)
+        {
             Console.WriteLine("JSON file loaded successfully.");
+            Console.WriteLine("JSON file: " + e.JsonFile);
+        }
         else
-            Console.WriteLine("Could not load JSON file.");
-        Console.WriteLine("JSON file: " + e.JsonFile);
+        {
+            WriteErrorLine("Could not load JSON file.");
+            WriteErrorLine("JSON file: " + e.JsonFile);
+        }
     };
 
     twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
@@ -131,7 +136,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         if (e.Error == null)
             Console.WriteLine("Writing preparations finished successfully.");
         else
-            Console.WriteLine("Failed to finish writing preparations.");
+            WriteErrorLine("Failed to finish writing preparations.");
     };
 
     int leftMessages = 0;
@@ -232,22 +237,22 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
 
 #if RELEASE
             if (settings.ChatTextFile)
-                Console.WriteLine("Failed to write chat text file.");
+                WriteErrorLine("Failed to write chat text file.");
             else
-                Console.WriteLine("Failed to write subtitles.");
-            Console.WriteLine("Error: " + e.Error.Message);
+                WriteErrorLine("Failed to write subtitles.");
+            WriteErrorLine("Error: " + e.Error.Message);
 
             Exception ex = e.Error.InnerException;
             while (ex != null)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                WriteErrorLine("Error: " + ex.Message);
                 ex = ex.InnerException;
             }
 #elif DEBUG
             if (settings.ChatTextFile)
-                Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
+                WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
             else
-                Console.WriteLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+                WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
 #endif
 
             Console.WriteLine("Press any key to continue . . .");
@@ -257,7 +262,10 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
 
     twitchSubtitles.Tracepoint += (object sender, TracepointEventArgs e) =>
     {
+        ConsoleColor foregroundColor = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine(e.Message);
+        Console.ForegroundColor = foregroundColor;
     };
 
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);
@@ -275,9 +283,18 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.ColorUserNames = true;
     //options.RemoveEmoticonNames = true;
     //options.ShowTimestamps = false;
+    //options.SubtitlesLocation = SubtitlesLocation.Left;
     //options.SubtitlesFontSize = SubtitlesFontSize.Bigger;
 }
 #endif
+
+static void WriteErrorLine(string line = null)
+{
+    ConsoleColor foregroundColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.Error.WriteLine(line);
+    Console.ForegroundColor = foregroundColor;
+}
 
 static Parser GetParser()
 {
