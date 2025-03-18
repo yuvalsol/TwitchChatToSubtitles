@@ -55,6 +55,14 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         }
     }
 
+    public bool HasEmptyMessage
+    {
+        get
+        {
+            return Messages.HasAny(message => message == null);
+        }
+    }
+
     public void AddMessage(ChatMessage message)
     {
         Messages.Add(message);

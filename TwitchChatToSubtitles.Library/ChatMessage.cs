@@ -1,17 +1,13 @@
 ﻿namespace TwitchChatToSubtitles.Library;
 
-internal partial class ChatMessage : IMessage
+internal partial class ChatMessage(string body) : IMessage
 {
     public readonly TimeSpan Timestamp;
     public readonly string User;
     public readonly bool IsModerator;
     public readonly Color UserColor;
     public readonly bool IsBrailleArt;
-
-    public ChatMessage(string body)
-    {
-        Body = body;
-    }
+    public readonly string Body = body;
 
     public ChatMessage(TimeSpan timestamp, string user, bool isModerator, Color userColor, string body, bool isBrailleArt)
         : this(body)
@@ -21,21 +17,6 @@ internal partial class ChatMessage : IMessage
         IsModerator = isModerator;
         UserColor = userColor;
         IsBrailleArt = isBrailleArt;
-    }
-
-    private string body;
-    public string Body
-    {
-        get
-        {
-            return body;
-        }
-
-        set
-        {
-            body = value;
-            linesCount = 0;
-        }
     }
 
     [GeneratedRegex(@"\\N")]
@@ -83,14 +64,16 @@ internal partial class ChatMessage : IMessage
                 return new ChatMessage(Body);
         }
 
-        int startIndex = 0;
-        for (int i = 0; i < shaveCount; i++)
-        {
-            int index = Body.IndexOf("\\N", startIndex);
-            if (index == -1)
-                return null;
-            startIndex = index + 2;
-        }
+        var startIndex =
+            RegexHardNewLine().Matches(Body)
+            .Select(m => m.Index)
+            .Skip(shaveCount - 1)
+            .FirstOrDefault(-1);
+
+        if (startIndex == -1)
+            return null;
+
+        startIndex += 2;
 
         if (startIndex >= Body.Length)
             return null;
@@ -111,9 +94,11 @@ internal partial class ChatMessage : IMessage
         if (shaveCount >= LinesCount)
             return null;
 
-        int lastIndex = Body.LastIndexOf("\\N");
-        for (int i = 0; i < shaveCount - 1 && lastIndex != -1; i++)
-            lastIndex = Body.LastIndexOf("\\N", lastIndex);
+        var lastIndex =
+            RegexHardNewLine().Matches(Body)
+            .Select(m => m.Index)
+            .SkipLast(shaveCount - 1)
+            .LastOrDefault(-1);
 
         if (lastIndex == -1)
         {

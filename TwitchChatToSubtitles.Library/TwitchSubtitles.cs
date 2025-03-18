@@ -663,6 +663,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     if (sub.IsEmpty)
                         throw GetEmptyRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
 
+                    if (sub.HasEmptyMessage)
+                        throw GetEmptyMessageRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
+
                     return sub;
                 });
             }
@@ -725,6 +728,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
                     if (sub.IsEmpty)
                         throw GetEmptyRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
+
+                    if (sub.HasEmptyMessage)
+                        throw GetEmptyMessageRollingSubtitleException(pccm.message, settings.SubtitlesRollingDirection, linesCount, posYCount, info);
 
                     return sub;
                 });
@@ -831,11 +837,48 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int posYCount,
         RollingSubtitleInfo info)
     {
-        return new Exception(string.Join(Environment.NewLine,
+        return GetRollingSubtitleException(
             "Rolling subtitle is empty.",
-            message.ChatLogTimestampAndUser(true),
-            $"{subtitlesRollingDirection}, {nameof(linesCount)}={linesCount} {(linesCount <= posYCount ? "<=" : ">")} {nameof(posYCount)}={posYCount}",
+            message,
+            subtitlesRollingDirection,
+            linesCount,
+            posYCount,
+            info
+        );
+    }
+
+    private static Exception GetEmptyMessageRollingSubtitleException(
+        ChatMessage message,
+        SubtitlesRollingDirection subtitlesRollingDirection,
+        int linesCount,
+        int posYCount,
+        RollingSubtitleInfo info)
+    {
+        return GetRollingSubtitleException(
+            "Rolling subtitle has an empty message.",
+            message,
+            subtitlesRollingDirection,
+            linesCount,
+            posYCount,
+            info
+        );
+    }
+
+    private static Exception GetRollingSubtitleException(
+        string title,
+        ChatMessage message,
+        SubtitlesRollingDirection subtitlesRollingDirection,
+        int linesCount,
+        int posYCount,
+        RollingSubtitleInfo info)
+    {
+        return new Exception(string.Join(Environment.NewLine,
+            title,
+            message.ChatLogTimestampAndUser(true)
+#if DEBUG
+            , $"{subtitlesRollingDirection}, {nameof(linesCount)}={linesCount} {(linesCount <= posYCount ? "<=" : ">")} {nameof(posYCount)}={posYCount}",
             info.ToString()
+#endif
         ));
     }
 
