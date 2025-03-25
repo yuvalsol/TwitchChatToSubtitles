@@ -75,14 +75,13 @@ internal partial class ChatMessage(string body) : IMessage
 
         startIndex += 2;
 
-        if (startIndex >= Body.Length)
+        if (startIndex > Body.Length)
             return null;
+
+        if (startIndex == Body.Length)
+            return new ChatMessage(string.Empty);
 
         string shavedBody = Body[startIndex..];
-
-        if (string.IsNullOrEmpty(shavedBody))
-            return null;
-
         return new ChatMessage(shavedBody);
     }
 
