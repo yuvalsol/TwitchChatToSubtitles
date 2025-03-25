@@ -1246,6 +1246,12 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
     }
 
+#if DEBUG
+    private static readonly bool IsDebug = false;
+    private static readonly string Debug_User = null;
+    private static readonly string Debug_Timestamp = null;
+#endif
+
     private static (ProcessedComment, ChatMessage) GetProcessComment(
         JToken comment,
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
@@ -1262,6 +1268,15 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 ub.SelectToken("_id").Value<string>() == "moderator"
             )
         };
+
+#if DEBUG
+        if (IsDebug && (
+            Debug_User != processedComment.User ||
+            Debug_Timestamp != ChatMessage.ToChatLogTimestamp(processedComment.Timestamp)))
+        {
+            return (processedComment, null);
+        }
+#endif
 
         processedComment.Body = GetMessageBody(
             comment.SelectToken("message"),
