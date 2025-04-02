@@ -587,7 +587,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
 
-        TimeSpan nextTimeSlot = TimeSpan.MinValue;
+        TimeSpan nextAvailableTimeSlot = TimeSpan.MinValue;
         bool isWriteSubtitles = false;
         TimeSpan maxShowTime = TimeSpan.MinValue;
 
@@ -622,9 +622,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             int linesCount = pccm.message.LinesCount;
 
             TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
-            if (showTime < nextTimeSlot)
-                showTime = nextTimeSlot;
-            nextTimeSlot = showTime + TimeSpan.FromSeconds(linesCount);
+            if (showTime < nextAvailableTimeSlot)
+                showTime = nextAvailableTimeSlot;
+            nextAvailableTimeSlot = showTime + (linesCount * timeStep);
 
             IEnumerable<Subtitle> subtitles = null;
 
