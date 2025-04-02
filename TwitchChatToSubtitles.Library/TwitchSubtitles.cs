@@ -361,6 +361,21 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
+    #region Debug Code
+
+#if DEBUG
+    private readonly List<int> Debug_MessageIndexes = [];
+
+    private bool Debug_KeepMessage(int messageIndex)
+    {
+        return
+            Debug_MessageIndexes.IsNullOrEmpty() ||
+            Debug_MessageIndexes.BinarySearch(messageIndex) >= 0;
+    }
+#endif
+
+    #endregion
+
     #region Regular Subtitles
 
     private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
@@ -403,6 +418,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
 
             messagesCount++;
+
+#if DEBUG
+            if (Debug_KeepMessage(messagesCount) == false)
+                return;
+#endif
 
             TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
 
@@ -593,6 +613,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
 
             messagesCount++;
+
+#if DEBUG
+            if (Debug_KeepMessage(messagesCount) == false)
+                return;
+#endif
 
             int linesCount = pccm.message.LinesCount;
 
@@ -942,6 +967,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             messagesCount++;
 
+#if DEBUG
+            if (Debug_KeepMessage(messagesCount) == false)
+                return;
+#endif
+
             if (prevSubtitle == null)
             {
                 TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
@@ -1076,6 +1106,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
 
             messagesCount++;
+
+#if DEBUG
+            if (Debug_KeepMessage(messagesCount) == false)
+                return;
+#endif
 
             ChatMessages.Add(pccm.message);
             subtitlesCount++;
@@ -1246,12 +1281,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
     }
 
-#if DEBUG
-    private static readonly bool IsDebug = false;
-    private static readonly string Debug_User = null;
-    private static readonly string Debug_Timestamp = null;
-#endif
-
     private static (ProcessedComment, ChatMessage) GetProcessComment(
         JToken comment,
         (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
@@ -1268,15 +1297,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 ub.SelectToken("_id").Value<string>() == "moderator"
             )
         };
-
-#if DEBUG
-        if (IsDebug && (
-            Debug_User != processedComment.User ||
-            Debug_Timestamp != ChatMessage.ToChatLogTimestamp(processedComment.Timestamp)))
-        {
-            return (processedComment, null);
-        }
-#endif
 
         processedComment.Body = GetMessageBody(
             comment.SelectToken("message"),

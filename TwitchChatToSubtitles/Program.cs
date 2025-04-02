@@ -276,15 +276,17 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
 static void Debug(TwitchSubtitlesOptions options)
 {
     //options.JsonFile = @"";
-    //options.RegularSubtitles = false;
-    //options.RollingChatSubtitles = false;
-    //options.StaticChatSubtitles = true;
     //options.ChatTextFile = false;
+    //options.StaticChatSubtitles = false;
+    //options.RollingChatSubtitles = true;
+    //options.RegularSubtitles = false;
     //options.ColorUserNames = true;
     //options.RemoveEmoticonNames = true;
-    //options.ShowTimestamps = false;
-    //options.SubtitlesLocation = SubtitlesLocation.Left;
+    //options.ShowTimestamps = true;
     //options.SubtitlesFontSize = SubtitlesFontSize.Bigger;
+    //options.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Regular;
+    //options.SubtitlesLocation = SubtitlesLocation.Left;
 }
 #endif
 
