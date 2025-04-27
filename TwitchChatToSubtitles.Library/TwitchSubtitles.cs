@@ -1397,7 +1397,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 {
                     int length =
                         match.Groups["Prefix"].Length +
-                        1 + // emoticon name
+                        2 + // emoticon name
                         match.Groups["Suffix"].Length;
 
                     char leftChar = default;
@@ -1418,7 +1418,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 }
             }
 
-            SplitMessageBodyForBrailleArt(body);
+            body.Replace(" ", "\\N");
 
             if (settings.IsUsingAssaTags == false)
                 body.Replace(@"\N", Environment.NewLine);
@@ -1652,70 +1652,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             body.Remove(body.Length - 1, 1);
 
         body.Replace("\n", "\\N");
-    }
-
-    private static void SplitMessageBodyForBrailleArt(StringBuilder body)
-    {
-        int charsPerLine;
-        int splitCount;
-
-        int indexFirstSpace = body.ToString().IndexOf(' ');
-        if (indexFirstSpace < 10)
-            indexFirstSpace = -1;
-
-        if (indexFirstSpace != -1)
-        {
-            charsPerLine = indexFirstSpace + 1;
-            splitCount = body.Length / charsPerLine;
-        }
-        else
-        {
-            var bestMeasurement = GetBestFitBrailleMeasurement(body.Length);
-
-            if (bestMeasurement.charsMissingInLastLine > 0)
-            {
-                for (int i = 0; i < bestMeasurement.charsMissingInLastLine; i++)
-                    body.Append(' ');
-
-                bestMeasurement = GetBestFitBrailleMeasurement(body.Length);
-            }
-
-            charsPerLine = bestMeasurement.charsPerLine;
-            splitCount = bestMeasurement.splitCount;
-        }
-
-        var indexes = Enumerable.Range(1, splitCount).Select(n => (n * charsPerLine) + (2 * (n - 1)));
-        foreach (var index in indexes)
-            body.Insert(index, "\\N");
-    }
-
-    private const int BRAILLE_LINE_LENGTH = 30;
-
-    private static (int charsPerLine, int splitCount, int charsInLastLine, int charsMissingInLastLine) GetBestFitBrailleMeasurement(int bodyLength)
-    {
-        var measurements = new List<(int charsPerLine, int splitCount, int charsInLastLine, int charsMissingInLastLine)>();
-
-        for (int charsPerLine = BRAILLE_LINE_LENGTH - 5; charsPerLine <= BRAILLE_LINE_LENGTH + 5; charsPerLine++)
-        {
-            int splitCount = Math.DivRem(bodyLength, charsPerLine, out int charsInLastLine);
-            int charsMissingInLastLine = (charsPerLine - charsInLastLine) % charsPerLine;
-            measurements.Add((charsPerLine, splitCount, charsInLastLine, charsMissingInLastLine));
-        }
-
-        measurements.Sort((x, y) =>
-        {
-            // charsPerLine = 30
-            // charsInLastLine =  0 -> charsMissingInLastLine = (30 -  0) % 30 = 30 % 30 =  0
-            // charsInLastLine =  1 -> charsMissingInLastLine = (30 -  1) % 30 = 29 % 30 = 29
-            // charsInLastLine = 29 -> charsMissingInLastLine = (30 - 29) % 30 =  1 % 30 =  1
-            int val = x.charsMissingInLastLine.CompareTo(y.charsMissingInLastLine);
-            if (val != 0)
-                return val;
-
-            return x.charsPerLine.CompareTo(y.charsPerLine);
-        });
-
-        return measurements[0];
     }
 
     #endregion
