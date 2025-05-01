@@ -913,6 +913,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
     {
+        if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.None)
+            settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
+
         if (settings.SubtitlesFontSize == SubtitlesFontSize.None)
             settings.SubtitlesFontSize = SubtitlesFontSize.Regular;
         int fontSize = (int)settings.SubtitlesFontSize;
@@ -986,10 +989,21 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             {
                 TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, prevSubtitle);
-                subtitle.AddMessage(pccm.message);
 
-                if (subtitle.LinesCount > posYCount)
-                    subtitle.KeepLinesFromTheBottom(posYCount);
+                if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
+                {
+                    subtitle.InsertFirstMessage(pccm.message);
+
+                    if (subtitle.LinesCount > posYCount)
+                        subtitle.KeepLinesFromTheTop(posYCount);
+                }
+                else
+                {
+                    subtitle.AddMessage(pccm.message);
+
+                    if (subtitle.LinesCount > posYCount)
+                        subtitle.KeepLinesFromTheBottom(posYCount);
+                }
 
                 subtitle.SetSubtitlesConsecutively(prevSubtitle);
 

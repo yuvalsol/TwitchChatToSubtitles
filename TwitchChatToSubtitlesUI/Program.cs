@@ -1,5 +1,3 @@
-using TwitchChatToSubtitlesUI.CustomMessageBox;
-
 namespace TwitchChatToSubtitlesUI
 {
     internal static class Program

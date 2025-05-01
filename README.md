@@ -7,7 +7,7 @@ Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitl
 The program provides 3 types of subtitles and one text file:
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
 2. **Rolling Chat Subtitles**. Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
-3. **Static Chat Subtitles**. Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does.
+3. **Static Chat Subtitles**. Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
 4. **Chat Text File**. Save Twitch chat to a text file.
 
 The program uses [ASSA tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA tags are what allows the program to position the subtitles at different locations on the screen. ASSA tags are not part of SubRip specification but some media players have the ability to read ASSA tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC, or at least VLC 3, ignores ASSA tags in a SubRip file. For this case, the program can create [Subtitles Without ASSA Tags](#subtitles-without-assa-tags "Subtitles Without ASSA Tags"). If the program generates subtitles with ASSA tags, it will also underline moderators and URL links.
@@ -53,7 +53,7 @@ TwitchChatToSubtitles.exe --RegularSubtitles
                           [--TimeOffset <seconds>]
 ```
 
-#### Usage
+### Usage
 
 1. Default usage:
 
@@ -84,7 +84,7 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles
                           [--TimeOffset <seconds>]
 ```
 
-#### Usage
+### Usage
 
 1. Default usage:
 
@@ -105,7 +105,7 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch C
 
 ## Static Chat Subtitles
 
-Chat messages are added to the bottom of all the previous chat messages and remain there. Similar to what Twitch chat does.
+Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
 
 ```console
 TwitchChatToSubtitles.exe --StaticChatSubtitles
@@ -115,11 +115,12 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles
                           [--ShowTimestamps]
                           [--SubtitlesFontSize <font size>]
                           [--SubtitlesLocation <location>]
+                          [--SubtitlesRollingDirection <rolling direction>]
                           [--TextColor <color>]
                           [--TimeOffset <seconds>]
 ```
 
-#### Usage
+### Usage
 
 1. Default usage:
 
@@ -149,7 +150,7 @@ TwitchChatToSubtitles.exe --ChatTextFile
                           [--ShowTimestamps]
 ```
 
-#### Usage
+### Usage
 
 1. Default usage:
 
@@ -222,7 +223,7 @@ This option determines where the subtitles are displayed on the screen. This opt
                         RightBottomHalf,RightTopTwoThirds, RightBottomTwoThirds.
 ```
 
-This option determines the direction that the subtitles roll from the bottom to the top of the screen or from the top to the bottom of the screen. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `BottomToTop` direction.
+This option determines the direction that the subtitles roll from the bottom to the top of the screen or from the top to the bottom of the screen. This option is applicable for `RollingChatSubtitles` and `StaticChatSubtitles`. If not specified, it will default to `BottomToTop` direction.
 
 ```console
 --SubtitlesRollingDirection     The direction that the subtitles roll.

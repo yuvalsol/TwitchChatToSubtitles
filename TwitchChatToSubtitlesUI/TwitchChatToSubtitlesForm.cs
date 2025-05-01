@@ -1,5 +1,4 @@
 using TwitchChatToSubtitles.Library;
-using TwitchChatToSubtitlesUI.CustomMessageBox;
 
 namespace TwitchChatToSubtitlesUI
 {
@@ -312,6 +311,9 @@ namespace TwitchChatToSubtitlesUI
             {
                 lblSubtitlesLocation.Enabled =
                 ddlSubtitlesLocation.Enabled = true;
+
+                lblSubtitlesRollingDirection.Enabled =
+                ddlSubtitlesRollingDirection.Enabled = true;
             }
         }
 
@@ -758,8 +760,8 @@ namespace TwitchChatToSubtitlesUI
         {
             string settingsKey = (string.IsNullOrEmpty(streamerName) ? SETTINGS_KEY : streamerName);
 
-            if (StreamersUISettings.ContainsKey(settingsKey))
-                GetUISettingsFromForm(StreamersUISettings[settingsKey]);
+            if (StreamersUISettings.TryGetValue(settingsKey, out UISettings settings))
+                GetUISettingsFromForm(settings);
             else
                 StreamersUISettings.Add(settingsKey, GetUISettingsFromForm());
         }

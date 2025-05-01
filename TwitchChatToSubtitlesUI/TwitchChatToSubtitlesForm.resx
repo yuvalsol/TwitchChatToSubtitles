@@ -126,13 +126,13 @@
   <data name="lblSubtitlesType.ToolTip" xml:space="preserve">
     <value>Regular Subtitles: Chat messages will appear at the center-bottom of the screen.
 Rolling Chat Subtitles: Chat messages will roll vertically across the screen and then disappear.
-Static Chat Subtitles: Chat messages are added to the bottom of all the previous chat messages and remain there.
+Static Chat Subtitles: Chat messages are added to the previous chat messages and remain there.
 Chat Text File: Save Twitch chat to a text file.</value>
   </data>
   <data name="ddlSubtitlesType.ToolTip" xml:space="preserve">
     <value>Regular Subtitles: Chat messages will appear at the center-bottom of the screen.
 Rolling Chat Subtitles: Chat messages will roll vertically across the screen and then disappear.
-Static Chat Subtitles: Chat messages are added to the bottom of all the previous chat messages and remain there.
+Static Chat Subtitles: Chat messages are added to the previous chat messages and remain there.
 Chat Text File: Save Twitch chat to a text file.</value>
   </data>
   <metadata name="openJsonFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

@@ -1,4 +1,4 @@
-﻿namespace TwitchChatToSubtitlesUI.CustomMessageBox
+﻿namespace TwitchChatToSubtitlesUI
 {
     using System.Windows.Forms;
 

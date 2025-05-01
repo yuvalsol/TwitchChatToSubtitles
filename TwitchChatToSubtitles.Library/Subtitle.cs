@@ -63,6 +63,12 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         }
     }
 
+    public void InsertFirstMessage(ChatMessage message)
+    {
+        Messages.Insert(0, message);
+        linesCount = 0;
+    }
+
     public void AddMessage(ChatMessage message)
     {
         Messages.Add(message);

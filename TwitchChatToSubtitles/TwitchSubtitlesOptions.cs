@@ -44,9 +44,6 @@ internal interface IRollingChatSubtitlesOptions
     [Option("RollingChatSubtitles", Required = false, HelpText = "Convert Twitch chat to rolling chat subtitles.")]
     bool RollingChatSubtitles { get; set; }
 
-    [Option("SubtitlesRollingDirection", Required = false, HelpText = "The direction that the subtitles roll. Valid values: BottomToTop, TopToBottom.")]
-    SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
-
     [Option("SubtitlesSpeed", Required = false, HelpText = "How fast the subtitles roll. Valid values: Regular, Faster, Fastest.")]
     SubtitlesSpeed SubtitlesSpeed { get; set; }
 }
@@ -61,6 +58,9 @@ internal interface IChatSubtitlesOptions
 {
     [Option("SubtitlesLocation", Required = false, HelpText = "The location of the subtitles on the screen. Valid values: Left, LeftTopHalf, LeftBottomHalf, LeftTopTwoThirds, LeftBottomTwoThirds, Right, RightTopHalf, RightBottomHalf, RightTopTwoThirds, RightBottomTwoThirds.")]
     SubtitlesLocation SubtitlesLocation { get; set; }
+
+    [Option("SubtitlesRollingDirection", Required = false, HelpText = "The direction that the subtitles roll. Valid values: BottomToTop, TopToBottom.")]
+    SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
 }
 
 internal interface IChatTextFileOptions
@@ -122,9 +122,9 @@ internal class RegularSubtitlesOptions : IRegularSubtitlesOptions
 internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChatSubtitlesOptions
 {
     public bool RollingChatSubtitles { get; set; }
+    public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
-    public SubtitlesLocation SubtitlesLocation { get; set; }
 
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
     public static IEnumerable<Example> Examples
@@ -170,6 +170,7 @@ internal class StaticChatSubtitlesOptions : IStaticChatSubtitlesOptions, IChatSu
 {
     public bool StaticChatSubtitles { get; set; }
     public SubtitlesLocation SubtitlesLocation { get; set; }
+    public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
 
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
     public static IEnumerable<Example> Examples
