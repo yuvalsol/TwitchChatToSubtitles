@@ -21,10 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CustomMessageBox\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Using Include="System.ComponentModel" />
     <Using Include="System.Media" />
     <Using Include="System.Reflection" />

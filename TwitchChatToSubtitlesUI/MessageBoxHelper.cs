@@ -33,6 +33,7 @@
                 new CustomAppearance(
                     foreColor: foreColor,
                     textAlign: textAlign,
+                    maxWidth: 550,
                     buttonsAppearance: new CustomButtonAppearance(
                         buttonsPanelBackColor: Color.FromArgb(238, 244, 249),
                         backColor: Color.White,

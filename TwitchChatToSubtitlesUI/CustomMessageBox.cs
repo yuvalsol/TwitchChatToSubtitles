@@ -94,7 +94,8 @@
             SetIcon(icon);
             List<Button> btns = SetButtons(buttons, customButtons, buttonTexts);
             SetAppearance(appearance, icon, btns);
-            SetMessage(text, caption);
+            SetMessageSize(appearance);
+            SetMessage(text, caption, btns);
             SetRightToLeft(appearance, icon, btns);
         }
 
@@ -156,12 +157,12 @@
                 AddButton(btns, buttons, CustomMessageBoxButtons.No, DialogResult.No, "No", buttonTexts);
                 AddButton(btns, buttons, CustomMessageBoxButtons.Cancel, DialogResult.Cancel, "Cancel", buttonTexts);
 
-                AddButton(btns, buttons, CustomMessageBoxButtons.Copy, DialogResult.None, "Copy", buttonTexts, (object sender, CustomMessageBoxEventArgs e) =>
+                AddButton(btns, buttons, CustomMessageBoxButtons.Copy, DialogResult.None, "Copy", buttonTexts, (sender, e) =>
                 {
                     CopyToClipboard();
                 });
 
-                AddButton(btns, buttons, CustomMessageBoxButtons.CopyText, DialogResult.None, "Copy", buttonTexts, (object sender, CustomMessageBoxEventArgs e) =>
+                AddButton(btns, buttons, CustomMessageBoxButtons.CopyText, DialogResult.None, "Copy", buttonTexts, (sender, e) =>
                 {
                     CopyToClipboard(true);
                 });
@@ -296,29 +297,62 @@
                 btn.Font = newFont;
         }
 
-        private void SetMessage(string text, string caption)
+        private void SetMessageSize(CustomAppearance appearance)
+        {
+            lblMessage.MaximumSize = new Size(
+                lblMessage.MaximumSize.Width,
+                Convert.ToInt32(0.75 * Screen.FromControl(this).WorkingArea.Height)
+            );
+
+            int newMinWidth = 0;
+            if (appearance.MinWidth != null && lblMessage.MinimumSize.Width < appearance.MinWidth.Value)
+                newMinWidth = appearance.MinWidth.Value;
+
+            int newMaxWidth = 0;
+            if (appearance.MaxWidth != null)
+                newMaxWidth = appearance.MaxWidth.Value;
+
+            int minWidth = (newMinWidth > 0 ? newMinWidth : lblMessage.MinimumSize.Width);
+            int maxWidth = (newMaxWidth > 0 ? newMaxWidth : lblMessage.MaximumSize.Width);
+
+            if (minWidth >= maxWidth)
+                return;
+
+            if (maxWidth != lblMessage.MaximumSize.Width)
+                lblMessage.MaximumSize = new Size(maxWidth, lblMessage.MaximumSize.Height);
+
+            if (minWidth != lblMessage.MinimumSize.Width)
+            {
+                this.Width += minWidth - lblMessage.MinimumSize.Width;
+                lblMessage.MinimumSize = new Size(minWidth, lblMessage.MinimumSize.Height);
+            }
+        }
+
+        private void SetMessage(string text, string caption, List<Button> btns)
         {
             int lblW = lblMessage.Size.Width;
             int lblH = lblMessage.Size.Height;
-
-            int captionW = 0;
-            if (string.IsNullOrEmpty(caption) == false)
-            {
-                lblMessage.Text = caption;
-                captionW = lblMessage.Size.Width;
-            }
 
             lblMessage.Text = text;
 
             int lblNewW = lblMessage.Size.Width;
             int lblNewH = lblMessage.Size.Height;
 
-            if (captionW != 0 && lblNewW < captionW)
-                lblNewW = captionW;
+            if (string.IsNullOrEmpty(caption) == false)
+            {
+                int captionW = caption.Length * 10;
+                if (lblNewW < captionW)
+                    lblNewW = captionW;
+            }
 
             if (lblNewW > lblW)
-            {
                 this.Width += lblNewW - lblW;
+
+            if (btns != null && btns.Count > 0)
+            {
+                int btnsW = (btns.Count + 1) * BUTTON_WIDTH;
+                if (this.Width < btnsW)
+                    this.Width = btnsW;
             }
 
             if (lblNewH > lblH)
@@ -402,21 +436,23 @@
             }
         }
 
+        private const int BUTTON_WIDTH = 90;
+
         private Button GetButton(
             string text,
             DialogResult dialogResult = DialogResult.None,
             CustomMessageBoxEventHandler click = null)
         {
-            Button btn = new()
+            var btn = new Button()
             {
                 Text = text,
-                Size = new Size(90, 40),
+                Size = new Size(BUTTON_WIDTH, 40),
                 DialogResult = dialogResult
             };
 
             if (click != null)
             {
-                btn.Click += (object sender, EventArgs e) =>
+                btn.Click += (sender, e) =>
                 {
                     foreach (CustomMessageBoxEventHandler listener in click.GetInvocationList().Cast<CustomMessageBoxEventHandler>())
                         listener.Invoke(sender, new CustomMessageBoxEventArgs(lblMessage.Text, this.Text));
@@ -506,7 +542,9 @@
         FontStyle? fontStyle = null,
         ContentAlignment? textAlign = null,
         bool? rightToLeft = null,
-        CustomButtonAppearance buttonsAppearance = null) : ICloneable
+        CustomButtonAppearance buttonsAppearance = null,
+        int? minWidth = null,
+        int? maxWidth = null) : ICloneable
     {
         public Color? ForeColor { get; set; } = foreColor;
         public Color? BackColor { get; set; } = backColor;
@@ -517,6 +555,8 @@
         public ContentAlignment? TextAlign { get; set; } = textAlign;
         public bool? RightToLeft { get; set; } = rightToLeft;
         public CustomButtonAppearance ButtonsAppearance { get; set; } = buttonsAppearance;
+        public int? MinWidth { get; set; } = minWidth;
+        public int? MaxWidth { get; set; } = maxWidth;
 
         public CustomAppearance(CustomAppearance prototype) : this(
             prototype.ForeColor,
@@ -527,7 +567,9 @@
             prototype.FontStyle,
             prototype.TextAlign,
             prototype.RightToLeft,
-            (prototype.ButtonsAppearance != null ? (CustomButtonAppearance)prototype.ButtonsAppearance.Clone() : null))
+            (prototype.ButtonsAppearance != null ? (CustomButtonAppearance)prototype.ButtonsAppearance.Clone() : null),
+            prototype.MinWidth,
+            prototype.MaxWidth)
         { }
 
         public object Clone()

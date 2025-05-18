@@ -51,7 +51,7 @@
             this.lblMessage.BackColor = System.Drawing.Color.White;
             this.lblMessage.ForeColor = System.Drawing.Color.Black;
             this.lblMessage.Location = new System.Drawing.Point(50, 12);
-            this.lblMessage.MaximumSize = new System.Drawing.Size(492, 0);
+            this.lblMessage.MaximumSize = new System.Drawing.Size(1000, 0);
             this.lblMessage.MinimumSize = new System.Drawing.Size(102, 110);
             this.lblMessage.Name = "lblMessage";
             this.lblMessage.Size = new System.Drawing.Size(102, 110);
