@@ -392,7 +392,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
+        GetComments(root, out JToken comments, out int totalMessages);
+
+        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
         bool isWriteSubtitles = false;
 
@@ -417,14 +419,19 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 return;
             }
 
+            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
+            if (showTime < TimeSpan.Zero)
+            {
+                discardedMessagesCount++;
+                return;
+            }
+
             messagesCount++;
 
 #if DEBUG
             if (Debug_KeepMessage(messagesCount) == false)
                 return;
 #endif
-
-            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
 
             var sub = Subtitles.FirstOrDefault(s => s.ShowTime == showTime);
             if (sub != null)
@@ -585,7 +592,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
+        GetComments(root, out JToken comments, out int totalMessages);
+
+        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
         TimeSpan nextAvailableTimeSlot = TimeSpan.MinValue;
         bool isWriteSubtitles = false;
@@ -612,6 +621,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 return;
             }
 
+            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
+            if (showTime < TimeSpan.Zero)
+            {
+                discardedMessagesCount++;
+                return;
+            }
+
             messagesCount++;
 
 #if DEBUG
@@ -621,7 +637,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             int linesCount = pccm.message.LinesCount;
 
-            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
             if (showTime < nextAvailableTimeSlot)
                 showTime = nextAvailableTimeSlot;
             nextAvailableTimeSlot = showTime + (linesCount * timeStep);
@@ -943,7 +958,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
+        GetComments(root, out JToken comments, out int totalMessages);
+
+        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
 
         Subtitle prevSubtitle = null;
 
@@ -968,6 +985,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 return;
             }
 
+            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
+            if (showTime < TimeSpan.Zero)
+            {
+                discardedMessagesCount++;
+                return;
+            }
+
             messagesCount++;
 
 #if DEBUG
@@ -977,7 +1001,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             if (prevSubtitle == null)
             {
-                TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, pccm.message);
 
                 Subtitles.Add(subtitle);
@@ -987,7 +1010,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
             else
             {
-                TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
+
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, prevSubtitle);
 
                 if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
@@ -1096,7 +1119,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         int discardedMessagesCount = 0;
         int subtitlesCount = 0;
 
-        GetComments(root, settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset);
+        GetComments(root, out JToken comments, out int totalMessages);
 
         ProcessCommentsInChunks(
             comments,
@@ -1157,24 +1180,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Get Comments
 
-    private static void GetComments(JToken root, TwitchSubtitlesSettings settings, out JToken comments, out int totalMessages, out TimeSpan timeOffset)
+    private static void GetComments(JToken root, out JToken comments, out int totalMessages)
     {
         comments = root.SelectToken("comments");
         if (comments.TryGetNonEnumeratedCount(out totalMessages) == false)
             totalMessages = comments.Count();
-
-        timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
-        if (settings.TimeOffset < 0)
-        {
-            JToken firstComment = comments.FirstOrDefault();
-            if (firstComment != null)
-            {
-                int seconds = firstComment.SelectToken("content_offset_seconds").Value<int>();
-                if (seconds + settings.TimeOffset < 0)
-                    timeOffset = TimeSpan.FromSeconds(-seconds);
-            }
-        }
     }
 
     #endregion
