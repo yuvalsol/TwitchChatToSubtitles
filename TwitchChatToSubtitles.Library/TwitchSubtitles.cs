@@ -1359,6 +1359,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     [GeneratedRegex(@"(?<Prefix>\s*)[A-Za-z0-9]+(?<Suffix>\s*)")]
     private static partial Regex RegexEmoticonName();
 
+    [GeneratedRegex(@"\s*⭕\s*")]
+    private static partial Regex RegexNonBrailleWithSpaces();
+
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex RegexDoubleSpaces();
 
@@ -1439,6 +1442,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     body.Remove(match.Index, match.Length);
                     var replacement = new string(charReplacement, length);
                     body.Insert(match.Index, replacement);
+                }
+            }
+
+            if (RegexNonBrailleWithSpaces().IsMatch(body.ToString()))
+            {
+                foreach (var match in RegexNonBrailleWithSpaces().Matches(body.ToString()).Cast<Match>())
+                {
+                    body.Replace(' ', BRAILLE_SPACE, match.Index, match.Length);
                 }
             }
 
