@@ -6,6 +6,7 @@ using TwitchChatToSubtitles.Library;
 int returnCode = 0;
 
 Console.OutputEncoding = Encoding.UTF8;
+Console.Clear();
 
 try
 {
