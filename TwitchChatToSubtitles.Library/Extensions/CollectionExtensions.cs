@@ -18,6 +18,8 @@ public static partial class CollectionExtensions
 
     #endregion
 
+    #region IsNullOrEmpty
+
     public static bool IsNullOrEmpty<TSource>(this IEnumerable<TSource> source)
     {
         return source == null || !source.Any();
@@ -32,6 +34,20 @@ public static partial class CollectionExtensions
     {
         return source == null || source.Count == 0;
     }
+
+    public static bool IsNullOrEmpty<TSource>(this Span<TSource> source)
+    {
+        return source == null || source.Length == 0;
+    }
+
+    public static bool IsNullOrEmpty<TSource>(this ReadOnlySpan<TSource> source)
+    {
+        return source == null || source.Length == 0;
+    }
+
+    #endregion
+
+    #region HasAny
 
     public static bool HasAny<TSource>(this IEnumerable<TSource> source)
     {
@@ -48,6 +64,20 @@ public static partial class CollectionExtensions
         return source != null && source.Count > 0;
     }
 
+    public static bool HasAny<TSource>(this Span<TSource> source)
+    {
+        return source != null && source.Length > 0;
+    }
+
+    public static bool HasAny<TSource>(this ReadOnlySpan<TSource> source)
+    {
+        return source != null && source.Length > 0;
+    }
+
+    #endregion
+
+    #region HasSingle
+
     public static bool HasSingle<TSource>(this IEnumerable<TSource> source)
     {
         return source != null && source.Any() && !source.Skip(1).Any();
@@ -63,6 +93,20 @@ public static partial class CollectionExtensions
         return source != null && source.Count == 1;
     }
 
+    public static bool HasSingle<TSource>(this Span<TSource> source)
+    {
+        return source != null && source.Length == 1;
+    }
+
+    public static bool HasSingle<TSource>(this ReadOnlySpan<TSource> source)
+    {
+        return source != null && source.Length == 1;
+    }
+
+    #endregion
+
+    #region HasMoreThanOne
+
     public static bool HasMoreThanOne<TSource>(this IEnumerable<TSource> source)
     {
         return source != null && source.Skip(1).Any();
@@ -77,6 +121,20 @@ public static partial class CollectionExtensions
     {
         return source != null && source.Count > 1;
     }
+
+    public static bool HasMoreThanOne<TSource>(this Span<TSource> source)
+    {
+        return source != null && source.Length > 1;
+    }
+
+    public static bool HasMoreThanOne<TSource>(this ReadOnlySpan<TSource> source)
+    {
+        return source != null && source.Length > 1;
+    }
+
+    #endregion
+
+    #region IEnumerable Predicate Extensions
 
     private static readonly Func<int, int, bool> EqualsTo = (itemsCount, numItems) => itemsCount == numItems;
     private static readonly Func<int, int, bool> LessThan = (itemsCount, numItems) => itemsCount < numItems;
@@ -133,4 +191,85 @@ public static partial class CollectionExtensions
 
         return comparison(itemsCount, numItems);
     }
+
+    #endregion
+
+    #region Span and ReadOnlySpan Predicate Extensions
+
+    public static bool HasMoreThanOrEqualsTo<TSource>(this Span<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, MoreThanOrEqualsTo, EqualsTo, true);
+    }
+
+    public static bool HasMoreThan<TSource>(this Span<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, MoreThan, MoreThan, true);
+    }
+
+    public static bool HasEqualsTo<TSource>(this Span<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, EqualsTo, MoreThan, false);
+    }
+
+    public static bool HasLessThanOrEqualsTo<TSource>(this Span<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, LessThanOrEqualsTo, MoreThan, false);
+    }
+
+    public static bool HasLessThan<TSource>(this Span<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, LessThan, EqualsTo, false);
+    }
+
+    public static bool HasMoreThanOrEqualsTo<TSource>(this ReadOnlySpan<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, MoreThanOrEqualsTo, EqualsTo, true);
+    }
+
+    public static bool HasMoreThan<TSource>(this ReadOnlySpan<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, MoreThan, MoreThan, true);
+    }
+
+    public static bool HasEqualsTo<TSource>(this ReadOnlySpan<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, EqualsTo, MoreThan, false);
+    }
+
+    public static bool HasLessThanOrEqualsTo<TSource>(this ReadOnlySpan<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, LessThanOrEqualsTo, MoreThan, false);
+    }
+
+    public static bool HasLessThan<TSource>(this ReadOnlySpan<TSource> source, int numItems, Func<TSource, bool> predicate)
+    {
+        return HasItemsCount(source, numItems, predicate, LessThan, EqualsTo, false);
+    }
+
+    private static bool HasItemsCount<TSource>(
+        ReadOnlySpan<TSource> source,
+        int numItems,
+        Func<TSource, bool> predicate,
+        Func<int, int, bool> comparison,
+        Func<int, int, bool> inLoopComparison,
+        bool inLoopComparisonResult)
+    {
+        if (source == null || numItems < 0)
+            return false;
+
+        int itemsCount = 0;
+        foreach (TSource item in source)
+        {
+            if (predicate(item))
+            {
+                itemsCount++;
+                if (inLoopComparison(itemsCount, numItems))
+                    return inLoopComparisonResult;
+            }
+        }
+
+        return comparison(itemsCount, numItems);
+    }
+
+    #endregion
 }
