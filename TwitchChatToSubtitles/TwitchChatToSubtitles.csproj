@@ -11,11 +11,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Runtime)' == 'win-x64'">
-    <DefineConstants>WINDOWS</DefineConstants>
+    <DefineConstants>$(DefineConstants);WINDOWS_BUILD</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Runtime)' == 'linux-x64'">
-    <DefineConstants>LINUX</DefineConstants>
+    <DefineConstants>$(DefineConstants);LINUX_BUILD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -78,9 +78,9 @@ internal class RegularSubtitlesOptions : IRegularSubtitlesOptions
     public bool RegularSubtitles { get; set; }
     public int SubtitleShowDuration { get; set; }
 
-#if WINDOWS
+#if WINDOWS_BUILD
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
-#elif LINUX
+#elif LINUX_BUILD
     [Usage(ApplicationAlias = "./TwitchChatToSubtitles")]
 #else
     [Usage(ApplicationAlias = "TwitchChatToSubtitles")]
@@ -132,9 +132,9 @@ internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChat
     public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
 
-#if WINDOWS
+#if WINDOWS_BUILD
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
-#elif LINUX
+#elif LINUX_BUILD
     [Usage(ApplicationAlias = "./TwitchChatToSubtitles")]
 #else
     [Usage(ApplicationAlias = "TwitchChatToSubtitles")]
@@ -184,9 +184,9 @@ internal class StaticChatSubtitlesOptions : IStaticChatSubtitlesOptions, IChatSu
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
 
-#if WINDOWS
+#if WINDOWS_BUILD
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
-#elif LINUX
+#elif LINUX_BUILD
     [Usage(ApplicationAlias = "./TwitchChatToSubtitles")]
 #else
     [Usage(ApplicationAlias = "TwitchChatToSubtitles")]
@@ -233,9 +233,9 @@ internal class ChatTextFileOptions : IChatTextFileOptions
 {
     public bool ChatTextFile { get; set; }
 
-#if WINDOWS
+#if WINDOWS_BUILD
     [Usage(ApplicationAlias = "TwitchChatToSubtitles.exe")]
-#elif LINUX
+#elif LINUX_BUILD
     [Usage(ApplicationAlias = "./TwitchChatToSubtitles")]
 #else
     [Usage(ApplicationAlias = "TwitchChatToSubtitles")]

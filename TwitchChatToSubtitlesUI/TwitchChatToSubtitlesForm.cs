@@ -662,9 +662,9 @@ namespace TwitchChatToSubtitlesUI
         {
             var sb = new StringBuilder();
 
-#if WINDOWS
+#if WINDOWS_BUILD
             sb.Append("TwitchChatToSubtitles.exe");
-#elif LINUX
+#elif LINUX_BUILD
             sb.Append("./TwitchChatToSubtitles");
 #else
             sb.Append("TwitchChatToSubtitles");
