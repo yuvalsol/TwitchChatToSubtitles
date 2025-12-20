@@ -229,12 +229,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         }
         else
         {
-            try
-            {
-                if (File.Exists(e.SrtFile))
-                    File.Delete(e.SrtFile);
-            }
-            catch { }
+            DeleteFile(e.SrtFile);
 
 #if RELEASE
             if (settings.ChatTextFile)
@@ -297,6 +292,36 @@ static void WriteErrorLine(string line = null)
     Console.ForegroundColor = ConsoleColor.Red;
     Console.Error.WriteLine(line);
     Console.ForegroundColor = foregroundColor;
+}
+
+static void DeleteFile(string path)
+{
+    if (string.IsNullOrEmpty(path))
+        return;
+
+    try
+    {
+        if (File.Exists(path))
+        {
+#if WINDOWS_BUILD
+            try
+            {
+                Microsoft.VisualBasic.FileIO.FileSystem.DeleteFile(
+                    path,
+                    Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+                    Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin,
+                    Microsoft.VisualBasic.FileIO.UICancelOption.ThrowException
+                );
+
+                return;
+            }
+            catch { }
+#endif
+
+            File.Delete(path);
+        }
+    }
+    catch { }
 }
 
 static Parser GetParser()
