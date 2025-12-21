@@ -464,7 +464,7 @@ namespace TwitchChatToSubtitlesUI
 
             var twitchSubtitles = new TwitchSubtitles(settings);
 
-            twitchSubtitles.Start += (object sender, EventArgs e) =>
+            twitchSubtitles.Start += (sender, e) =>
             {
                 Cursor = Cursors.WaitCursor;
 
@@ -482,14 +482,14 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
-            twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
+            twitchSubtitles.StartLoadingJsonFile += (sender, e) =>
             {
                 WriteLine("Loading JSON file...");
 
                 Application.DoEvents();
             };
 
-            twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
+            twitchSubtitles.FinishLoadingJsonFile += (sender, e) =>
             {
                 if (e.Error == null)
                     WriteLine("JSON file loaded successfully.");
@@ -500,7 +500,7 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
-            twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
+            twitchSubtitles.StartWritingPreparations += (sender, e) =>
             {
                 string preparations =
                     (e.RemoveEmoticonNames ? "emoticons" : string.Empty) +
@@ -512,7 +512,7 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
-            twitchSubtitles.FinishWritingPreparations += (object sender, FinishWritingPreparationsEventArgs e) =>
+            twitchSubtitles.FinishWritingPreparations += (sender, e) =>
             {
                 if (e.Error == null)
                     WriteLine("Writing preparations finished successfully.");
@@ -525,7 +525,7 @@ namespace TwitchChatToSubtitlesUI
             int selectionStart = 0;
             int selectionLength = 0;
 
-            twitchSubtitles.StartWritingSubtitles += (object sender, StartWritingSubtitlesEventArgs e) =>
+            twitchSubtitles.StartWritingSubtitles += (sender, e) =>
             {
                 selectionStart = txtConsole.SelectionStart;
 
@@ -570,7 +570,7 @@ namespace TwitchChatToSubtitlesUI
             twitchSubtitles.ProgressAsync += PrintProgress;
             twitchSubtitles.FinishWritingSubtitles += PrintProgress;
 
-            twitchSubtitles.Finish += (object sender, FinishEventArgs e) =>
+            twitchSubtitles.Finish += (sender, e) =>
             {
                 if (e.Error == null)
                 {
@@ -620,7 +620,7 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
-            twitchSubtitles.Tracepoint += (object sender, TracepointEventArgs e) =>
+            twitchSubtitles.Tracepoint += (sender, e) =>
             {
                 WriteLine(e.Message);
             };

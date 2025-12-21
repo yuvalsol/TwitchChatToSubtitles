@@ -89,7 +89,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     var settings = options.ToSettings();
     var twitchSubtitles = new TwitchSubtitles(settings);
 
-    twitchSubtitles.Start += (object sender, EventArgs e) =>
+    twitchSubtitles.Start += (sender, e) =>
     {
         Console.WriteLine(GetVersion());
 
@@ -103,12 +103,12 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
             Console.WriteLine("Chat Text File.");
     };
 
-    twitchSubtitles.StartLoadingJsonFile += (object sender, StartLoadingJsonFileEventArgs e) =>
+    twitchSubtitles.StartLoadingJsonFile += (sender, e) =>
     {
         Console.WriteLine("Loading JSON file...");
     };
 
-    twitchSubtitles.FinishLoadingJsonFile += (object sender, FinishLoadingJsonFileEventArgs e) =>
+    twitchSubtitles.FinishLoadingJsonFile += (sender, e) =>
     {
         if (e.Error == null)
         {
@@ -122,7 +122,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         }
     };
 
-    twitchSubtitles.StartWritingPreparations += (object sender, StartWritingPreparationsEventArgs e) =>
+    twitchSubtitles.StartWritingPreparations += (sender, e) =>
     {
         string preparations =
             (e.RemoveEmoticonNames ? "emoticons" : string.Empty) +
@@ -132,7 +132,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         Console.WriteLine($"Begin writing preparations ({preparations})...");
     };
 
-    twitchSubtitles.FinishWritingPreparations += (object sender, FinishWritingPreparationsEventArgs e) =>
+    twitchSubtitles.FinishWritingPreparations += (sender, e) =>
     {
         if (e.Error == null)
             Console.WriteLine("Writing preparations finished successfully.");
@@ -149,7 +149,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     int leftFinish = 0;
     int topFinish = 0;
 
-    twitchSubtitles.StartWritingSubtitles += (object sender, StartWritingSubtitlesEventArgs e) =>
+    twitchSubtitles.StartWritingSubtitles += (sender, e) =>
     {
         Console.Write("Chat Messages: ");
         leftMessages = Console.CursorLeft;
@@ -203,7 +203,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     twitchSubtitles.ProgressAsync += PrintProgress;
     twitchSubtitles.FinishWritingSubtitles += PrintProgress;
 
-    twitchSubtitles.Finish += (object sender, FinishEventArgs e) =>
+    twitchSubtitles.Finish += (sender, e) =>
     {
         Console.CursorVisible = true;
 
@@ -256,7 +256,7 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
         }
     };
 
-    twitchSubtitles.Tracepoint += (object sender, TracepointEventArgs e) =>
+    twitchSubtitles.Tracepoint += (sender, e) =>
     {
         ConsoleColor foregroundColor = Console.ForegroundColor;
         Console.ForegroundColor = ConsoleColor.Yellow;

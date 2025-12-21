@@ -211,7 +211,7 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         return ShaveLinesFromTheTop(LinesCount - keepCount);
     }
 
-    private static int PosX(SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize)
+    private static int PosX(SubtitlesLocation subtitlesLocation)
     {
         if (subtitlesLocation.IsRight())
         {

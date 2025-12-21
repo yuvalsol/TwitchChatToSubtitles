@@ -231,7 +231,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             ct.ThrowIfCancellationRequested();
 
-            return
+            return [..
                 Enumerable.Empty<string>()
                 .Concat(emoticonsInMessages)
                 .Concat(emoticonNames)
@@ -239,8 +239,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 .OrderBy(name => name)
                 // keep text emoticons in messages
                 .Where(name => RegexTextEmoticon().IsMatch(name) == false)
-                .Select(emoticon => (emoticon, new Regex($@"\b{Regex.Escape(emoticon)}\b", RegexOptions.Compiled)))
-                .ToArray();
+                .Select(emoticon => (emoticon, new Regex($@"\b{Regex.Escape(emoticon)}\b", RegexOptions.Compiled)))];
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
@@ -531,7 +530,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 .Select((t, tIndex) => (t, tIndex))
                 .ToArray();
 
-            Subtitle[] newSubs = times.Join(
+            var newSubs = times.Join(
                 times.Skip(1),
                 t1 => t1.tIndex + 1,
                 t2 => t2.tIndex,
@@ -1291,7 +1290,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             ct.ThrowIfCancellationRequested();
 
-            return comments.Select(comment => GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings, ct)).ToArray();
+            return [.. comments.Select(comment => GetProcessComment(comment, regexEmbeddedEmoticons, userColors, settings, ct))];
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
@@ -1570,7 +1569,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             ct.ThrowIfCancellationRequested();
 
-            return emoticons.Where(x => bodyString.Contains(x.emoticon, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return [.. emoticons.Where(x => bodyString.Contains(x.emoticon, StringComparison.OrdinalIgnoreCase))];
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
@@ -1590,7 +1589,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             ct.ThrowIfCancellationRequested();
 
-            return userColors.Where(x => bodyString.Contains(x.Value.User, StringComparison.OrdinalIgnoreCase)).ToArray();
+            return [.. userColors.Where(x => bodyString.Contains(x.Value.User, StringComparison.OrdinalIgnoreCase))];
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
