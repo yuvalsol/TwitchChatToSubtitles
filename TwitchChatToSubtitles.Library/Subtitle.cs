@@ -2,6 +2,8 @@
 
 internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 {
+    internal const string FONT_NAME = "Calibri";
+
     public readonly TimeSpan ShowTime = showTime;
     public TimeSpan HideTime { get; private set; } = hideTime;
     public readonly int PosY;
@@ -211,53 +213,17 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         return ShaveLinesFromTheTop(LinesCount - keepCount);
     }
 
-    internal const string FONT_NAME = "Calibri";
-
-    private static int PosX(SubtitlesLocation subtitlesLocation)
-    {
-        if (subtitlesLocation.IsRight())
-        {
-            /*
-            measurement is for Calibri font and BIGGER_LINE_LENGTH = 45.
-            REGULAR_LINE_LENGTH = 50 has more chars and BIGGEST_LINE_LENGTH = 40 has less chars,
-            so, although they both are positioned at X = 255,
-            they don't overflow out of the right side of the screen
-
-            1
-            00:00:00,000 --> 9:59:59,999
-            {\a5\an7\pos(255,65)\fnCalibri\fs8\bord0\shad0}
-            12345678901234567890123456789012345678901234567890
-
-            2
-            00:00:00,000 --> 9:59:59,999
-            {\a5\an7\pos(255,71)\fnCalibri\fs9\bord0\shad0}
-            123456789012345678901234567890123456789012340
-
-            3
-            00:00:00,000 --> 9:59:59,999
-            {\a5\an7\pos(255,77)\fnCalibri\fs10\bord0\shad0}
-            1234567890123456789012345678901234567890
-            */
-
-            return 255; // = 384 - 129
-        }
-        else
-        {
-            return 5;
-        }
-    }
-
     public override string ToString()
     {
-        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, null, false);
+        return ToString(false, SubtitlesLocation.Left, 0, SubtitlesFontSize.None, null, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.PosXLocationRight, settings.SubtitlesFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, Color textColor, bool isUsingAssaTags)
+    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, int posXLocationRight, SubtitlesFontSize subtitlesFontSize, Color textColor, bool isUsingAssaTags)
     {
         var sb = new StringBuilder();
         sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
@@ -269,7 +235,7 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
                 fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
             if (PosY > 0)
-                sb.AppendLine($@"{{\a5\an7\pos({PosX(subtitlesLocation)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
+                sb.AppendLine($@"{{\a5\an7\pos({(subtitlesLocation.IsRight() ? posXLocationRight : 5)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
             else if (subtitlesFontSize != SubtitlesFontSize.None)
                 sb.AppendLine($@"{{\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
         }

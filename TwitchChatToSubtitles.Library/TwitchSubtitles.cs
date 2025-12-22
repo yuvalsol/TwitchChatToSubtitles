@@ -1603,23 +1603,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         }
     }
 
-    private const int REGULAR_LINE_LENGTH = 50;
-    private const int BIGGER_LINE_LENGTH = 45;
-    private const int BIGGEST_LINE_LENGTH = 40;
-
-    private static int GetBodyLineLength(SubtitlesFontSize subtitlesFontSize)
-    {
-        if (subtitlesFontSize == SubtitlesFontSize.Regular)
-            return REGULAR_LINE_LENGTH;
-        else if (subtitlesFontSize == SubtitlesFontSize.Bigger)
-            return BIGGER_LINE_LENGTH;
-        else /*if (subtitlesFontSize == SubtitlesFontSize.Biggest)*/
-            return BIGGEST_LINE_LENGTH;
-    }
-
     private static void SplitMessageBody(StringBuilder body, string user, TimeSpan timestamp, TwitchSubtitlesSettings settings)
     {
-        int bodyLineLength = GetBodyLineLength(settings.SubtitlesFontSize);
+        int bodyLineLength = settings.BodyLineLength;
 
         int startIndex = 0;
         while (startIndex < body.Length)
