@@ -211,6 +211,8 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         return ShaveLinesFromTheTop(LinesCount - keepCount);
     }
 
+    internal const string FONT_NAME = "Calibri";
+
     private static int PosX(SubtitlesLocation subtitlesLocation)
     {
         if (subtitlesLocation.IsRight())
@@ -222,18 +224,18 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
             they don't overflow out of the right side of the screen
 
             1
-            00:00:00,000 --> 99:59:59,999
-            {\a5\an7\pos(255,65)\fs8\bord0\shad0}
+            00:00:00,000 --> 9:59:59,999
+            {\a5\an7\pos(255,65)\fnCalibri\fs8\bord0\shad0}
             12345678901234567890123456789012345678901234567890
 
             2
-            00:00:00,000 --> 99:59:59,999
-            {\a5\an7\pos(255,70)\fs9\bord0\shad0}
+            00:00:00,000 --> 9:59:59,999
+            {\a5\an7\pos(255,71)\fnCalibri\fs9\bord0\shad0}
             123456789012345678901234567890123456789012340
 
             3
-            00:00:00,000 --> 99:59:59,999
-            {\a5\an7\pos(255,76)\fs10\bord0\shad0}
+            00:00:00,000 --> 9:59:59,999
+            {\a5\an7\pos(255,77)\fnCalibri\fs10\bord0\shad0}
             1234567890123456789012345678901234567890
             */
 
@@ -267,9 +269,9 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
                 fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
             if (PosY > 0)
-                sb.AppendLine($@"{{\a5\an7\pos({PosX(subtitlesLocation, subtitlesFontSize)},{PosY}){fontSizeStr}\bord0\shad0}}");
+                sb.AppendLine($@"{{\a5\an7\pos({PosX(subtitlesLocation)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
             else if (subtitlesFontSize != SubtitlesFontSize.None)
-                sb.AppendLine($@"{{{fontSizeStr}\bord0\shad0}}");
+                sb.AppendLine($@"{{\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
         }
         else if (isUsingAssaTags)
         {
