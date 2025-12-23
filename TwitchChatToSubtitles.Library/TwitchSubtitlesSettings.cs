@@ -38,15 +38,19 @@ public class TwitchSubtitlesSettings
                 subtitlesFontSize = value;
 
                 FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
-                var measurements = (FontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(FontSizeMeasurementsAttribute));
-                BodyLineLength = measurements.BodyLineLength;
+                var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
+                LineLength = measurements.LineLength;
                 PosXLocationRight = measurements.PosXLocationRight;
+                MaxBottomPosY = measurements.MaxBottomPosY;
+                TimestampFontSize = measurements.TimestampFontSize;
             }
         }
     }
 
-    internal int BodyLineLength { get; private set; }
+    internal int LineLength { get; private set; }
     internal int PosXLocationRight { get; private set; }
+    internal int MaxBottomPosY { get; private set; }
+    internal int TimestampFontSize { get; private set; }
 
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }

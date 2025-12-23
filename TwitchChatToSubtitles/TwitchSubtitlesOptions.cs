@@ -20,7 +20,7 @@ internal interface IAllSubtitleTypesOptions
     [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
     bool ShowTimestamps { get; set; }
 
-    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Bigger, Biggest.")]
+    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Medium, Large, XL, X2L, X3L, X4L, X5L.")]
     SubtitlesFontSize SubtitlesFontSize { get; set; }
 
     [Option("TextColor", Required = false, HelpText = "The color of the subtitles text.")]
@@ -99,14 +99,14 @@ internal class RegularSubtitlesOptions : IRegularSubtitlesOptions
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Bigger`, subtitles will use ASSA tags",
+                "2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA tags",
                 new TwitchSubtitlesOptions
                 {
                     RegularSubtitles = true,
                     JsonFile = @"C:\Path\To\Twitch Chat.json",
                     ColorUserNames = true,
                     RemoveEmoticonNames = true,
-                    SubtitlesFontSize = SubtitlesFontSize.Bigger
+                    SubtitlesFontSize = SubtitlesFontSize.Medium
                 }
             );
 
@@ -153,14 +153,14 @@ internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChat
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Bigger`, subtitles location will default to whole `Left` side of the screen",
+                "2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen",
                 new TwitchSubtitlesOptions
                 {
                     RollingChatSubtitles = true,
                     JsonFile = @"C:\Path\To\Twitch Chat.json",
                     ColorUserNames = true,
                     RemoveEmoticonNames = true,
-                    SubtitlesFontSize = SubtitlesFontSize.Bigger
+                    SubtitlesFontSize = SubtitlesFontSize.Medium
                 }
             );
 
@@ -205,14 +205,14 @@ internal class StaticChatSubtitlesOptions : IStaticChatSubtitlesOptions, IChatSu
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Bigger`, subtitles location will default to whole `Left` side of the screen",
+                "2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen",
                 new TwitchSubtitlesOptions
                 {
                     StaticChatSubtitles = true,
                     JsonFile = @"C:\Path\To\Twitch Chat.json",
                     ColorUserNames = true,
                     RemoveEmoticonNames = true,
-                    SubtitlesFontSize = SubtitlesFontSize.Bigger
+                    SubtitlesFontSize = SubtitlesFontSize.Medium
                 }
             );
 

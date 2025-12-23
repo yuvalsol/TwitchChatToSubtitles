@@ -61,9 +61,9 @@ TwitchChatToSubtitles.exe --RegularSubtitles
 TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
-2. Color user names, remove emoticon names, font size `Bigger`, subtitles will use ASSA tags:
+2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA tags:
 ```console
-TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Bigger
+TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 ## Rolling Chat Subtitles
@@ -92,9 +92,9 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles
 TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
-2. Color user names, remove emoticon names, font size `Bigger`, subtitles location will default to whole `Left` side of the screen:
+2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 ```console
-TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Bigger
+TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 3. Subtitles will roll faster than regular speed and will appear on the right side and top half of the screen:
@@ -128,9 +128,9 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles
 TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
-2. Color user names, remove emoticon names, font size `Bigger`, subtitles location will default to whole `Left` side of the screen:
+2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 ```console
-TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Bigger
+TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 3. Subtitles will appear on the left side and top two-thirds of the screen:
@@ -211,7 +211,7 @@ The font size of the subtitles. If the options is not specified, `RollingChatSub
 
 ```console
 --SubtitlesFontSize     The font size of the subtitles.
-                        Valid values: Regular, Bigger, Biggest.
+                        Valid values: Regular, Medium, Large, XL, X2L, X3L, X4L, X5L.
 ```
 
 This option determines where the subtitles are displayed on the screen. This option is applicable only for `RollingChatSubtitles` and `StaticChatSubtitles`.

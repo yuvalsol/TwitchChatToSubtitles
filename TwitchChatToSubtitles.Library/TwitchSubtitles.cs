@@ -579,7 +579,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (settings.SubtitlesLocation == SubtitlesLocation.None)
             settings.SubtitlesLocation = SubtitlesLocation.Left;
 
-        CalculateChatPosYs(fontSize, settings.SubtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount);
+        CalculateChatPosYs(fontSize, settings.MaxBottomPosY, settings.SubtitlesLocation, settings.SubtitlesRollingDirection, out int topPosY, out int bottomPosY, out int posYCount);
 
         Task<int> lastWritingTask = null;
         var cts = new CancellationTokenSource();
@@ -937,7 +937,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (settings.SubtitlesLocation == SubtitlesLocation.None)
             settings.SubtitlesLocation = SubtitlesLocation.Left;
 
-        CalculateChatPosYs(fontSize, settings.SubtitlesLocation, out int topPosY, out _, out int posYCount);
+        CalculateChatPosYs(fontSize, settings.MaxBottomPosY, settings.SubtitlesLocation, settings.SubtitlesRollingDirection, out int topPosY, out _, out int posYCount);
 
         // 99:59:59,999
         TimeSpan hideTimeMaxValue = TimeSpan.FromMilliseconds(
@@ -1069,16 +1069,32 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Calculate Chat PosYs
 
-    private const int TOP_POS_Y = 10;
-    private const int BOTTOM_POS_Y = 270;
-
-    private static void CalculateChatPosYs(int fontSize, SubtitlesLocation subtitlesLocation, out int topPosY, out int bottomPosY, out int posYCount)
+    private static void CalculateChatPosYs(int fontSize, int maxBottomPosY, SubtitlesLocation subtitlesLocation, SubtitlesRollingDirection subtitlesRollingDirection, out int topPosY, out int bottomPosY, out int posYCount)
     {
-        bottomPosY = BOTTOM_POS_Y;
+        topPosY = 0;
+        bottomPosY = 0;
+        while (bottomPosY <= maxBottomPosY)
+            bottomPosY += fontSize;
+        bottomPosY -= fontSize;
 
-        topPosY = bottomPosY;
-        while (topPosY > TOP_POS_Y)
-            topPosY -= fontSize;
+        if (maxBottomPosY > bottomPosY)
+        {
+            int diff = maxBottomPosY - bottomPosY;
+
+            if (subtitlesRollingDirection == SubtitlesRollingDirection.BottomToTop)
+            {
+                topPosY += diff;
+                bottomPosY = maxBottomPosY;
+            }
+            else if (subtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
+            {
+                if (diff >= 2)
+                {
+                    topPosY = 2;
+                    bottomPosY += 2;
+                }
+            }
+        }
 
         posYCount = (bottomPosY - topPosY + fontSize) / fontSize;
 
@@ -1605,73 +1621,81 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     private static void SplitMessageBody(StringBuilder body, string user, TimeSpan timestamp, TwitchSubtitlesSettings settings)
     {
-        int bodyLineLength = settings.BodyLineLength;
-
-        int startIndex = 0;
-        while (startIndex < body.Length)
+        try
         {
-            int endIndex = startIndex + bodyLineLength - 1;
-
-            if (startIndex == 0)
+            int startIndex = 0;
+            while (startIndex < body.Length)
             {
-                if (settings.ShowTimestamps)
+                int endIndex = startIndex + settings.LineLength - 1;
+
+                if (startIndex == 0)
                 {
-                    // timestamp user: body
-                    endIndex -= ChatMessage.ToTimestamp(timestamp).Length + 1;
+                    if (settings.ShowTimestamps)
+                    {
+                        // timestamp user: body
+                        endIndex -= ChatMessage.ToTimestamp(timestamp).Length + 1;
+                    }
+
+                    if (string.IsNullOrEmpty(user) == false)
+                    {
+                        // user: body
+                        endIndex -= user.Length + 2;
+                    }
+
+                    if (endIndex <= 0)
+                        endIndex = -1;
                 }
 
-                if (string.IsNullOrEmpty(user) == false)
-                {
-                    // user: body
-                    endIndex -= user.Length + 2;
-                }
-            }
-
-            if (endIndex >= body.Length)
-                break;
-
-            bool found = false;
-            for (int i = endIndex; i >= startIndex; i--)
-            {
-                if (body[i] == ' ')
-                {
-                    body[i] = '\n';
-                    startIndex = i + 1;
-                    found = true;
+                if (endIndex >= body.Length)
                     break;
-                }
-            }
 
-            if (found)
-                continue;
-
-            found = false;
-            for (int i = endIndex; i >= startIndex; i--)
-            {
-                // break long url
-                if (body[i] == '/' || body[i] == '?' || body[i] == '&')
+                bool found = false;
+                for (int i = endIndex; i >= startIndex; i--)
                 {
-                    body.Insert(i + 1, '\n');
-                    startIndex = i + 2;
-                    found = true;
-                    break;
+                    if (body[i] == ' ')
+                    {
+                        body[i] = '\n';
+                        startIndex = i + 1;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                    continue;
+
+                found = false;
+                for (int i = endIndex; i >= startIndex; i--)
+                {
+                    // break long url
+                    if (body[i] == '/' || body[i] == '?' || body[i] == '&')
+                    {
+                        body.Insert(i + 1, '\n');
+                        startIndex = i + 2;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                    continue;
+
+                if (endIndex + 1 <= body.Length)
+                {
+                    body.Insert(endIndex + 1, '\n');
+                    startIndex = endIndex + 2;
                 }
             }
 
-            if (found)
-                continue;
+            if (body.Length > 0 && body[^1] == '\n')
+                body.Remove(body.Length - 1, 1);
 
-            if (endIndex + 1 <= body.Length)
-            {
-                body.Insert(endIndex + 1, '\n');
-                startIndex = endIndex + 2;
-            }
+            body.Replace("\n", "\\N");
         }
-
-        if (body.Length > 0 && body[^1] == '\n')
-            body.Remove(body.Length - 1, 1);
-
-        body.Replace("\n", "\\N");
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to split message body.{Environment.NewLine}{ChatMessage.ToTimestamp(timestamp)} {user}: {body}", ex);
+        }
     }
 
     #endregion
@@ -1780,7 +1804,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         for (int i = 0; i < 2; i++)
         {
-            int posY = 59;
+            int posY = 60;
 
             foreach (SubtitlesFontSize subtitlesFontSize in Enum.GetValues<SubtitlesFontSize>())
             {
@@ -1788,18 +1812,41 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     continue;
 
                 FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
-                var measurements = (FontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(FontSizeMeasurementsAttribute));
-                int BodyLineLength = measurements.BodyLineLength;
-                int PosXLocationRight = measurements.PosXLocationRight;
+                var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
+
+                var nums = Enumerable.Range(1, measurements.LineLength);
+                if (isRight)
+                    nums = nums.Reverse();
+                string line = string.Join(string.Empty, nums.Select(n => n % 10));
+
+                if (isRight == false)
+                {
+                    int spaceOffset = 0;
+
+                    if (subtitlesFontSize == SubtitlesFontSize.Regular)
+                        spaceOffset = 49;
+                    else if (subtitlesFontSize == SubtitlesFontSize.Medium)
+                        spaceOffset = 39;
+                    else if (subtitlesFontSize == SubtitlesFontSize.Large)
+                        spaceOffset = 36;
+                    else if (subtitlesFontSize == SubtitlesFontSize.XL)
+                        spaceOffset = 36;
+                    else if (subtitlesFontSize == SubtitlesFontSize.X2L)
+                        spaceOffset = 30;
+                    else if (subtitlesFontSize == SubtitlesFontSize.X3L)
+                        spaceOffset = 21;
+                    else if (subtitlesFontSize == SubtitlesFontSize.X4L)
+                        spaceOffset = 13;
+                    else if (subtitlesFontSize == SubtitlesFontSize.X5L)
+                        spaceOffset = 6;
+
+                    line += $"{new string(' ', spaceOffset)}{subtitlesFontSize}, fs{(int)subtitlesFontSize}, {measurements.LineLength} chars";
+                }
 
                 yield return $"{(isRight ? 2 : 1)}{(int)subtitlesFontSize:00}";
                 yield return "00:00:00,000 --> 9:59:59,999";
-                yield return $@"{{\a5\an7\pos({(isRight ? PosXLocationRight : 5)},{posY += 6})\fn{Subtitle.FONT_NAME}\fs{(int)subtitlesFontSize}\bord0\shad0}}";
-
-                var nums = Enumerable.Range(1, BodyLineLength);
-                if (isRight)
-                    nums = nums.Reverse();
-                yield return string.Join(string.Empty, nums.Select(n => n % 10));
+                yield return $@"{{\a5\an7\pos({(isRight ? measurements.PosXLocationRight : Subtitle.POS_X_LOCATION_LEFT)},{posY += (subtitlesFontSize <= SubtitlesFontSize.Large ? 6 : (subtitlesFontSize <= SubtitlesFontSize.X3L ? 7 : 8))})\fn{Subtitle.FONT_NAME}\fs{(int)subtitlesFontSize}\bord0\shad0}}";
+                yield return line;
                 yield return string.Empty;
             }
 

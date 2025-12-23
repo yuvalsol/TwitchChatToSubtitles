@@ -3,9 +3,11 @@
 internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 {
     internal const string FONT_NAME = "Calibri";
+    internal const int POS_X_LOCATION_LEFT = 3;
 
     public readonly TimeSpan ShowTime = showTime;
     public TimeSpan HideTime { get; private set; } = hideTime;
+    public readonly bool HasPosY;
     public readonly int PosY;
     private readonly List<ChatMessage> Messages = [];
 
@@ -28,24 +30,28 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
     public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY)
         : this(showTime, hideTime)
     {
+        HasPosY = true;
         PosY = posY;
     }
 
     public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, ChatMessage message)
         : this(showTime, hideTime, message)
     {
+        HasPosY = true;
         PosY = posY;
     }
 
     public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, IEnumerable<ChatMessage> messages)
         : this(showTime, hideTime, messages)
     {
+        HasPosY = true;
         PosY = posY;
     }
 
     public Subtitle(TimeSpan showTime, TimeSpan hideTime, int posY, Subtitle subtitle)
         : this(showTime, hideTime, subtitle)
     {
+        HasPosY = true;
         PosY = posY;
     }
 
@@ -215,37 +221,37 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesLocation.Left, 0, SubtitlesFontSize.None, null, false);
+        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, 0, 0, null, false);
     }
 
     public string ToString(TwitchSubtitlesSettings settings)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.PosXLocationRight, settings.SubtitlesFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
+        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.PosXLocationRight, settings.TimestampFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
     }
 
-    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, int posXLocationRight, SubtitlesFontSize subtitlesFontSize, Color textColor, bool isUsingAssaTags)
+    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, int posXLocationRight, int timestampFontSize, Color textColor, bool isUsingAssaTags)
     {
         var sb = new StringBuilder();
         sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
 
-        if (PosY > 0 || subtitlesFontSize != SubtitlesFontSize.None)
+        if (HasPosY || subtitlesFontSize != SubtitlesFontSize.None)
         {
             string fontSizeStr = string.Empty;
             if (subtitlesFontSize != SubtitlesFontSize.None)
                 fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
 
-            if (PosY > 0)
-                sb.AppendLine($@"{{\a5\an7\pos({(subtitlesLocation.IsRight() ? posXLocationRight : 5)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
+            if (HasPosY)
+                sb.Append($@"{{\a5\an7\pos({(subtitlesLocation.IsRight() ? posXLocationRight : POS_X_LOCATION_LEFT)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
             else if (subtitlesFontSize != SubtitlesFontSize.None)
-                sb.AppendLine($@"{{\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
+                sb.Append($@"{{\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
         }
         else if (isUsingAssaTags)
         {
-            sb.AppendLine(@"{\bord0\shad0}");
+            sb.Append(@"{\bord0\shad0}");
         }
 
         foreach (var message in Messages)
-            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, textColor, isUsingAssaTags));
+            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, timestampFontSize, textColor, isUsingAssaTags));
 
         return sb.ToString();
     }
