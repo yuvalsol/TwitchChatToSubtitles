@@ -1762,4 +1762,50 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     }
 
     #endregion
+
+    #region Write Font Size Test Subtitles
+
+    public static void WriteFontSizeTestSubtitles(string srtFile)
+    {
+        using var srtStream = File.Open(srtFile, FileMode.Create);
+        using var writer = new StreamWriter(srtStream, Encoding.UTF8);
+
+        foreach (var line in GetFontSizeTestSubtitles())
+            writer.WriteLine(line);
+    }
+
+    private static IEnumerable<string> GetFontSizeTestSubtitles()
+    {
+        bool isRight = false;
+
+        for (int i = 0; i < 2; i++)
+        {
+            int posY = 59;
+
+            foreach (SubtitlesFontSize subtitlesFontSize in Enum.GetValues<SubtitlesFontSize>())
+            {
+                if (subtitlesFontSize == SubtitlesFontSize.None)
+                    continue;
+
+                FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
+                var measurements = (FontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(FontSizeMeasurementsAttribute));
+                int BodyLineLength = measurements.BodyLineLength;
+                int PosXLocationRight = measurements.PosXLocationRight;
+
+                yield return $"{(isRight ? 2 : 1)}{(int)subtitlesFontSize:00}";
+                yield return "00:00:00,000 --> 9:59:59,999";
+                yield return $@"{{\a5\an7\pos({(isRight ? PosXLocationRight : 5)},{posY += 6})\fn{Subtitle.FONT_NAME}\fs{(int)subtitlesFontSize}\bord0\shad0}}";
+
+                var nums = Enumerable.Range(1, BodyLineLength);
+                if (isRight)
+                    nums = nums.Reverse();
+                yield return string.Join(string.Empty, nums.Select(n => n % 10));
+                yield return string.Empty;
+            }
+
+            isRight = true;
+        }
+    }
+
+    #endregion
 }

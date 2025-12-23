@@ -306,6 +306,8 @@ internal partial class TwitchSubtitlesOptions
     public string TextColor { get; set; }
     public int TimeOffset { get; set; }
 
+    internal bool WriteFontSizeTestSubtitles { get; set; }
+
     public TwitchSubtitlesSettings ToSettings()
     {
         return new TwitchSubtitlesSettings

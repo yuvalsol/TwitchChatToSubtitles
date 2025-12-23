@@ -84,6 +84,12 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
 {
 #if DEBUG
     Debug(options);
+
+    if (options.WriteFontSizeTestSubtitles)
+    {
+        WriteFontSizeTestSubtitles(options);
+        return;
+    }
 #endif
 
     var settings = options.ToSettings();
@@ -283,6 +289,47 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
     //options.SubtitlesSpeed = SubtitlesSpeed.Regular;
     //options.SubtitlesLocation = SubtitlesLocation.Left;
+    //options.WriteFontSizeTestSubtitles = false;
+}
+
+static void WriteFontSizeTestSubtitles(TwitchSubtitlesOptions options)
+{
+    if (string.IsNullOrEmpty(options.JsonFile))
+        throw new ArgumentException("JSON file not specified.");
+
+    if (string.Compare(Path.GetExtension(options.JsonFile), ".json", true) != 0)
+        throw new ArgumentException("Not a JSON file '" + options.JsonFile + "'.");
+
+    string srtFile = Path.Combine(
+        Path.GetDirectoryName(options.JsonFile),
+        Path.GetFileNameWithoutExtension(options.JsonFile) + ".srt"
+    );
+
+    Console.WriteLine("Font Size Test Subtitles.");
+
+    try
+    {
+        TwitchSubtitles.WriteFontSizeTestSubtitles(srtFile);
+        Console.WriteLine("Finished successfully.");
+        Console.WriteLine("Subtitles file: " + srtFile);
+    }
+    catch (Exception ex)
+    {
+        DeleteFile(srtFile);
+
+        WriteErrorLine("Failed to write subtitles.");
+        WriteErrorLine("Error: " + ex.Message);
+
+        Exception exInner = ex.InnerException;
+        while (exInner != null)
+        {
+            WriteErrorLine("Error: " + exInner.Message);
+            exInner = exInner.InnerException;
+        }
+    }
+
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
 }
 #endif
 
