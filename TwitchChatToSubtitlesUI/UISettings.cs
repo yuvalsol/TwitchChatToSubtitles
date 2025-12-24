@@ -21,6 +21,7 @@ internal class UISettings
     public decimal TimeOffset { get; set; }
     public decimal SubtitleShowDuration { get; set; }
     public string TextColor { get; set; }
+    public bool ASS { get; set; }
     public bool CloseWhenFinishedSuccessfully { get; set; }
     public string JsonDirectory { get; set; }
 }

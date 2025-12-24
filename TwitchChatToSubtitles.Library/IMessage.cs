@@ -2,6 +2,5 @@
 
 internal interface IMessage
 {
-    string ToString(TwitchSubtitlesSettings settings);
-    string ToChatLogString(TwitchSubtitlesSettings settings);
+    string ToString(TwitchSubtitlesSettings settings, int messageIndex);
 }

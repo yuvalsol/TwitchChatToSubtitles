@@ -108,12 +108,15 @@ namespace TwitchChatToSubtitlesUI
         [GeneratedRegex(@"([a-z])([A-Z])")]
         private static partial Regex RegexCamelCase();
 
+        [GeneratedRegex(@"^X([0-9])L$")]
+        private static partial Regex RegexSubtitlesXLFontSize();
+
         public static string GetEnumName<TEnum>(TEnum value) where TEnum : Enum
         {
-            return RegexCamelCase().Replace(
-                Enum.GetName(typeof(TEnum), value),
-                "$1 $2"
-            );
+            string name = Enum.GetName(typeof(TEnum), value);
+            name = RegexSubtitlesXLFontSize().Replace(name, "$1XL");
+            name = RegexCamelCase().Replace(name, "$1 $2");
+            return name;
         }
 
         #endregion
@@ -277,7 +280,8 @@ namespace TwitchChatToSubtitlesUI
             nudTimeOffset.Enabled =
             btnTextColor.Enabled =
             flowLayoutPanelColors.Enabled =
-            lblTextColor.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
+            lblTextColor.Enabled =
+            chkASS.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
 
             lblSubtitlesLocation.Enabled =
             ddlSubtitlesLocation.Enabled = false;
@@ -461,6 +465,8 @@ namespace TwitchChatToSubtitlesUI
                 settings.TextColor = textColor;
             if (nudTimeOffset.Enabled)
                 settings.TimeOffset = Convert.ToInt32(nudTimeOffset.Value);
+            if (chkASS.Enabled)
+                settings.ASS = chkASS.Checked;
 
             var twitchSubtitles = new TwitchSubtitles(settings);
 
@@ -730,7 +736,7 @@ namespace TwitchChatToSubtitlesUI
             {
                 var subtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue;
                 if (subtitlesFontSize != SubtitlesFontSize.None)
-                    sb.Append($" --SubtitlesFontSize {subtitlesFontSize}");
+                    sb.Append($" --SubtitlesFontSize {RegexSubtitlesXLFontSize().Replace(subtitlesFontSize.ToString(), "$1XL")}");
             }
 
             if (ddlSubtitlesRollingDirection.Enabled)
@@ -770,6 +776,12 @@ namespace TwitchChatToSubtitlesUI
                         color = textColor.Value.Name;
                     sb.Append($" --TextColor \"{color}\"");
                 }
+            }
+
+            if (chkASS.Enabled)
+            {
+                if (chkASS.Checked)
+                    sb.Append($" --ass");
             }
 
             MessageBoxHelper.ShowCommandLine(this, sb.ToString(), "Command Line");
@@ -835,6 +847,7 @@ namespace TwitchChatToSubtitlesUI
             settings.TimeOffset = nudTimeOffset.Value;
             settings.SubtitleShowDuration = nudSubtitleShowDuration.Value;
             settings.TextColor = (textColor != null ? ColorToHex(textColor.Value) : null);
+            settings.ASS = chkASS.Checked;
             settings.CloseWhenFinishedSuccessfully = chkCloseWhenFinishedSuccessfully.Checked;
             settings.JsonDirectory = jsonDirectory;
 
@@ -857,6 +870,7 @@ namespace TwitchChatToSubtitlesUI
             SetComboBox(ddlSubtitlesSpeed, ddl_SelectedIndexChanged, settings.SubtitlesSpeed);
             SetNumericUpDown(nudTimeOffset, nud_ValueChanged, settings.TimeOffset);
             SetNumericUpDown(nudSubtitleShowDuration, nud_ValueChanged, settings.SubtitleShowDuration);
+            SetCheckBox(chkASS, chk_CheckedChanged, settings.ASS);
             SetCheckBox(chkCloseWhenFinishedSuccessfully, chk_CheckedChanged, settings.CloseWhenFinishedSuccessfully);
 
             if (string.IsNullOrEmpty(settings.TextColor) == false)

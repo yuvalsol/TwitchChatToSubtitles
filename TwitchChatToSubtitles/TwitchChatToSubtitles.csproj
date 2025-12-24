@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <Using Include="System.ComponentModel" />
+    <Using Include="System.Diagnostics" />
     <Using Include="System.Drawing" />
     <Using Include="System.Reflection" />
     <Using Include="System.Text" />

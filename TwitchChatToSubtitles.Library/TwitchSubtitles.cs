@@ -26,6 +26,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     public void WriteTwitchSubtitles(string jsonFile)
     {
+#if DEBUG
+        SortMessageIndexesToKeep();
+#endif
+
         long startTime = Stopwatch.GetTimestamp();
 
         if (string.IsNullOrEmpty(jsonFile))
@@ -44,9 +48,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         Start.Raise(this, () => EventArgs.Empty);
 
+        string fileName = Path.GetFileNameWithoutExtension(jsonFile);
+
         string srtFile = Path.Combine(
             Path.GetDirectoryName(jsonFile),
-            Path.GetFileNameWithoutExtension(jsonFile) + (settings.ChatTextFile ? ".txt" : ".srt")
+             fileName + (settings.ChatTextFile ? ".txt" : (settings.ASS ? ".ass" : ".srt"))
         );
 
         StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
@@ -69,7 +75,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         {
             StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
 
-            WritingPreparations(root, ref regexEmbeddedEmoticons, ref userColors, ref error);
+            WritingPreparations(settings.RemoveEmoticonNames, settings.ColorUserNames, root, ref regexEmbeddedEmoticons, ref userColors, ref error);
 
             FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames, error));
 
@@ -87,11 +93,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             using var writer = new StreamWriter(srtStream, Encoding.UTF8);
 
             if (settings.RegularSubtitles)
-                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
+                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
             else if (settings.RollingChatSubtitles)
-                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
+                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
             else if (settings.StaticChatSubtitles)
-                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, writer, ref error);
+                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
             else if (settings.ChatTextFile)
                 WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, ref error);
         }
@@ -138,7 +144,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Writing Preparations
 
-    private void WritingPreparations(
+    private static void WritingPreparations(
+        bool removeEmoticonNames,
+        bool colorUserNames,
         JToken root,
         ref (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
         ref Dictionary<string, UserColor> userColors,
@@ -150,24 +158,24 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         try
         {
             Task<(string emoticon, Regex regex)[]> taskRemoveEmoticonNames = null;
-            if (settings.RemoveEmoticonNames)
+            if (removeEmoticonNames)
                 taskRemoveEmoticonNames = Task.Run(() => GetEmbeddedEmoticons(root, ct), ct);
 
             Task<Dictionary<string, UserColor>> taskColorUserNames = null;
-            if (settings.ColorUserNames)
+            if (colorUserNames)
                 taskColorUserNames = Task.Run(() => GetUserColors(root, ct), ct);
 
-            if (settings.RemoveEmoticonNames && settings.ColorUserNames)
+            if (removeEmoticonNames && colorUserNames)
                 Task.WaitAll([taskRemoveEmoticonNames, taskColorUserNames], ct);
-            else if (settings.RemoveEmoticonNames)
+            else if (removeEmoticonNames)
                 taskRemoveEmoticonNames.Wait(ct);
-            else if (settings.ColorUserNames)
+            else if (colorUserNames)
                 taskColorUserNames.Wait(ct);
 
-            if (settings.RemoveEmoticonNames)
+            if (removeEmoticonNames)
                 regexEmbeddedEmoticons = taskRemoveEmoticonNames.Result;
 
-            if (settings.ColorUserNames)
+            if (colorUserNames)
                 userColors = taskColorUserNames.Result;
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
@@ -283,7 +291,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     userColor = DEFAULT_USER_COLOR;
 
                 if (userColors.ContainsKey(user) == false)
-                    userColors.Add(user, new UserColor(user, new Color(userColor)));
+                    userColors.Add(user, new UserColor(user, new ASSAColor(userColor)));
             }
 
             var streamerToken = root.SelectToken("streamer");
@@ -296,7 +304,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                         streamer = streamer[1..];
 
                     if (userColors.ContainsKey(streamer) == false)
-                        userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+                        userColors.Add(streamer, new UserColor(streamer, new ASSAColor(DEFAULT_USER_COLOR)));
                 }
             }
 
@@ -310,7 +318,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     {
                         string streamer = match.Value[1..];
                         if (userColors.ContainsKey(streamer) == false)
-                            userColors.Add(streamer, new UserColor(streamer, new Color(DEFAULT_USER_COLOR)));
+                            userColors.Add(streamer, new UserColor(streamer, new ASSAColor(DEFAULT_USER_COLOR)));
                     }
                 }
             }
@@ -360,24 +368,9 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Debug Code
-
-#if DEBUG
-    private readonly List<int> Debug_MessageIndexes = [];
-
-    private bool Debug_KeepMessage(int messageIndex)
-    {
-        return
-            Debug_MessageIndexes.IsNullOrEmpty() ||
-            Debug_MessageIndexes.BinarySearch(messageIndex) >= 0;
-    }
-#endif
-
-    #endregion
-
     #region Regular Subtitles
 
-    private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
     {
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
 
@@ -393,9 +386,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         GetComments(root, out JToken comments, out int totalMessages);
 
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
         bool isWriteSubtitles = false;
+
+        if (settings.ASS)
+            WriteASSRegularSubtitles(fileName, writer);
 
         ProcessCommentsInChunks(
             comments,
@@ -412,14 +406,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrEmpty(pccm.processedComment.Body))
-            {
-                discardedMessagesCount++;
-                return;
-            }
-
-            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
-            if (showTime < TimeSpan.Zero)
+            if (pccm.processedComment.Timestamp < TimeSpan.Zero ||
+                string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -428,9 +416,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             messagesCount++;
 
 #if DEBUG
-            if (Debug_KeepMessage(messagesCount) == false)
+            if (IsKeepMessage(messagesCount) == false)
+            {
+                discardedMessagesCount++;
                 return;
+            }
 #endif
+
+            TimeSpan showTime = pccm.processedComment.Timestamp;
 
             var sub = Subtitles.FirstOrDefault(s => s.ShowTime == showTime);
             if (sub != null)
@@ -460,7 +453,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
                             var copySubtitles = Subtitles.ToArray();
-                            WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
+                            WriteMessages(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                             Subtitles.Clear();
                             Subtitles.Add(lastSub);
@@ -488,7 +481,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 SortRegularSubtitles(Subtitles);
                 OverlapRegularSubtitles(Subtitles, ref subtitlesCount);
 
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, Subtitles, settings, writer, ct);
             }
 
             lastWritingTask?.Wait(ct);
@@ -563,7 +556,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Rolling Chat Subtitles
 
-    private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
     {
         if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.None)
             settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
@@ -593,11 +586,12 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         GetComments(root, out JToken comments, out int totalMessages);
 
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
         TimeSpan nextAvailableTimeSlot = TimeSpan.MinValue;
         bool isWriteSubtitles = false;
         TimeSpan maxShowTime = TimeSpan.MinValue;
+
+        if (settings.ASS)
+            WriteASSRollingChatSubtitles(fileName, writer, topPosY, bottomPosY);
 
         ProcessCommentsInChunks(
             comments,
@@ -614,14 +608,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrEmpty(pccm.processedComment.Body))
-            {
-                discardedMessagesCount++;
-                return;
-            }
-
-            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
-            if (showTime < TimeSpan.Zero)
+            if (pccm.processedComment.Timestamp < TimeSpan.Zero ||
+                string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -630,10 +618,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             messagesCount++;
 
 #if DEBUG
-            if (Debug_KeepMessage(messagesCount) == false)
+            if (IsKeepMessage(messagesCount) == false)
+            {
+                discardedMessagesCount++;
                 return;
+            }
 #endif
 
+            TimeSpan showTime = pccm.processedComment.Timestamp;
             int linesCount = pccm.message.LinesCount;
 
             if (showTime < nextAvailableTimeSlot)
@@ -793,7 +785,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                             count = Subtitles.Count;
 
                         var copySubtitles = Subtitles.Take(count).ToArray();
-                        WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
+                        WriteMessages(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                         Subtitles.RemoveRange(0, count);
 
@@ -828,7 +820,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             {
                 SortRollingChatSubtitles(Subtitles, settings.SubtitlesRollingDirection);
 
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, Subtitles, settings, writer, ct);
             }
 
             lastWritingTask?.Wait(ct);
@@ -925,7 +917,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #region Static Chat Subtitles
 
-    private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
     {
         if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.None)
             settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
@@ -959,9 +951,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         GetComments(root, out JToken comments, out int totalMessages);
 
-        TimeSpan timeOffset = TimeSpan.FromSeconds(settings.TimeOffset);
-
         Subtitle prevSubtitle = null;
+
+        if (settings.ASS)
+            WriteASSStaticChatSubtitles(fileName, writer, topPosY);
 
         ProcessCommentsInChunks(
             comments,
@@ -978,14 +971,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         void ProcessComment((ProcessedComment processedComment, ChatMessage message) pccm)
         {
-            if (string.IsNullOrEmpty(pccm.processedComment.Body))
-            {
-                discardedMessagesCount++;
-                return;
-            }
-
-            TimeSpan showTime = pccm.processedComment.Timestamp + timeOffset;
-            if (showTime < TimeSpan.Zero)
+            if (pccm.processedComment.Timestamp < TimeSpan.Zero ||
+                string.IsNullOrEmpty(pccm.processedComment.Body))
             {
                 discardedMessagesCount++;
                 return;
@@ -994,9 +981,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             messagesCount++;
 
 #if DEBUG
-            if (Debug_KeepMessage(messagesCount) == false)
+            if (IsKeepMessage(messagesCount) == false)
+            {
+                discardedMessagesCount++;
                 return;
+            }
 #endif
+
+            TimeSpan showTime = pccm.processedComment.Timestamp;
 
             if (prevSubtitle == null)
             {
@@ -1009,7 +1001,6 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
             else
             {
-
                 var subtitle = new Subtitle(showTime, hideTimeMaxValue, topPosY, prevSubtitle);
 
                 if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
@@ -1042,7 +1033,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 Subtitles.RemoveAt(lastIndex);
 
                 var copySubtitles = Subtitles.ToArray();
-                WriteSubtitles(ref lastWritingTask, copySubtitles, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, copySubtitles, settings, writer, ct);
 
                 Subtitles.Clear();
                 Subtitles.Add(lastSub);
@@ -1057,7 +1048,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         void PostProcessComments()
         {
             if (Subtitles.Count > 0)
-                WriteSubtitles(ref lastWritingTask, Subtitles, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, Subtitles, settings, writer, ct);
 
             lastWritingTask?.Wait(ct);
 
@@ -1088,10 +1079,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             }
             else if (subtitlesRollingDirection == SubtitlesRollingDirection.TopToBottom)
             {
-                if (diff >= 2)
+                for (int n = 3; n >= 1; n--)
                 {
-                    topPosY = 2;
-                    bottomPosY += 2;
+                    if (diff >= n)
+                    {
+                        topPosY = n;
+                        bottomPosY += n;
+                        break;
+                    }
                 }
             }
         }
@@ -1116,6 +1111,102 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             else if (subtitlesLocation.IsBottomTwoThirds())
                 topPosY = bottomPosY - ((posYCount - 1) * fontSize);
         }
+    }
+
+    #endregion
+
+    #region Write ASS
+
+    private void WriteASSRegularSubtitles(string fileName, StreamWriter writer)
+    {
+        WriteASSScriptInfo(fileName, writer);
+
+        int fontSize = (settings.SubtitlesFontSize == SubtitlesFontSize.None ? 20 : (int)settings.SubtitlesFontSize);
+        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+        writer.WriteLine($"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,2,10,10,10,1");
+
+        WriteASSEvents(writer);
+        writer.Flush();
+    }
+
+    private void WriteASSRollingChatSubtitles(string fileName, StreamWriter writer, int topPosY, int bottomPosY)
+    {
+        WriteASSScriptInfo(fileName, writer);
+
+        int fontSize = (int)settings.SubtitlesFontSize;
+        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+
+        if (settings.SubtitlesLocation.IsRight())
+        {
+            int posY = topPosY;
+            while (posY <= bottomPosY)
+            {
+                writer.WriteLine($@"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{settings.TextPosXLocationRight},0,{posY},1");
+                posY += fontSize;
+            }
+
+            posY = topPosY;
+            while (posY <= bottomPosY)
+            {
+                writer.WriteLine($@"Style: BrailleV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{settings.BraillePosXLocationRight},0,{posY},1");
+                posY += fontSize;
+            }
+        }
+        else
+        {
+            int posY = topPosY;
+            while (posY <= bottomPosY)
+            {
+                writer.WriteLine($@"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{Subtitle.POS_X_LOCATION_LEFT},0,{posY},1");
+                posY += fontSize;
+            }
+        }
+
+        WriteASSEvents(writer);
+        writer.Flush();
+    }
+
+    private void WriteASSStaticChatSubtitles(string fileName, StreamWriter writer, int topPosY)
+    {
+        WriteASSScriptInfo(fileName, writer);
+
+        int fontSize = (int)settings.SubtitlesFontSize;
+        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+
+        if (settings.SubtitlesLocation.IsRight())
+        {
+            writer.WriteLine($@"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{settings.TextPosXLocationRight},0,{topPosY},1");
+            writer.WriteLine($@"Style: Braille,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{settings.BraillePosXLocationRight},0,{topPosY},1");
+        }
+        else
+        {
+            writer.WriteLine($@"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,{Subtitle.POS_X_LOCATION_LEFT},0,{topPosY},1");
+        }
+
+        WriteASSEvents(writer);
+        writer.Flush();
+    }
+
+    private static void WriteASSScriptInfo(string fileName, StreamWriter writer)
+    {
+        writer.WriteLine($@"[Script Info]
+; This is an Advanced Sub Station Alpha v4+ script.
+Title: {fileName}
+ScriptType: v4.00+
+PlayResX: 384
+PlayResY: 288
+PlayDepth: 0
+ScaledBorderAndShadow: Yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding");
+    }
+
+    private static void WriteASSEvents(StreamWriter writer)
+    {
+        writer.WriteLine($@"
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text");
     }
 
     #endregion
@@ -1160,8 +1251,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             messagesCount++;
 
 #if DEBUG
-            if (Debug_KeepMessage(messagesCount) == false)
+            if (IsKeepMessage(messagesCount) == false)
+            {
+                discardedMessagesCount++;
                 return;
+            }
 #endif
 
             ChatMessages.Add(pccm.message);
@@ -1170,7 +1264,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             if (ChatMessages.Count >= FLUSH_SUBTITLES_COUNT)
             {
                 var copyChatMessages = ChatMessages.ToArray();
-                WriteChatMessages(ref lastWritingTask, copyChatMessages, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, copyChatMessages, settings, writer, ct);
                 ChatMessages.Clear();
             }
         }
@@ -1183,7 +1277,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         void PostProcessComments()
         {
             if (ChatMessages.Count > 0)
-                WriteChatMessages(ref lastWritingTask, ChatMessages, settings, writer, ct);
+                WriteMessages(ref lastWritingTask, ChatMessages, settings, writer, ct);
 
             lastWritingTask?.Wait(ct);
 
@@ -1329,13 +1423,18 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
     {
         var processedComment = new ProcessedComment
         {
-            Timestamp = TimeSpan.FromSeconds(comment.SelectToken("content_offset_seconds").Value<int>()),
+            Timestamp =
+                TimeSpan.FromSeconds(comment.SelectToken("content_offset_seconds").Value<int>()) +
+                TimeSpan.FromSeconds(settings.ChatTextFile ? 0 : settings.TimeOffset),
             User = comment.SelectToken("commenter").SelectToken("display_name").Value<string>(),
             IsModerator = comment.SelectToken("message").SelectToken("user_badges").Any(ub =>
                 ub.SelectToken("_id").Value<string>() == "broadcaster" ||
                 ub.SelectToken("_id").Value<string>() == "moderator"
             )
         };
+
+        if (processedComment.Timestamp < TimeSpan.Zero)
+            return (processedComment, null);
 
         processedComment.Body = GetMessageBody(
             comment.SelectToken("message"),
@@ -1470,7 +1569,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             body.Replace(" ", "\\N");
 
-            if (settings.IsUsingAssaTags == false)
+            if (settings.ASS == false && settings.IsUsingAssaTags == false)
                 body.Replace(@"\N", Environment.NewLine);
 
             return body.ToString();
@@ -1569,8 +1668,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             void ColorUserNames(UserColor userColor)
             {
-                if (settings.InternalTextColor != null)
-                    userColor.SearchAndReplace(body, $@"{{\c&{settings.InternalTextColor.BGR}&}}");
+                if (settings.ASS == false && settings.TextASSAColor != null)
+                    userColor.SearchAndReplace(body, $@"{{\c{settings.TextASSAColor}}}");
                 else
                     userColor.SearchAndReplace(body);
             }
@@ -1643,7 +1742,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                     }
 
                     if (endIndex <= 0)
-                        endIndex = -1;
+                    {
+                        body.Insert(0, '\n');
+                        startIndex = 1;
+                        continue;
+                    }
                 }
 
                 if (endIndex >= body.Length)
@@ -1680,6 +1783,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
                 if (found)
                     continue;
 
+                if (startIndex == 0)
+                {
+                    body.Insert(0, '\n');
+                    startIndex = 1;
+                    continue;
+                }
+
                 if (endIndex + 1 <= body.Length)
                 {
                     body.Insert(endIndex + 1, '\n');
@@ -1700,70 +1810,46 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
     #endregion
 
-    #region Write Subtitles & Chat Messages
+    #region Write Messages
 
-    private static void WriteSubtitles(
+    private static void WriteMessages(
         ref Task<int> lastWritingTask,
-        IEnumerable<Subtitle> subtitles,
+        IEnumerable<IMessage> messages,
         TwitchSubtitlesSettings settings,
         StreamWriter writer,
         CancellationToken ct)
-    {
-        WriteMessages(ref lastWritingTask, subtitles, settings, writer, false, ct);
-    }
-
-    private static void WriteChatMessages(
-        ref Task<int> lastWritingTask,
-        IEnumerable<ChatMessage> chatMessages,
-        TwitchSubtitlesSettings settings,
-        StreamWriter writer,
-        CancellationToken ct)
-    {
-        WriteMessages(ref lastWritingTask, chatMessages, settings, writer, true, ct);
-    }
-
-    private static void WriteMessages<TMessage>(
-        ref Task<int> lastWritingTask,
-        IEnumerable<TMessage> messages,
-        TwitchSubtitlesSettings settings,
-        StreamWriter writer,
-        bool toChatLogString,
-        CancellationToken ct)
-        where TMessage : IMessage
     {
         if (lastWritingTask != null && lastWritingTask.Exception != null)
             throw lastWritingTask.Exception;
 
         if (lastWritingTask == null)
-            lastWritingTask = Task.Run(() => WriteMessagesAsync(messages, 1, settings, writer, toChatLogString, ct), ct);
+            lastWritingTask = Task.Run(() => WriteMessagesAsync(messages, 1, settings, writer, ct), ct);
         else
-            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteMessagesAsync(messages, previousTask.Result, settings, writer, toChatLogString, ct), ct);
+            lastWritingTask = lastWritingTask.ContinueWith((previousTask) => WriteMessagesAsync(messages, previousTask.Result, settings, writer, ct), ct);
     }
 
-    private static int WriteMessagesAsync<TMessage>(
-        IEnumerable<TMessage> messages,
-        int subsCounter,
+    private static int WriteMessagesAsync(
+        IEnumerable<IMessage> messages,
+        int messagesCounter,
         TwitchSubtitlesSettings settings,
         StreamWriter writer,
-        bool toChatLogString,
         CancellationToken ct)
-        where TMessage : IMessage
     {
         try
         {
             ct.ThrowIfCancellationRequested();
 
-            foreach (var message in messages)
+            if (settings.ChatTextFile || settings.ASS)
             {
-                if (toChatLogString)
+                foreach (var message in messages)
+                    writer.WriteLine(message.ToString(settings, messagesCounter++));
+            }
+            else
+            {
+                foreach (var message in messages)
                 {
-                    subsCounter++;
-                    writer.WriteLine(message.ToChatLogString(settings));
-                }
-                else
-                {
-                    writer.WriteLine(subsCounter++);
-                    writer.WriteLine(message.ToString(settings));
+                    writer.WriteLine(messagesCounter);
+                    writer.WriteLine(message.ToString(settings, messagesCounter++));
                 }
             }
 
@@ -1771,19 +1857,39 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
             ct.ThrowIfCancellationRequested();
 
-            return subsCounter;
+            return messagesCounter;
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
             // swallow the exception
             // and finish the task gracefully
-            return subsCounter;
+            return messagesCounter;
         }
         catch
         {
             throw;
         }
     }
+
+    #endregion
+
+    #region Messages To Keep
+
+#if DEBUG
+    private readonly List<int> MessageIndexesToKeep = [];
+
+    private void SortMessageIndexesToKeep()
+    {
+        MessageIndexesToKeep.Sort();
+    }
+
+    private bool IsKeepMessage(int messageIndex)
+    {
+        return
+            MessageIndexesToKeep.Count == 0 ||
+            MessageIndexesToKeep.BinarySearch(messageIndex) >= 0;
+    }
+#endif
 
     #endregion
 
@@ -1794,63 +1900,107 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         using var srtStream = File.Open(srtFile, FileMode.Create);
         using var writer = new StreamWriter(srtStream, Encoding.UTF8);
 
-        foreach (var line in GetFontSizeTestSubtitles())
-            writer.WriteLine(line);
-    }
+        int subtitleNumber = 1;
 
-    private static IEnumerable<string> GetFontSizeTestSubtitles()
-    {
-        bool isRight = false;
-
+        bool isBrailleArt = false;
         for (int i = 0; i < 2; i++)
         {
-            int posY = 60;
-
-            foreach (SubtitlesFontSize subtitlesFontSize in Enum.GetValues<SubtitlesFontSize>())
+            bool isRight = false;
+            for (int k = 0; k < 2; k++)
             {
-                if (subtitlesFontSize == SubtitlesFontSize.None)
-                    continue;
+                int posY = (isBrailleArt ? 150 : 50);
 
-                FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
-                var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
-
-                var nums = Enumerable.Range(1, measurements.LineLength);
-                if (isRight)
-                    nums = nums.Reverse();
-                string line = string.Join(string.Empty, nums.Select(n => n % 10));
-
-                if (isRight == false)
+                foreach (SubtitlesFontSize subtitlesFontSize in Enum.GetValues<SubtitlesFontSize>())
                 {
-                    int spaceOffset = 0;
+                    if (subtitlesFontSize == SubtitlesFontSize.None)
+                        continue;
 
-                    if (subtitlesFontSize == SubtitlesFontSize.Regular)
-                        spaceOffset = 49;
-                    else if (subtitlesFontSize == SubtitlesFontSize.Medium)
-                        spaceOffset = 39;
-                    else if (subtitlesFontSize == SubtitlesFontSize.Large)
-                        spaceOffset = 36;
-                    else if (subtitlesFontSize == SubtitlesFontSize.XL)
-                        spaceOffset = 36;
-                    else if (subtitlesFontSize == SubtitlesFontSize.X2L)
-                        spaceOffset = 30;
-                    else if (subtitlesFontSize == SubtitlesFontSize.X3L)
-                        spaceOffset = 21;
-                    else if (subtitlesFontSize == SubtitlesFontSize.X4L)
-                        spaceOffset = 13;
-                    else if (subtitlesFontSize == SubtitlesFontSize.X5L)
-                        spaceOffset = 6;
+                    FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
+                    var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
 
-                    line += $"{new string(' ', spaceOffset)}{subtitlesFontSize}, fs{(int)subtitlesFontSize}, {measurements.LineLength} chars";
+                    string line = null;
+                    if (isBrailleArt)
+                    {
+                        int brailleLineLength = 30;
+
+                        if (isRight)
+                        {
+                            line = $"⡇{new string('⣿', brailleLineLength - 2)}⢸";
+                        }
+                        else
+                        {
+                            int spaceOffset = 0;
+
+                            if (subtitlesFontSize == SubtitlesFontSize.Regular)
+                                spaceOffset = 117;
+                            else if (subtitlesFontSize == SubtitlesFontSize.Medium)
+                                spaceOffset = 96;
+                            else if (subtitlesFontSize == SubtitlesFontSize.Large)
+                                spaceOffset = 87;
+                            else if (subtitlesFontSize == SubtitlesFontSize.XL)
+                                spaceOffset = 80;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X2L)
+                                spaceOffset = 68;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X3L)
+                                spaceOffset = 59;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X4L)
+                                spaceOffset = 51;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X5L)
+                                spaceOffset = 45;
+
+                            line = $"⡇{new string(' ', spaceOffset)}{subtitlesFontSize}, {brailleLineLength} chars, PosX {measurements.BraillePosXLocationRight}";
+                        }
+                    }
+                    else
+                    {
+                        var nums = Enumerable.Range(1, measurements.LineLength);
+                        if (isRight)
+                            nums = nums.Reverse();
+                        line = string.Join(string.Empty, nums.Select(n => n % 10));
+
+                        if (isRight == false)
+                        {
+                            int spaceOffset = 0;
+
+                            if (subtitlesFontSize == SubtitlesFontSize.Regular)
+                                spaceOffset = 49;
+                            else if (subtitlesFontSize == SubtitlesFontSize.Medium)
+                                spaceOffset = 39;
+                            else if (subtitlesFontSize == SubtitlesFontSize.Large)
+                                spaceOffset = 37;
+                            else if (subtitlesFontSize == SubtitlesFontSize.XL)
+                                spaceOffset = 36;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X2L)
+                                spaceOffset = 30;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X3L)
+                                spaceOffset = 21;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X4L)
+                                spaceOffset = 13;
+                            else if (subtitlesFontSize == SubtitlesFontSize.X5L)
+                                spaceOffset = 6;
+
+                            line += $"{new string(' ', spaceOffset)}{subtitlesFontSize}, {measurements.LineLength} chars";
+                        }
+                    }
+
+                    if (subtitlesFontSize <= SubtitlesFontSize.Large)
+                        posY += 8;
+                    else if (subtitlesFontSize <= SubtitlesFontSize.X3L)
+                        posY += 10;
+                    else
+                        posY += 11;
+
+                    writer.WriteLine(subtitleNumber++);
+                    writer.WriteLine("00:00:00,000 --> 10:00:00,000");
+                    writer.WriteLine($@"{{\a5\an7\pos({(isRight ? (isBrailleArt ? measurements.BraillePosXLocationRight : measurements.TextPosXLocationRight) : Subtitle.POS_X_LOCATION_LEFT)},{posY})\fn{Subtitle.FONT_NAME}\fs{(int)subtitlesFontSize}{Subtitle.FONT_RESET}}}");
+                    writer.WriteLine(line);
+                    writer.WriteLine(string.Empty);
                 }
 
-                yield return $"{(isRight ? 2 : 1)}{(int)subtitlesFontSize:00}";
-                yield return "00:00:00,000 --> 9:59:59,999";
-                yield return $@"{{\a5\an7\pos({(isRight ? measurements.PosXLocationRight : Subtitle.POS_X_LOCATION_LEFT)},{posY += (subtitlesFontSize <= SubtitlesFontSize.Large ? 6 : (subtitlesFontSize <= SubtitlesFontSize.X3L ? 7 : 8))})\fn{Subtitle.FONT_NAME}\fs{(int)subtitlesFontSize}\bord0\shad0}}";
-                yield return line;
-                yield return string.Empty;
+                isRight = true;
             }
 
-            isRight = true;
+            isBrailleArt = true;
         }
     }
 

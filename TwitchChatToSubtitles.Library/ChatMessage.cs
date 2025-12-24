@@ -5,11 +5,17 @@ internal partial class ChatMessage(string body) : IMessage
     public readonly TimeSpan Timestamp;
     public readonly string User;
     public readonly bool IsModerator;
-    public readonly Color UserColor;
+    public readonly ASSAColor UserColor;
     public readonly bool IsBrailleArt;
     public readonly string Body = body;
 
-    public ChatMessage(TimeSpan timestamp, string user, bool isModerator, Color userColor, string body, bool isBrailleArt)
+    private ChatMessage(string body, bool isBrailleArt)
+        : this(body)
+    {
+        IsBrailleArt = isBrailleArt;
+    }
+
+    public ChatMessage(TimeSpan timestamp, string user, bool isModerator, ASSAColor userColor, string body, bool isBrailleArt)
         : this(body)
     {
         Timestamp = timestamp;
@@ -32,16 +38,16 @@ internal partial class ChatMessage(string body) : IMessage
                 if (string.IsNullOrEmpty(Body))
                 {
                     if (string.IsNullOrEmpty(User))
-                        linesCount = 0;
+                        return 0;
                     else
-                        linesCount = (IsBrailleArt ? 1 : 0);
+                        return linesCount = (IsBrailleArt ? 1 : 0);
                 }
                 else
                 {
                     if (string.IsNullOrEmpty(User))
-                        linesCount = RegexHardNewLine().Matches(Body).Count + 1;
+                        return linesCount = RegexHardNewLine().Matches(Body).Count + 1;
                     else
-                        linesCount = RegexHardNewLine().Matches(Body).Count + 1 + (IsBrailleArt ? 1 : 0);
+                        return linesCount = RegexHardNewLine().Matches(Body).Count + 1 + (IsBrailleArt ? 1 : 0);
                 }
             }
 
@@ -61,7 +67,7 @@ internal partial class ChatMessage(string body) : IMessage
         {
             shaveCount--;
             if (shaveCount == 0)
-                return new ChatMessage(Body);
+                return new ChatMessage(Body, IsBrailleArt);
         }
 
         var startIndex =
@@ -82,7 +88,7 @@ internal partial class ChatMessage(string body) : IMessage
             return new ChatMessage(string.Empty);
 
         string shavedBody = Body[startIndex..];
-        return new ChatMessage(shavedBody);
+        return new ChatMessage(shavedBody, IsBrailleArt);
     }
 
     public ChatMessage ShaveLinesFromTheBottom(int shaveCount)
@@ -123,59 +129,58 @@ internal partial class ChatMessage(string body) : IMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesFontSize.None, 0, null, false);
+        return ToString(new TwitchSubtitlesSettings(), 1);
     }
 
-    public string ToString(TwitchSubtitlesSettings settings)
+    public string ToString(TwitchSubtitlesSettings settings, int messageIndex)
     {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesFontSize, settings.TimestampFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
-    }
+        if (settings.ChatTextFile)
+        {
+            string chatLogBody = (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
 
-    public string ToString(bool showTimestamps, SubtitlesFontSize subtitlesFontSize, int timestampFontSize, Color textColor, bool isUsingAssaTags)
-    {
+            if (string.IsNullOrEmpty(User))
+                return chatLogBody;
+            else
+                return $"[{messageIndex}] {ChatLogTimestampAndUser(settings.ShowTimestamps)}:{(IsBrailleArt ? Environment.NewLine : " ")}{chatLogBody}";
+        }
+
         if (string.IsNullOrEmpty(User))
         {
-            if (textColor != null)
-                return $@"{{\c&{textColor.BGR}&}}" + Body;
+            if (settings.ASS == false && settings.TextASSAColor != null)
+                return $@"{{\c{settings.TextASSAColor}}}" + Body;
             else
                 return Body;
         }
+
+        if (settings.ASS)
+        {
+            string timestampStr = null;
+            if (settings.ShowTimestamps)
+                timestampStr = $@"{{\fs{settings.TimestampFontSize}}}{ToTimestamp(Timestamp)}{{\rfs}} ";
+
+            if (settings.RegularSubtitles)
+                return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+            else
+                return $"{timestampStr}{(IsModerator ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+        }
         else
         {
-            string timestampStr = string.Empty;
-            if (showTimestamps)
+            string timestampStr = null;
+            if (settings.ShowTimestamps)
             {
-                string fontSizeStr = string.Empty;
-                if (subtitlesFontSize != SubtitlesFontSize.None)
-                    fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
+                string fontSizeStr = null;
+                if (settings.SubtitlesFontSize != SubtitlesFontSize.None)
+                    fontSizeStr = $@"\fs{(int)settings.SubtitlesFontSize}";
 
-                timestampStr = $@"{{\fs{timestampFontSize}{(textColor != null ? $@"\c&{textColor.BGR}&" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(textColor != null ? @"\c" : string.Empty)}\rfs\fn{Subtitle.FONT_NAME}{fontSizeStr}\bord0\shad0}} ";
+                timestampStr = $@"{{\fs{settings.TimestampFontSize}{(settings.TextASSAColor != null ? $@"\c{settings.TextASSAColor}" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(settings.TextASSAColor != null ? @"\c" : string.Empty)}\rfs\fn{Subtitle.FONT_NAME}{fontSizeStr}{Subtitle.FONT_RESET}}} ";
             }
 
-            return $"{timestampStr}{(IsModerator && isUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\c&{UserColor.BGR}&}}" : (textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty))}{User}{(UserColor != null || textColor != null ? @"{\c}" : string.Empty)}{(IsModerator && isUsingAssaTags ? @"{\u0}" : string.Empty)}{(textColor != null ? $@"{{\c&{textColor.BGR}&}}" : string.Empty)}:{(IsBrailleArt ? (isUsingAssaTags ? @"\N" : Environment.NewLine) : " ")}{Body}";
+            return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : (settings.TextASSAColor != null ? $@"{{\b1\c{settings.TextASSAColor}}}" : string.Empty))}{User}{(UserColor != null || settings.TextASSAColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}{(settings.TextASSAColor != null ? $@"{{\c{settings.TextASSAColor}}}" : string.Empty)}:{(IsBrailleArt ? (settings.IsUsingAssaTags ? @"\N" : Environment.NewLine) : " ")}{Body}";
         }
     }
 
-    public string ToChatLogString(TwitchSubtitlesSettings settings)
-    {
-        return ToChatLogString(settings.ShowTimestamps);
-    }
-
-    public string ToChatLogString(bool showTimestamps)
-    {
-        if (string.IsNullOrEmpty(User))
-            return ChatLogBody();
-        else
-            return $"{ChatLogTimestampAndUser(showTimestamps)}:{(IsBrailleArt ? Environment.NewLine : " ")}{ChatLogBody()}";
-    }
-
-    public string ChatLogTimestampAndUser(bool showTimestamps)
+    internal string ChatLogTimestampAndUser(bool showTimestamps)
     {
         return $"{(showTimestamps ? $"{ToChatLogTimestamp(Timestamp)} " : string.Empty)}{(IsModerator ? "[M] " : string.Empty)}{User}";
-    }
-
-    public string ChatLogBody()
-    {
-        return (IsBrailleArt ? Body.Replace(@"\N", Environment.NewLine) : Body);
     }
 }

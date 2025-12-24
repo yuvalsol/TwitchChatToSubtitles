@@ -11,6 +11,9 @@ internal interface IAllSubtitleTypesOptions
     [Option("JsonFile", Required = false, HelpText = "Path to Twitch chat JSON file.")]
     string JsonFile { get; set; }
 
+    [Option("ass", Required = false, HelpText = "Whether to write Advanced Sub Station Alpha (.ass) file.")]
+    bool ASS { get; set; }
+
     [Option("ColorUserNames", Required = false, HelpText = "Whether to color user names.")]
     bool ColorUserNames { get; set; }
 
@@ -20,7 +23,7 @@ internal interface IAllSubtitleTypesOptions
     [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
     bool ShowTimestamps { get; set; }
 
-    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Medium, Large, XL, X2L, X3L, X4L, X5L.")]
+    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.")]
     SubtitlesFontSize SubtitlesFontSize { get; set; }
 
     [Option("TextColor", Required = false, HelpText = "The color of the subtitles text.")]
@@ -270,6 +273,7 @@ internal class ChatTextFileOptions : IChatTextFileOptions
 internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
 {
     public string JsonFile { get; set; }
+    public bool ASS { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -291,10 +295,52 @@ internal partial class TwitchSubtitlesOptions
     , IChatTextFileOptions
 {
     public string JsonFile { get; set; }
-    public bool RegularSubtitles { get; set; }
-    public bool RollingChatSubtitles { get; set; }
-    public bool StaticChatSubtitles { get; set; }
-    public bool ChatTextFile { get; set; }
+    public bool ASS { get; set; }
+
+    private bool regularSubtitles;
+    public bool RegularSubtitles
+    {
+        get => regularSubtitles;
+        set => SetSubtitlesType(ref regularSubtitles, value);
+    }
+
+    private bool rollingChatSubtitles;
+    public bool RollingChatSubtitles
+    {
+        get => rollingChatSubtitles;
+        set => SetSubtitlesType(ref rollingChatSubtitles, value);
+    }
+
+    private bool staticChatSubtitles;
+    public bool StaticChatSubtitles
+    {
+        get => staticChatSubtitles;
+        set => SetSubtitlesType(ref staticChatSubtitles, value);
+    }
+
+    private bool chatTextFile;
+    public bool ChatTextFile
+    {
+        get => chatTextFile;
+        set => SetSubtitlesType(ref chatTextFile, value);
+    }
+
+    private void SetSubtitlesType(ref bool currentValue, bool value)
+    {
+        if (currentValue == value)
+            return;
+
+        if (value)
+        {
+            regularSubtitles = false;
+            rollingChatSubtitles = false;
+            staticChatSubtitles = false;
+            chatTextFile = false;
+        }
+
+        currentValue = value;
+    }
+
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -306,12 +352,11 @@ internal partial class TwitchSubtitlesOptions
     public string TextColor { get; set; }
     public int TimeOffset { get; set; }
 
-    internal bool WriteFontSizeTestSubtitles { get; set; }
-
     public TwitchSubtitlesSettings ToSettings()
     {
         return new TwitchSubtitlesSettings
         {
+            ASS = ASS,
             SubtitlesType =
                 (RegularSubtitles ? SubtitlesType.RegularSubtitles :
                 (RollingChatSubtitles ? SubtitlesType.RollingChatSubtitles :

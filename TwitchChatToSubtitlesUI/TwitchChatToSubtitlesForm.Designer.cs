@@ -33,6 +33,7 @@
             txtConsole = new RichTextBox();
             ddlSubtitlesFontSize = new ComboBox();
             splitContainer1 = new SplitContainer();
+            chkASS = new CheckBox();
             ddlSubtitlesRollingDirection = new ComboBox();
             lblSubtitlesRollingDirection = new Label();
             lblTextColor = new Label();
@@ -117,6 +118,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(chkASS);
             splitContainer1.Panel2.Controls.Add(ddlSubtitlesRollingDirection);
             splitContainer1.Panel2.Controls.Add(lblSubtitlesRollingDirection);
             splitContainer1.Panel2.Controls.Add(lblTextColor);
@@ -149,6 +151,20 @@
             splitContainer1.SplitterDistance = 279;
             splitContainer1.TabIndex = 0;
             splitContainer1.TabStop = false;
+            // 
+            // chkASS
+            // 
+            chkASS.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            chkASS.AutoSize = true;
+            chkASS.CheckAlign = ContentAlignment.MiddleRight;
+            chkASS.Location = new Point(185, 239);
+            chkASS.Name = "chkASS";
+            chkASS.Size = new Size(51, 24);
+            chkASS.TabIndex = 16;
+            chkASS.Text = ".ass";
+            toolTip.SetToolTip(chkASS, "Whether to write Advanced Sub Station Alpha (.ass) file.");
+            chkASS.UseVisualStyleBackColor = true;
+            chkASS.CheckedChanged += chk_CheckedChanged;
             // 
             // ddlSubtitlesRollingDirection
             // 
@@ -247,10 +263,10 @@
             btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnCommandLine.AutoSize = true;
             btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnCommandLine.Location = new Point(485, 236);
+            btnCommandLine.Location = new Point(506, 236);
             btnCommandLine.Name = "btnCommandLine";
             btnCommandLine.Size = new Size(119, 30);
-            btnCommandLine.TabIndex = 17;
+            btnCommandLine.TabIndex = 18;
             btnCommandLine.Text = "Command Line";
             btnCommandLine.UseVisualStyleBackColor = true;
             btnCommandLine.Click += btnCommandLine_Click;
@@ -274,12 +290,11 @@
             chkCloseWhenFinishedSuccessfully.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             chkCloseWhenFinishedSuccessfully.AutoSize = true;
             chkCloseWhenFinishedSuccessfully.CheckAlign = ContentAlignment.MiddleRight;
-            chkCloseWhenFinishedSuccessfully.Location = new Point(208, 239);
+            chkCloseWhenFinishedSuccessfully.Location = new Point(244, 239);
             chkCloseWhenFinishedSuccessfully.Name = "chkCloseWhenFinishedSuccessfully";
             chkCloseWhenFinishedSuccessfully.Size = new Size(246, 24);
-            chkCloseWhenFinishedSuccessfully.TabIndex = 16;
+            chkCloseWhenFinishedSuccessfully.TabIndex = 17;
             chkCloseWhenFinishedSuccessfully.Text = "Close When Finished Successfully";
-            toolTip.SetToolTip(chkCloseWhenFinishedSuccessfully, "Whether to show chat message timestamps.");
             chkCloseWhenFinishedSuccessfully.UseVisualStyleBackColor = true;
             chkCloseWhenFinishedSuccessfully.CheckedChanged += chk_CheckedChanged;
             // 
@@ -564,5 +579,6 @@
         private Label lblTextColor;
         private Label lblSubtitlesRollingDirection;
         private ComboBox ddlSubtitlesRollingDirection;
+        private CheckBox chkASS;
     }
 }

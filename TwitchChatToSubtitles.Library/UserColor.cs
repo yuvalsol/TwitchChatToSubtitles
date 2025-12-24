@@ -3,7 +3,7 @@
 internal class UserColor
 {
     public readonly string User;
-    public readonly Color Color;
+    public readonly ASSAColor Color;
 
     private readonly Regex Search1;
     private readonly string Replacement1;
@@ -11,7 +11,7 @@ internal class UserColor
     private readonly Regex Search2;
     private readonly string Replacement2;
 
-    public UserColor(string user, Color color)
+    public UserColor(string user, ASSAColor color)
     {
         User = user;
         Color = color;
@@ -23,7 +23,7 @@ internal class UserColor
         // (?!\.com)
         // (?=$|\b|\s|\\N)
         Search1 = new Regex($@"(?<=^|\b|\s|\\N)@{Regex.Escape(user)}(?![/])(?!\.com)(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        Replacement1 = $@"{{\c&{Color.BGR}&}}@{user}{{\c}}";
+        Replacement1 = $@"{{\c{Color}}}@{user}{{\c}}";
 
         // (?<=^|\b|\s|\\N)
         // (?<![@/])
@@ -32,7 +32,7 @@ internal class UserColor
         // (?!\.com)
         // (?=$|\b|\s|\\N)
         Search2 = new Regex($@"(?<=^|\b|\s|\\N)(?<![@/]){Regex.Escape(user)}(?![@/])(?!\.com)(?=$|\b|\s|\\N)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        Replacement2 = $@"{{\c&{Color.BGR}&}}{user}{{\c}}";
+        Replacement2 = $@"{{\c{Color}}}{user}{{\c}}";
     }
 
     public void SearchAndReplace(StringBuilder body)

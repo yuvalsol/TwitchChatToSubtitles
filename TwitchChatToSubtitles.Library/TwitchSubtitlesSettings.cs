@@ -2,6 +2,8 @@
 
 public class TwitchSubtitlesSettings
 {
+    public bool ASS { get; set; }
+
     public SubtitlesType SubtitlesType { get; set; }
 
     public bool RegularSubtitles { get { return SubtitlesType == SubtitlesType.RegularSubtitles; } }
@@ -40,7 +42,8 @@ public class TwitchSubtitlesSettings
                 FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
                 var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
                 LineLength = measurements.LineLength;
-                PosXLocationRight = measurements.PosXLocationRight;
+                TextPosXLocationRight = measurements.TextPosXLocationRight;
+                BraillePosXLocationRight = measurements.BraillePosXLocationRight;
                 MaxBottomPosY = measurements.MaxBottomPosY;
                 TimestampFontSize = measurements.TimestampFontSize;
             }
@@ -48,27 +51,26 @@ public class TwitchSubtitlesSettings
     }
 
     internal int LineLength { get; private set; }
-    internal int PosXLocationRight { get; private set; }
+    internal int TextPosXLocationRight { get; private set; }
+    internal int BraillePosXLocationRight { get; private set; }
     internal int MaxBottomPosY { get; private set; }
     internal int TimestampFontSize { get; private set; }
 
     public SubtitlesLocation SubtitlesLocation { get; set; }
     public SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
     public SubtitlesSpeed SubtitlesSpeed { get; set; }
-    public System.Drawing.Color? TextColor { get; set; }
+    public Color? TextColor { get; set; }
     public int TimeOffset { get; set; }
 
-    private Color internalTextColor;
-    internal Color InternalTextColor
+    private ASSAColor textASSAColor;
+    internal ASSAColor TextASSAColor
     {
         get
         {
             if (TextColor == null)
                 return null;
 
-            internalTextColor ??= new Color(TextColor.Value);
-
-            return internalTextColor;
+            return textASSAColor ??= new ASSAColor($"#{TextColor.Value.R:X2}{TextColor.Value.G:X2}{TextColor.Value.B:X2}");
         }
     }
 
@@ -79,6 +81,7 @@ public class TwitchSubtitlesSettings
             return
                 (ChatTextFile == false) &&
                 (
+                    ASS ||
                     RollingChatSubtitles ||
                     StaticChatSubtitles ||
                     ColorUserNames ||

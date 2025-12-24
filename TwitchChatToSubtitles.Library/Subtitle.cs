@@ -3,6 +3,7 @@
 internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 {
     internal const string FONT_NAME = "Calibri";
+    internal const string FONT_RESET = @"\b0\bord0\shad0";
     internal const int POS_X_LOCATION_LEFT = 3;
 
     public readonly TimeSpan ShowTime = showTime;
@@ -68,6 +69,14 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         get
         {
             return Messages.HasAny(message => message == null);
+        }
+    }
+
+    public bool HasBrailleArtMessage
+    {
+        get
+        {
+            return Messages.HasAny(message => message?.IsBrailleArt ?? false);
         }
     }
 
@@ -221,51 +230,48 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 
     public override string ToString()
     {
-        return ToString(false, SubtitlesLocation.Left, SubtitlesFontSize.None, 0, 0, null, false);
+        return ToString(new TwitchSubtitlesSettings(), 1);
     }
 
-    public string ToString(TwitchSubtitlesSettings settings)
-    {
-        return ToString(settings.ShowTimestamps, settings.SubtitlesLocation, settings.SubtitlesFontSize, settings.PosXLocationRight, settings.TimestampFontSize, settings.InternalTextColor, settings.IsUsingAssaTags);
-    }
-
-    public string ToString(bool showTimestamps, SubtitlesLocation subtitlesLocation, SubtitlesFontSize subtitlesFontSize, int posXLocationRight, int timestampFontSize, Color textColor, bool isUsingAssaTags)
+    public string ToString(TwitchSubtitlesSettings settings, int messageIndex)
     {
         var sb = new StringBuilder();
-        sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
 
-        if (HasPosY || subtitlesFontSize != SubtitlesFontSize.None)
+        if (settings.ASS)
         {
-            string fontSizeStr = string.Empty;
-            if (subtitlesFontSize != SubtitlesFontSize.None)
-                fontSizeStr = $@"\fs{(int)subtitlesFontSize}";
+            if (settings.RollingChatSubtitles)
+                sb.Append($@"Dialogue: {messageIndex % 2},{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},{(settings.SubtitlesLocation.IsRight() && HasBrailleArtMessage ? "BrailleV" : "TextV")}{PosY},,0,0,0,,");
+            else if (settings.StaticChatSubtitles)
+                sb.Append($@"Dialogue: 0,{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},{(settings.SubtitlesLocation.IsRight() && HasBrailleArtMessage ? "Braille" : "Default")},,0,0,0,,");
+            else
+                sb.Append($@"Dialogue: 0,{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},Default,,0,0,0,,");
 
-            if (HasPosY)
-                sb.Append($@"{{\a5\an7\pos({(subtitlesLocation.IsRight() ? posXLocationRight : POS_X_LOCATION_LEFT)},{PosY})\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
-            else if (subtitlesFontSize != SubtitlesFontSize.None)
-                sb.Append($@"{{\fn{FONT_NAME}{fontSizeStr}\bord0\shad0}}");
+            sb.AppendJoin(@"\N", Messages.Select(message => message.ToString(settings, messageIndex)));
         }
-        else if (isUsingAssaTags)
+        else
         {
-            sb.Append(@"{\bord0\shad0}");
+            sb.AppendLine($@"{(ShowTime.Days * 24) + ShowTime.Hours:00}{ShowTime:\:mm\:ss\,fff} --> {(HideTime.Days * 24) + HideTime.Hours:00}{HideTime:\:mm\:ss\,fff}");
+
+            if (HasPosY || settings.SubtitlesFontSize != SubtitlesFontSize.None)
+            {
+                string fontSizeStr = null;
+                if (settings.SubtitlesFontSize != SubtitlesFontSize.None)
+                    fontSizeStr = $@"\fs{(int)settings.SubtitlesFontSize}";
+
+                if (HasPosY)
+                    sb.Append($@"{{\a5\an7\pos({(settings.SubtitlesLocation.IsRight() ? (HasBrailleArtMessage ? settings.BraillePosXLocationRight : settings.TextPosXLocationRight) : POS_X_LOCATION_LEFT)},{PosY})\fn{FONT_NAME}{fontSizeStr}{FONT_RESET}}}");
+                else if (settings.SubtitlesFontSize != SubtitlesFontSize.None)
+                    sb.Append($@"{{\fn{FONT_NAME}{fontSizeStr}{FONT_RESET}}}");
+            }
+            else if (settings.IsUsingAssaTags)
+            {
+                sb.Append($@"{{{FONT_RESET}}}");
+            }
+
+            foreach (var message in Messages)
+                sb.AppendLine(message.ToString(settings, messageIndex));
         }
 
-        foreach (var message in Messages)
-            sb.AppendLine(message.ToString(showTimestamps, subtitlesFontSize, timestampFontSize, textColor, isUsingAssaTags));
-
-        return sb.ToString();
-    }
-
-    public string ToChatLogString(TwitchSubtitlesSettings settings)
-    {
-        return ToChatLogString(settings.ShowTimestamps);
-    }
-
-    public string ToChatLogString(bool showTimestamps)
-    {
-        var sb = new StringBuilder();
-        foreach (var message in Messages)
-            sb.AppendLine(message.ToChatLogString(showTimestamps));
         return sb.ToString();
     }
 }

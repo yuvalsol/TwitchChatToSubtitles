@@ -2,7 +2,7 @@
 
 # Twitch Chat To Subtitles
 
-Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitle file.
+Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitles file or Advanced Sub Station Alpha .ass subtitles file.
 
 The program provides 3 types of subtitles and one text file:
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
@@ -10,9 +10,15 @@ The program provides 3 types of subtitles and one text file:
 3. **Static Chat Subtitles**. Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
 4. **Chat Text File**. Save Twitch chat to a text file.
 
-The program uses [ASSA tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA tags are what allows the program to position the subtitles at different locations on the screen. ASSA tags are not part of SubRip specification but some media players have the ability to read ASSA tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC ignores ASSA tags in a SubRip file. However, VLC will read ASSA tags from .ass file, so to convert from .srt to .ass use [Subtitle Edit](https://www.nikse.dk/subtitleedit "Subtitle Edit") `SubtitleEdit /convert "C:\Path\To\Subtitle.srt" ass`. Alternatively, the program can create [Subtitles Without ASSA Tags](#subtitles-without-assa-tags "Subtitles Without ASSA Tags"). If the program generates subtitles with ASSA tags, it will also underline moderators and URL links.
+The program uses [ASSA override tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA override tags are what allows the program to position the subtitles at different locations on the screen. If the program writes subtitles with ASSA override tags, it will also underline moderators and URL links.
 
-The program is provided both as Command Line (**TwitchChatToSubtitles.exe**) and as UI (**TwitchChatToSubtitlesUI.exe**).
+ASSA override tags are not part of the SubRip specification but some media players can read ASSA override tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC ignores ASSA override tags in a SubRip file. In that case, there are several options available to you:
+
+- Use the program to write Advanced Sub Station Alpha .ass file.
+- Convert from .srt to .ass using [Subtitle Edit](https://www.nikse.dk/subtitleedit "Subtitle Edit"): `SubtitleEdit /convert "C:\Path\To\Subtitle.srt" ass`
+- Write [Subtitles Without ASSA Override Tags](#subtitles-without-assa-override-tags "Subtitles Without ASSA Override Tags").
+
+The program is provided both as Command Line (**TwitchChatToSubtitles**) and as UI (**TwitchChatToSubtitlesUI**).
 
 Twitch Chat To Subtitles requires .NET 8 Runtime.
 
@@ -30,27 +36,28 @@ Twitch Chat To Subtitles doesn't download the JSON file itself, the JSON file mu
 Chat messages will appear at the center-bottom of the screen.
 
 ```console
-TwitchChatToSubtitles.exe --RegularSubtitles
-                          --JsonFile <file>
-                          [--ColorUserNames]
-                          [--RemoveEmoticonNames]
-                          [--ShowTimestamps]
-                          [--SubtitleShowDuration <seconds>]
-                          [--SubtitlesFontSize <font size>]
-                          [--TextColor <color>]
-                          [--TimeOffset <seconds>]
+TwitchChatToSubtitles --RegularSubtitles
+                      --JsonFile <file>
+                      [--ass]
+                      [--ColorUserNames]
+                      [--RemoveEmoticonNames]
+                      [--ShowTimestamps]
+                      [--SubtitleShowDuration <seconds>]
+                      [--SubtitlesFontSize <font size>]
+                      [--TextColor <color>]
+                      [--TimeOffset <seconds>]
 ```
 
-### Subtitles Without ASSA Tags
+### Subtitles Without ASSA Override Tags
 
-The following subset of options create a subtitles file without any ASSA tags.
+The following subset of options create a subtitles file without any ASSA override tags.
 
 ```console
-TwitchChatToSubtitles.exe --RegularSubtitles
-                          --JsonFile <file>
-                          [--RemoveEmoticonNames]
-                          [--SubtitleShowDuration <seconds>]
-                          [--TimeOffset <seconds>]
+TwitchChatToSubtitles --RegularSubtitles
+                      --JsonFile <file>
+                      [--RemoveEmoticonNames]
+                      [--SubtitleShowDuration <seconds>]
+                      [--TimeOffset <seconds>]
 ```
 
 ### Usage
@@ -58,12 +65,12 @@ TwitchChatToSubtitles.exe --RegularSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
-2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA tags:
+2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA override tags:
 ```console
-TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 ## Rolling Chat Subtitles
@@ -71,17 +78,18 @@ TwitchChatToSubtitles.exe --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.
 Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
 
 ```console
-TwitchChatToSubtitles.exe --RollingChatSubtitles
-                          --JsonFile <file>
-                          [--ColorUserNames]
-                          [--RemoveEmoticonNames]
-                          [--ShowTimestamps]
-                          [--SubtitlesFontSize <font size>]
-                          [--SubtitlesLocation <location>]
-                          [--SubtitlesRollingDirection <rolling direction>]
-                          [--SubtitlesSpeed <speed>]
-                          [--TextColor <color>]
-                          [--TimeOffset <seconds>]
+TwitchChatToSubtitles --RollingChatSubtitles
+                      --JsonFile <file>
+                      [--ass]
+                      [--ColorUserNames]
+                      [--RemoveEmoticonNames]
+                      [--ShowTimestamps]
+                      [--SubtitlesFontSize <font size>]
+                      [--SubtitlesLocation <location>]
+                      [--SubtitlesRollingDirection <rolling direction>]
+                      [--SubtitlesSpeed <speed>]
+                      [--TextColor <color>]
+                      [--TimeOffset <seconds>]
 ```
 
 ### Usage
@@ -89,18 +97,18 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 ```console
-TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 3. Subtitles will roll faster than regular speed and will appear on the right side and top half of the screen:
 
 ```console
-TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation RightTopHalf --SubtitlesSpeed Faster
+TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation RightTopHalf --SubtitlesSpeed Faster
 ```
 
 ## Static Chat Subtitles
@@ -108,16 +116,17 @@ TwitchChatToSubtitles.exe --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch C
 Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
 
 ```console
-TwitchChatToSubtitles.exe --StaticChatSubtitles
-                          --JsonFile <file>
-                          [--ColorUserNames]
-                          [--RemoveEmoticonNames]
-                          [--ShowTimestamps]
-                          [--SubtitlesFontSize <font size>]
-                          [--SubtitlesLocation <location>]
-                          [--SubtitlesRollingDirection <rolling direction>]
-                          [--TextColor <color>]
-                          [--TimeOffset <seconds>]
+TwitchChatToSubtitles --StaticChatSubtitles
+                      --JsonFile <file>
+                      [--ass]
+                      [--ColorUserNames]
+                      [--RemoveEmoticonNames]
+                      [--ShowTimestamps]
+                      [--SubtitlesFontSize <font size>]
+                      [--SubtitlesLocation <location>]
+                      [--SubtitlesRollingDirection <rolling direction>]
+                      [--TextColor <color>]
+                      [--TimeOffset <seconds>]
 ```
 
 ### Usage
@@ -125,18 +134,18 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 ```console
-TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
 
 3. Subtitles will appear on the left side and top two-thirds of the screen:
 
 ```console
-TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation LeftTopTwoThirds
+TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation LeftTopTwoThirds
 ```
 
 ## Chat Text File
@@ -144,10 +153,10 @@ TwitchChatToSubtitles.exe --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Ch
 Save Twitch chat to a text file. In the text file, "[M]" before the user name indicates a moderator.
 
 ```console
-TwitchChatToSubtitles.exe --ChatTextFile
-                          --JsonFile <file>
-                          [--RemoveEmoticonNames]
-                          [--ShowTimestamps]
+TwitchChatToSubtitles --ChatTextFile
+                      --JsonFile <file>
+                      [--RemoveEmoticonNames]
+                      [--ShowTimestamps]
 ```
 
 ### Usage
@@ -155,12 +164,12 @@ TwitchChatToSubtitles.exe --ChatTextFile
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles.exe --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Remove emoticon names, show chat message timestamps:
 ```console
-TwitchChatToSubtitles.exe --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --RemoveEmoticonNames --ShowTimestamps
+TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --RemoveEmoticonNames --ShowTimestamps
 ```
 
 ## Command Line Options
@@ -178,6 +187,12 @@ The full path to the Twitch chat JSON file. The name of the subtitles file is th
 
 ```console
 --JsonFile              Path to Twitch chat JSON file.
+```
+
+Write .ass subtitles file instead of .srt subtitles file.
+
+```console
+--ass                   Whether to write Advanced Sub Station Alpha (.ass) file.
 ```
 
 Users, who post in Twitch chat, have an assigned color to their name. This option colors the name of the users across all subtitles, both the title and the body of chat messages. If a user doesn't have an assigned color, it will be colored with Twitch's purple color.
@@ -211,7 +226,7 @@ The font size of the subtitles. If the options is not specified, `RollingChatSub
 
 ```console
 --SubtitlesFontSize     The font size of the subtitles.
-                        Valid values: Regular, Medium, Large, XL, X2L, X3L, X4L, X5L.
+                        Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.
 ```
 
 This option determines where the subtitles are displayed on the screen. This option is applicable only for `RollingChatSubtitles` and `StaticChatSubtitles`.
@@ -243,7 +258,7 @@ This option determines the color of the subtitles text. If not specified, the co
 --TextColor             The color of the subtitles text.
 ```
 
-This option shifts the timing of all the subtitles. This option is applicable for all subtitles types but very useful for `RegularSubtitles`. For `RegularSubtitles`, the subtitles are visible only for a few seconds and then disappear. A Twitch streamer is more likely to interact with a chat message as it passes around the mid point of the chat, not when it first appears at the bottom of the chat. By adding a few seconds (3-7 seconds), the subtitles will appear **closer in time** to when the Twitch streamer have read and responded to it.
+This option shifts the timing of all the subtitles. This option is applicable for all subtitles types but very useful for `RegularSubtitles`. For `RegularSubtitles`, the subtitles are visible only for a few seconds and then disappear. A Twitch streamer is more likely to interact with a chat message as it passes around the mid point of the chat, not when it first appears at the bottom of the chat. By adding a few seconds (3-7 seconds), the subtitles will appear **closer in time** to when the Twitch streamer has read and responded to it.
 
 ```console
 --TimeOffset            Time offset for all subtitles, in seconds.
