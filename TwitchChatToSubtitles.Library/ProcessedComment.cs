@@ -1,6 +1,6 @@
 ﻿namespace TwitchChatToSubtitles.Library;
 
-internal struct ProcessedComment
+internal class ProcessedComment
 {
     public TimeSpan Timestamp;
     public string User;

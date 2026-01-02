@@ -467,7 +467,7 @@
             ddlSubtitlesSpeed.FormattingEnabled = true;
             ddlSubtitlesSpeed.Location = new Point(494, 72);
             ddlSubtitlesSpeed.Name = "ddlSubtitlesSpeed";
-            ddlSubtitlesSpeed.Size = new Size(120, 28);
+            ddlSubtitlesSpeed.Size = new Size(160, 28);
             ddlSubtitlesSpeed.TabIndex = 8;
             toolTip.SetToolTip(ddlSubtitlesSpeed, "How fast the subtitles roll.");
             ddlSubtitlesSpeed.SelectedIndexChanged += ddl_SelectedIndexChanged;

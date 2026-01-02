@@ -12,11 +12,7 @@ The program provides 3 types of subtitles and one text file:
 
 The program uses [ASSA override tags](https://www.nikse.dk/subtitleedit/formats/assa-override-tags "ASSA - Override tags") extensively. ASSA override tags are what allows the program to position the subtitles at different locations on the screen. If the program writes subtitles with ASSA override tags, it will also underline moderators and URL links.
 
-ASSA override tags are not part of the SubRip specification but some media players can read ASSA override tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC ignores ASSA override tags in a SubRip file. In that case, there are several options available to you:
-
-- Use the program to write Advanced Sub Station Alpha .ass file.
-- Convert from .srt to .ass using [Subtitle Edit](https://www.nikse.dk/subtitleedit "Subtitle Edit"): `SubtitleEdit /convert "C:\Path\To\Subtitle.srt" ass`
-- Write [Subtitles Without ASSA Override Tags](#subtitles-without-assa-override-tags "Subtitles Without ASSA Override Tags").
+ASSA override tags are not part of the SubRip specification but some media players can read ASSA override tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC ignores ASSA override tags in a SubRip file. In that case, you can write [Subtitles Without ASSA Override Tags](#subtitles-without-assa-override-tags "Subtitles Without ASSA Override Tags"), or simply write Advanced Sub Station Alpha .ass file.
 
 The program is provided both as Command Line (**TwitchChatToSubtitles**) and as UI (**TwitchChatToSubtitlesUI**).
 
@@ -108,7 +104,7 @@ TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.
 3. Subtitles will roll faster than regular speed and will appear on the right side and top half of the screen:
 
 ```console
-TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation RightTopHalf --SubtitlesSpeed Faster
+TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation RightTopHalf --SubtitlesSpeed Speed2
 ```
 
 ## Static Chat Subtitles
@@ -222,7 +218,7 @@ This option is applicable only for `RegularSubtitles`. A chat message has a time
                         on the screen, in seconds.
 ```
 
-The font size of the subtitles. If the options is not specified, `RollingChatSubtitles` and `StaticChatSubtitles` will default to `Regular` font size and for `RegularSubtitles`, the font size will be determined by the media player.
+The font size of the subtitles. If the options is not specified, `RollingChatSubtitles` and `StaticChatSubtitles` will default to `Regular` font size and for `RegularSubtitles`, the font size will be determined by the media player. The larger font sizes are suitable for viewing on a TV screen rather than a computer screen.
 
 ```console
 --SubtitlesFontSize     The font size of the subtitles.
@@ -245,11 +241,20 @@ This option determines the direction that the subtitles roll from the bottom to 
                                 Valid values: BottomToTop, TopToBottom.
 ```
 
-This option determines the speed of the subtitles rolling vertically across the screen. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `Regular` speed.
+This option determines the speed of the subtitles rolling vertically across the screen, in milliseconds. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `Speed1`. When the chat is blasted with messages by viewers, the higher speeds are more suitable for showing the messages at the right time. Slower speeds will cause a time drift where the messages will appear later than their actual posted time in chat. The higher the speed number, the faster the speed:
+
+- Speed1 = 1 second
+- Speed2 = 0.5 second
+- Speed3 = 250 ms
+- Speed4 = 200 ms
+- Speed5 = 125 ms
+- Speed6 = 100 ms
+- Speed7 = 50 ms
 
 ```console
 --SubtitlesSpeed        How fast the subtitles roll.
-                        Valid values: Regular, Faster, Fastest.
+                        Valid values: Speed1, Speed2, Speed3, Speed4, Speed5,
+                        Speed6, Speed7.
 ```
 
 This option determines the color of the subtitles text. If not specified, the color will be determined by the media player's default text color. Valid color values are hex format (`#000000`) or known names (`Black`).

@@ -321,9 +321,9 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.SubtitlesRollingDirection = SubtitlesRollingDirection.TopToBottom;
     //options.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
 
-    //options.SubtitlesSpeed = SubtitlesSpeed.Fastest;
-    //options.SubtitlesSpeed = SubtitlesSpeed.Faster;
-    //options.SubtitlesSpeed = SubtitlesSpeed.Regular;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Speed3;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Speed2;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Speed1;
 }
 
 static int WriteFontSizeTestSubtitles(string jsonFile)

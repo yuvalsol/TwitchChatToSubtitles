@@ -47,7 +47,7 @@ internal interface IRollingChatSubtitlesOptions
     [Option("RollingChatSubtitles", Required = false, HelpText = "Convert Twitch chat to rolling chat subtitles.")]
     bool RollingChatSubtitles { get; set; }
 
-    [Option("SubtitlesSpeed", Required = false, HelpText = "How fast the subtitles roll. Valid values: Regular, Faster, Fastest.")]
+    [Option("SubtitlesSpeed", Required = false, HelpText = "How fast the subtitles roll. Valid values: Speed1, Speed2, Speed3, Speed4, Speed5, Speed6, Speed7. Speed1 is 1 second. Speed2 is 0.5 second. Speed6 is 100 milliseconds. Speed7 is 50 milliseconds.")]
     SubtitlesSpeed SubtitlesSpeed { get; set; }
 }
 
@@ -174,7 +174,7 @@ internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChat
                     RollingChatSubtitles = true,
                     JsonFile = @"C:\Path\To\Twitch Chat.json",
                     SubtitlesLocation = SubtitlesLocation.RightTopHalf,
-                    SubtitlesSpeed = SubtitlesSpeed.Faster
+                    SubtitlesSpeed = SubtitlesSpeed.Speed2
                 }
             );
         }

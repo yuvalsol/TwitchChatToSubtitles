@@ -562,8 +562,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
             settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
 
         if (settings.SubtitlesSpeed == SubtitlesSpeed.None)
-            settings.SubtitlesSpeed = SubtitlesSpeed.Regular;
-        TimeSpan timeStep = TimeSpan.FromSeconds(1.0 / (int)settings.SubtitlesSpeed);
+            settings.SubtitlesSpeed = SubtitlesSpeed.Speed1;
+        TimeSpan timeStep = TimeSpan.FromMilliseconds((int)settings.SubtitlesSpeed);
 
         if (settings.SubtitlesFontSize == SubtitlesFontSize.None)
             settings.SubtitlesFontSize = SubtitlesFontSize.Regular;

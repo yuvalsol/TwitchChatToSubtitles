@@ -33,11 +33,30 @@ namespace TwitchChatToSubtitlesUI
         private void TwitchChatToSubtitlesForm_Load(object sender, EventArgs e)
         {
             ResetFormTitle();
-            BindDdlDataSource<SubtitlesType>(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, SubtitlesType.RegularSubtitles);
+            BindDdlDataSource<SubtitlesType>(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, selectedValue: SubtitlesType.RegularSubtitles);
             BindDdlDataSource<SubtitlesLocation>(ddlSubtitlesLocation, ddl_SelectedIndexChanged);
             BindDdlDataSource<SubtitlesFontSize>(ddlSubtitlesFontSize, ddl_SelectedIndexChanged);
             BindDdlDataSource<SubtitlesRollingDirection>(ddlSubtitlesRollingDirection, ddl_SelectedIndexChanged);
-            BindDdlDataSource<SubtitlesSpeed>(ddlSubtitlesSpeed, ddl_SelectedIndexChanged);
+            BindDdlDataSource<SubtitlesSpeed>(ddlSubtitlesSpeed, ddl_SelectedIndexChanged, (dataSource) =>
+            {
+                var zeroValue = dataSource[0];
+                dataSource.Sort((x, y) => y.Value.CompareTo(x.Value));
+                dataSource.Remove(zeroValue);
+                dataSource.Insert(0, zeroValue);
+
+                foreach (var item in dataSource)
+                {
+                    if (item.Value == SubtitlesSpeed.None)
+                        continue;
+
+                    int ms = (int)item.Value;
+                    if (ms >= 500)
+                        item.Name += $" ({ms / 1000.0}s)";
+                    else
+                        item.Name += $" ({ms} ms)";
+                }
+            });
+
             SubtitlesTypeChanged();
         }
 
@@ -76,26 +95,35 @@ namespace TwitchChatToSubtitlesUI
 
         #region Enum ComboBox
 
-        private class EnumItem<TEnum> where TEnum : Enum
+        private class EnumItem<TEnum>
+            where TEnum : struct, Enum
         {
             public TEnum Value { get; set; }
             public string Name { get; set; }
         }
 
-        private static void BindDdlDataSource<TEnum>(ComboBox ddl, EventHandler selectedIndexChangedHandler, object selectedValue = null) where TEnum : Enum
+        private static void BindDdlDataSource<TEnum>(
+            ComboBox ddl,
+            EventHandler selectedIndexChangedHandler,
+            Action<List<EnumItem<TEnum>>> FixDataSource = null,
+            object selectedValue = null)
+            where TEnum : struct, Enum
         {
             ddl.SelectedIndexChanged -= selectedIndexChangedHandler;
             ddl.ValueMember = "Value";
             ddl.DisplayMember = "Name";
-            ddl.DataSource = GetEnumDataSource<TEnum>().ToList();
+            var dataSource = GetEnumDataSource<TEnum>().ToList();
+            FixDataSource?.Invoke(dataSource);
+            ddl.DataSource = dataSource;
             if (selectedValue != null)
                 ddl.SelectedValue = selectedValue;
             ddl.SelectedIndexChanged += selectedIndexChangedHandler;
         }
 
-        private static IEnumerable<EnumItem<TEnum>> GetEnumDataSource<TEnum>() where TEnum : Enum
+        private static IEnumerable<EnumItem<TEnum>> GetEnumDataSource<TEnum>()
+            where TEnum : struct, Enum
         {
-            foreach (TEnum value in Enum.GetValues(typeof(TEnum)))
+            foreach (TEnum value in Enum.GetValues<TEnum>())
             {
                 yield return new EnumItem<TEnum>
                 {
@@ -105,15 +133,18 @@ namespace TwitchChatToSubtitlesUI
             }
         }
 
-        [GeneratedRegex(@"([a-z])([A-Z])")]
-        private static partial Regex RegexCamelCase();
-
         [GeneratedRegex(@"^X([0-9])L$")]
         private static partial Regex RegexSubtitlesXLFontSize();
 
-        public static string GetEnumName<TEnum>(TEnum value) where TEnum : Enum
+        [GeneratedRegex(@"([a-z])([A-Z0-9])")]
+        private static partial Regex RegexCamelCase();
+
+        public static string GetEnumName<TEnum>(TEnum value)
+            where TEnum : struct, Enum
         {
-            string name = Enum.GetName(typeof(TEnum), value);
+            string name = Enum.GetName(value);
+            if (string.IsNullOrEmpty(name))
+                return string.Empty;
             name = RegexSubtitlesXLFontSize().Replace(name, "$1XL");
             name = RegexCamelCase().Replace(name, "$1 $2");
             return name;
@@ -191,7 +222,7 @@ namespace TwitchChatToSubtitlesUI
                 lblTextColor.Text = ColorToHex(color.Value);
 
                 if (color.Value.IsNamedColor)
-                    lblTextColor.Text = color.Value.Name + " " + lblTextColor.Text;
+                    lblTextColor.Text = $"{color.Value.Name} {lblTextColor.Text}";
 
                 lblTextColor.ForeColor = color.Value;
                 lblTextColor.BackColor = (lblTextColor.ForeColor.GetBrightness() > 0.4 ? Color.Black : Color.FromName("Control"));
@@ -222,6 +253,8 @@ namespace TwitchChatToSubtitlesUI
                 return;
             ddl.SelectedIndexChanged -= selectedIndexChangedHandler;
             ddl.SelectedValue = selectedValue;
+            if (ddl.SelectedIndex == -1)
+                ddl.SelectedIndex = 0;
             ddl.SelectedIndexChanged += selectedIndexChangedHandler;
         }
 
@@ -900,6 +933,26 @@ namespace TwitchChatToSubtitlesUI
             Dictionary<string, UISettings> tempUISettings = DeserializeUISettings(settingsFile);
             if (tempUISettings.HasAny())
                 StreamersUISettings = new(tempUISettings, StringComparer.OrdinalIgnoreCase);
+            SubtitlesSpeedBackwardCompatibility();
+        }
+
+        private void SubtitlesSpeedBackwardCompatibility()
+        {
+            foreach (var item in StreamersUISettings)
+            {
+                UISettings uiSettings = item.Value;
+                if (uiSettings == null)
+                    continue;
+
+                int subtitlesSpeed = (int)uiSettings.SubtitlesSpeed;
+
+                if (subtitlesSpeed == 1)
+                    uiSettings.SubtitlesSpeed = SubtitlesSpeed.Speed1;
+                else if (subtitlesSpeed == 2)
+                    uiSettings.SubtitlesSpeed = SubtitlesSpeed.Speed2;
+                else if (subtitlesSpeed == 3)
+                    uiSettings.SubtitlesSpeed = SubtitlesSpeed.Speed3;
+            }
         }
 
         private static Dictionary<string, UISettings> DeserializeUISettings(string settingsFile)
@@ -927,6 +980,7 @@ namespace TwitchChatToSubtitlesUI
         private void SaveUISettings()
         {
             var settingsFile = Path.Combine(AppContext.BaseDirectory, SETTINGS_FILE_NAME);
+            SubtitlesSpeedBackwardCompatibility();
             SerializeUISettings(settingsFile, StreamersUISettings);
         }
 

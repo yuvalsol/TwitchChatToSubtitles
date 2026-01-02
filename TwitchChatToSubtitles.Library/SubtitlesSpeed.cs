@@ -3,7 +3,11 @@
 public enum SubtitlesSpeed
 {
     None = 0,
-    Regular = 1,
-    Faster = 2,
-    Fastest = 3
+    Speed1 = 1000,
+    Speed2 = 500,
+    Speed3 = 250,
+    Speed4 = 200,
+    Speed5 = 125,
+    Speed6 = 100,
+    Speed7 = 50
 }
