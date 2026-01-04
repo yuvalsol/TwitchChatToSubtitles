@@ -4,18 +4,25 @@ using Newtonsoft.Json.Linq;
 
 namespace TwitchChatToSubtitles.Library;
 
-public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
+public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 {
-    private readonly TwitchSubtitlesSettings settings = settings ?? new();
+    private TwitchSubtitlesSettings settings = settings ?? new();
+
+    public bool RegularSubtitles => settings.RegularSubtitles;
+    public bool RollingChatSubtitles => settings.RollingChatSubtitles;
+    public bool StaticChatSubtitles => settings.StaticChatSubtitles;
+    public bool ChatTextFile => settings.ChatTextFile;
 
     public EventHandler Start;
     public EventHandler<StartLoadingJsonFileEventArgs> StartLoadingJsonFile;
     public EventHandler<FinishLoadingJsonFileEventArgs> FinishLoadingJsonFile;
     public EventHandler<StartWritingPreparationsEventArgs> StartWritingPreparations;
     public EventHandler<FinishWritingPreparationsEventArgs> FinishWritingPreparations;
+    public EventHandler<StartTestingSettingsEventArgs> StartTestingSettings;
     public EventHandler<StartWritingSubtitlesEventArgs> StartWritingSubtitles;
     public EventHandler<ProgressEventArgs> ProgressAsync;
     public EventHandler<ProgressEventArgs> FinishWritingSubtitles;
+    public EventHandler<FinishTestingSettingsEventArgs> FinishTestingSettings;
     public EventHandler<FinishEventArgs> Finish;
     public EventHandler<TracepointEventArgs> Tracepoint;
 
@@ -52,7 +59,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
 
         string srtFile = Path.Combine(
             Path.GetDirectoryName(jsonFile),
-             fileName + (settings.ChatTextFile ? ".txt" : (settings.ASS ? ".ass" : ".srt"))
+            fileName + (settings.ChatTextFile ? ".txt" : (settings.ASS ? ".ass" : ".srt"))
         );
 
         StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
@@ -74,9 +81,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         if (settings.RemoveEmoticonNames || settings.ColorUserNames)
         {
             StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
-
             WritingPreparations(settings.RemoveEmoticonNames, settings.ColorUserNames, root, ref regexEmbeddedEmoticons, ref userColors, ref error);
-
             FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames, error));
 
             if (error != null)
@@ -105,6 +110,100 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings)
         TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
 
         Finish.Raise(this, () => new FinishEventArgs(srtFile, processTime, error));
+    }
+
+    public void TestMultipleSettings(string jsonFile, IEnumerable<TwitchSubtitlesSettings> multipleSettings)
+    {
+#if DEBUG
+        SortMessageIndexesToKeep();
+#endif
+
+        long startTime = Stopwatch.GetTimestamp();
+
+        if (string.IsNullOrEmpty(jsonFile))
+            throw new ArgumentException("JSON file not specified.");
+
+        if (string.Compare(Path.GetExtension(jsonFile), ".json", true) != 0)
+            throw new ArgumentException("Not a JSON file '" + jsonFile + "'.");
+
+        if (File.Exists(jsonFile) == false)
+            throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
+
+        Exception error = null;
+
+        Start.Raise(this, () => EventArgs.Empty);
+
+        string fileName = Path.GetFileNameWithoutExtension(jsonFile);
+
+        StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
+        JToken root = LoadJsonFile(jsonFile, ref error);
+        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
+
+        if (error != null)
+        {
+            Finish.Raise(this, () => new FinishEventArgs(null, TimeSpan.Zero, error));
+            return;
+        }
+
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
+        Dictionary<string, UserColor> userColors = null;
+
+        StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(true, true));
+        WritingPreparations(true, true, root, ref regexEmbeddedEmoticons, ref userColors, ref error);
+        FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(true, true, error));
+
+        if (error != null)
+        {
+            Finish.Raise(this, () => new FinishEventArgs(null, TimeSpan.Zero, error));
+            return;
+        }
+
+        foreach (var currentSettings in multipleSettings)
+        {
+            StartTestingSettings.Raise(this, () => new StartTestingSettingsEventArgs(currentSettings));
+
+            settings = currentSettings;
+            error = null;
+
+            if (settings.IsAnySubtitlesTypeSelected == false)
+            {
+                FinishTestingSettings.Raise(this, () => new FinishTestingSettingsEventArgs(
+                    currentSettings,
+                    new ArgumentException("Subtitles type was not selected.")
+                ));
+                continue;
+            }
+
+            string srtFile = Path.Combine(
+                Path.GetDirectoryName(jsonFile),
+                fileName + (settings.ChatTextFile ? ".txt" : (settings.ASS ? ".ass" : ".srt"))
+            );
+
+            if (settings.ChatTextFile)
+                settings.ColorUserNames = false;
+
+            StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
+
+            {
+                using var srtStream = File.Open(srtFile, FileMode.Create);
+                using var writer = new StreamWriter(srtStream, Encoding.UTF8);
+
+                if (settings.RegularSubtitles)
+                    WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
+                else if (settings.RollingChatSubtitles)
+                    WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
+                else if (settings.StaticChatSubtitles)
+                    WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
+                else if (settings.ChatTextFile)
+                    WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, ref error);
+            }
+
+            FinishTestingSettings.Raise(this, () => new FinishTestingSettingsEventArgs(currentSettings, error));
+        }
+
+        TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
+
+        Finish.Raise(this, () => new FinishEventArgs(null, processTime, null));
     }
 
     #region Load Json File

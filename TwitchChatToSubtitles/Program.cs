@@ -7,11 +7,10 @@ Console.OutputEncoding = Encoding.UTF8;
 Console.Clear();
 
 int returnCode = Run(args);
+//int returnCode = WriteFontSizeTestSubtitles(@"");
+//int returnCode = TestMultipleSettings(@"");
 
 #if DEBUG
-//int returnCode = WriteFontSizeTestSubtitles(@"");
-//int returnCode = TestMultipleOptions(@"");
-
 if (returnCode != 0)
 {
     Console.WriteLine("Press any key to continue . . .");
@@ -57,9 +56,9 @@ static int Run(string[] args)
                     foreach (Error error in errors)
                     {
                         if (error is TokenError tokenError)
-                            WriteErrorLine(tokenError.Tag + " " + tokenError.Token);
+                            WriteErrorLine($"{tokenError.Tag} {tokenError.Token}");
                         else if (error is NamedError namedError)
-                            WriteErrorLine(namedError.Tag + " " + namedError.NameInfo.NameText);
+                            WriteErrorLine($"{namedError.Tag} {namedError.NameInfo.NameText}");
                         else
                             WriteErrorLine(error.Tag.ToString());
                     }
@@ -110,182 +109,197 @@ static void WriteTwitchSubtitles(TwitchSubtitlesOptions options)
     Debug(options);
 #endif
 
-    var settings = options.ToSettings();
-    var twitchSubtitles = new TwitchSubtitles(settings);
-
-    twitchSubtitles.Start += (sender, e) =>
-    {
-        Console.WriteLine(GetVersion());
-
-        if (settings.RegularSubtitles)
-            Console.WriteLine("Regular Subtitles.");
-        else if (settings.RollingChatSubtitles)
-            Console.WriteLine("Rolling Chat Subtitles.");
-        else if (settings.StaticChatSubtitles)
-            Console.WriteLine("Static Chat Subtitles.");
-        else if (settings.ChatTextFile)
-            Console.WriteLine("Chat Text File.");
-    };
-
-    twitchSubtitles.StartLoadingJsonFile += (sender, e) =>
-    {
-        Console.WriteLine("Loading JSON file...");
-    };
-
-    twitchSubtitles.FinishLoadingJsonFile += (sender, e) =>
-    {
-        if (e.Error == null)
-        {
-            Console.WriteLine("JSON file loaded successfully.");
-            Console.WriteLine("JSON file: " + e.JsonFile);
-        }
-        else
-        {
-            WriteErrorLine("Could not load JSON file.");
-            WriteErrorLine("JSON file: " + e.JsonFile);
-        }
-    };
-
-    twitchSubtitles.StartWritingPreparations += (sender, e) =>
-    {
-        string preparations =
-            (e.RemoveEmoticonNames ? "emoticons" : string.Empty) +
-            (e.RemoveEmoticonNames && e.ColorUserNames ? ", " : string.Empty) +
-            (e.ColorUserNames ? "user colors" : string.Empty);
-
-        Console.WriteLine($"Begin writing preparations ({preparations})...");
-    };
-
-    twitchSubtitles.FinishWritingPreparations += (sender, e) =>
-    {
-        if (e.Error == null)
-            Console.WriteLine("Writing preparations finished successfully.");
-        else
-            WriteErrorLine("Failed to finish writing preparations.");
-    };
-
-    int leftMessages = 0;
-    int topMessages = 0;
-
-    int leftSubtitles = 0;
-    int topSubtitles = 0;
-
-    int leftFinish = 0;
-    int topFinish = 0;
-
-    twitchSubtitles.StartWritingSubtitles += (sender, e) =>
-    {
-        Console.Write("Chat Messages: ");
-        leftMessages = Console.CursorLeft;
-        topMessages = Console.CursorTop;
-        Console.WriteLine("0 / 0");
-
-        if (settings.ChatTextFile == false)
-        {
-            Console.Write("Subtitles: ");
-            leftSubtitles = Console.CursorLeft;
-            topSubtitles = Console.CursorTop;
-            Console.WriteLine("0");
-        }
-
-        leftFinish = Console.CursorLeft;
-        topFinish = Console.CursorTop;
-
-        Console.CursorVisible = false;
-    };
-
-    var lineLength = 45;
-    var lockObj = new object();
-
-    void PrintProgress(object sender, ProgressEventArgs e)
-    {
-        var strMessages = $"{e.MessagesCount:N0} / {e.TotalMessages:N0}";
-        if (e.DiscardedMessagesCount > 0)
-            strMessages += $" (discarded messages {e.DiscardedMessagesCount:N0})";
-        strMessages += new string(' ', lineLength - strMessages.Length);
-
-        string strSubtitles = null;
-        if (settings.ChatTextFile == false)
-        {
-            strSubtitles = $"{e.SubtitlesCount:N0}";
-            strSubtitles += new string(' ', lineLength - strSubtitles.Length);
-        }
-
-        lock (lockObj)
-        {
-            Console.SetCursorPosition(leftMessages, topMessages);
-            Console.Write(strMessages);
-
-            if (settings.ChatTextFile == false)
-            {
-                Console.SetCursorPosition(leftSubtitles, topSubtitles);
-                Console.Write(strSubtitles);
-            }
-        }
-    }
-
-    twitchSubtitles.ProgressAsync += PrintProgress;
-    twitchSubtitles.FinishWritingSubtitles += PrintProgress;
-
-    twitchSubtitles.Finish += (sender, e) =>
-    {
-        Console.CursorVisible = true;
-
-        if (leftFinish != 0 || topFinish != 0)
-            Console.SetCursorPosition(leftFinish, topFinish);
-
-        if (e.Error == null)
-        {
-            Console.WriteLine("Finished successfully.");
-
-            if (settings.ChatTextFile)
-                Console.WriteLine("Chat text file: " + e.SrtFile);
-            else
-                Console.WriteLine("Subtitles file: " + e.SrtFile);
-
-            string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
-            Console.WriteLine("Process Time: " + processTime);
-        }
-        else
-        {
-            DeleteFile(e.SrtFile);
-
-#if RELEASE
-            if (settings.ChatTextFile)
-                WriteErrorLine("Failed to write chat text file.");
-            else
-                WriteErrorLine("Failed to write subtitles.");
-            WriteErrorLine("Error: " + e.Error.Message);
-
-            Exception ex = e.Error.InnerException;
-            while (ex != null)
-            {
-                WriteErrorLine("Error: " + ex.Message);
-                ex = ex.InnerException;
-            }
-#elif DEBUG
-            if (settings.ChatTextFile)
-                WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
-            else
-                WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
-#endif
-        }
-    };
-
-    twitchSubtitles.Tracepoint += (sender, e) =>
-    {
-        ConsoleColor foregroundColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine(e.Message);
-        Console.ForegroundColor = foregroundColor;
-    };
-
+    var twitchSubtitles = new TwitchSubtitles(options.ToSettings());
+    SubscribeToEvents(twitchSubtitles);
     twitchSubtitles.WriteTwitchSubtitles(options.JsonFile);
 }
 
-#if DEBUG
+static void SubscribeToEvents(TwitchSubtitles twitchSubtitles)
+{
+    twitchSubtitles.Start += OnStart;
+    twitchSubtitles.StartLoadingJsonFile += OnStartLoadingJsonFile;
+    twitchSubtitles.FinishLoadingJsonFile += OnFinishLoadingJsonFile;
+    twitchSubtitles.StartWritingPreparations += OnStartWritingPreparations;
+    twitchSubtitles.FinishWritingPreparations += OnFinishWritingPreparations;
+    twitchSubtitles.StartWritingSubtitles += OnStartWritingSubtitles;
+    twitchSubtitles.ProgressAsync += OnPrintProgress;
+    twitchSubtitles.FinishWritingSubtitles += OnPrintProgress;
+    twitchSubtitles.Finish += OnFinish;
+    twitchSubtitles.Tracepoint += OnTracepoint;
+}
+
+static void OnStart(object sender, EventArgs e)
+{
+    Console.WriteLine(GetVersion());
+
+    var twitchSubtitles = (TwitchSubtitles)sender;
+    if (twitchSubtitles.RegularSubtitles)
+        Console.WriteLine("Regular Subtitles.");
+    else if (twitchSubtitles.RollingChatSubtitles)
+        Console.WriteLine("Rolling Chat Subtitles.");
+    else if (twitchSubtitles.StaticChatSubtitles)
+        Console.WriteLine("Static Chat Subtitles.");
+    else if (twitchSubtitles.ChatTextFile)
+        Console.WriteLine("Chat Text File.");
+}
+
+static void OnStartLoadingJsonFile(object sender, StartLoadingJsonFileEventArgs e)
+{
+    Console.WriteLine("Loading JSON file...");
+}
+
+static void OnFinishLoadingJsonFile(object sender, FinishLoadingJsonFileEventArgs e)
+{
+    if (e.Error == null)
+    {
+        Console.WriteLine("JSON file loaded successfully.");
+        Console.WriteLine("JSON file: " + e.JsonFile);
+    }
+    else
+    {
+        WriteErrorLine("Could not load JSON file.");
+        WriteErrorLine("JSON file: " + e.JsonFile);
+    }
+}
+
+static void OnStartWritingPreparations(object sender, StartWritingPreparationsEventArgs e)
+{
+    string preparations =
+        (e.RemoveEmoticonNames ? "emoticons" : string.Empty) +
+        (e.RemoveEmoticonNames && e.ColorUserNames ? ", " : string.Empty) +
+        (e.ColorUserNames ? "user colors" : string.Empty);
+
+    Console.WriteLine($"Begin writing preparations ({preparations})...");
+}
+
+static void OnFinishWritingPreparations(object sender, FinishWritingPreparationsEventArgs e)
+{
+    if (e.Error == null)
+        Console.WriteLine("Writing preparations finished successfully.");
+    else
+        WriteErrorLine("Failed to finish writing preparations.");
+}
+
+static void OnStartWritingSubtitles(object sender, StartWritingSubtitlesEventArgs e)
+{
+    leftMessages = 0;
+    topMessages = 0;
+    leftSubtitles = 0;
+    topSubtitles = 0;
+    leftFinish = 0;
+    topFinish = 0;
+
+    Console.Write("Chat Messages: ");
+    leftMessages = Console.CursorLeft;
+    topMessages = Console.CursorTop;
+    Console.WriteLine("0 / 0");
+
+    var twitchSubtitles = (TwitchSubtitles)sender;
+    if (twitchSubtitles.ChatTextFile == false)
+    {
+        Console.Write("Subtitles: ");
+        leftSubtitles = Console.CursorLeft;
+        topSubtitles = Console.CursorTop;
+        Console.WriteLine("0");
+    }
+
+    leftFinish = Console.CursorLeft;
+    topFinish = Console.CursorTop;
+
+    Console.CursorVisible = false;
+}
+
+static void OnPrintProgress(object sender, ProgressEventArgs e)
+{
+    int lineLength = 45;
+
+    var strMessages = $"{e.MessagesCount:N0} / {e.TotalMessages:N0}";
+    if (e.DiscardedMessagesCount > 0)
+        strMessages += $" (discarded messages {e.DiscardedMessagesCount:N0})";
+    strMessages += new string(' ', lineLength - strMessages.Length);
+
+    string strSubtitles = null;
+    var twitchSubtitles = (TwitchSubtitles)sender;
+    if (twitchSubtitles.ChatTextFile == false)
+    {
+        strSubtitles = $"{e.SubtitlesCount:N0}";
+        strSubtitles += new string(' ', lineLength - strSubtitles.Length);
+    }
+
+    lock (lockObj)
+    {
+        Console.SetCursorPosition(leftMessages, topMessages);
+        Console.Write(strMessages);
+
+        if (twitchSubtitles.ChatTextFile == false)
+        {
+            Console.SetCursorPosition(leftSubtitles, topSubtitles);
+            Console.Write(strSubtitles);
+        }
+    }
+}
+
+static void OnFinish(object sender, FinishEventArgs e)
+{
+    Console.CursorVisible = true;
+
+    if (leftFinish != 0 || topFinish != 0)
+        Console.SetCursorPosition(leftFinish, topFinish);
+
+    var twitchSubtitles = (TwitchSubtitles)sender;
+
+    if (e.Error == null)
+    {
+        Console.WriteLine("Finished successfully.");
+
+        if (string.IsNullOrEmpty(e.SrtFile) == false)
+        {
+            if (twitchSubtitles.ChatTextFile)
+                Console.WriteLine("Chat text file: " + e.SrtFile);
+            else
+                Console.WriteLine("Subtitles file: " + e.SrtFile);
+        }
+
+        string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
+        Console.WriteLine("Process Time: " + processTime);
+    }
+    else
+    {
+        DeleteFile(e.SrtFile);
+
+#if RELEASE
+        if (twitchSubtitles.ChatTextFile)
+            WriteErrorLine("Failed to write chat text file.");
+        else
+            WriteErrorLine("Failed to write subtitles.");
+        WriteErrorLine("Error: " + e.Error.Message);
+
+        Exception ex = e.Error.InnerException;
+        while (ex != null)
+        {
+            WriteErrorLine("Error: " + ex.Message);
+            ex = ex.InnerException;
+        }
+#elif DEBUG
+        if (twitchSubtitles.ChatTextFile)
+            WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
+        else
+            WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+#endif
+    }
+}
+
+static void OnTracepoint(object sender, TracepointEventArgs e)
+{
+    ConsoleColor foregroundColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Yellow;
+    Console.WriteLine(e.Message);
+    Console.ForegroundColor = foregroundColor;
+}
+
 #pragma warning disable CS8321 // Local function is declared but never used
 
+#if DEBUG
 static void Debug(TwitchSubtitlesOptions options)
 {
     //options.JsonFile = @"";
@@ -325,6 +339,7 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.SubtitlesSpeed = SubtitlesSpeed.Speed2;
     //options.SubtitlesSpeed = SubtitlesSpeed.Speed1;
 }
+#endif
 
 static int WriteFontSizeTestSubtitles(string jsonFile)
 {
@@ -369,71 +384,83 @@ static int WriteFontSizeTestSubtitles(string jsonFile)
     return returnCode;
 }
 
-static int TestMultipleOptions(string jsonFile)
+static int TestMultipleSettings(string jsonFile, bool toLogFile = true)
 {
-    long startTime = Stopwatch.GetTimestamp();
+    var multipleSettings = GetMultipleSettings().ToArray();
 
-    var multipleOptions = GetMultipleOptions(jsonFile);
-    var totalCount = multipleOptions.Count();
+    int counter = 0;
+    int totalCount = multipleSettings.Length;
+    string directory = Path.GetDirectoryName(jsonFile);
+    string fileName = Path.GetFileNameWithoutExtension(jsonFile);
+    string logFile = Path.Combine(directory, $"{fileName} log.txt");
+    var parser = GetParser();
+    List<(TwitchSubtitlesSettings settings, Exception error)> failedSettings = [];
 
-    int count = 1;
-    List<(TwitchSubtitlesOptions options, Exception ex)> failedOptions = [];
+    var twitchSubtitles = new TwitchSubtitles();
+    SubscribeToEvents(twitchSubtitles);
 
-    foreach (var options in multipleOptions)
+    twitchSubtitles.Start += (sender, e) =>
+    {
+        File.WriteAllText(logFile, null, Encoding.UTF8);
+    };
+
+    twitchSubtitles.StartTestingSettings += (sender, e) =>
     {
         Console.Clear();
-        Console.WriteLine($"{count} / {totalCount}");
+        Console.WriteLine($"{++counter} / {totalCount}");
+        Console.WriteLine(parser.FormatCommandLine(new TwitchSubtitlesOptions(e.Settings)));
+    };
 
-        try
-        {
-            WriteTwitchSubtitles(options);
-        }
-        catch (Exception ex)
-        {
-            failedOptions.Add(new(options, ex));
-        }
-        finally
-        {
-            count++;
-        }
-    }
-
-    TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
-
-    Console.Clear();
-
-    int returnCode = 0;
-
-    if (failedOptions.IsNullOrEmpty())
+    twitchSubtitles.FinishTestingSettings += (sender, e) =>
     {
-        Console.WriteLine($"All {totalCount} options succeeded");
-    }
-    else
+        if (e.Error != null)
+            failedSettings.Add((e.Settings, e.Error));
+
+        if (toLogFile)
+            File.AppendAllText(logFile, $"[{counter}] {(e.Error == null ? "Pass" : "Fail")}: {parser.FormatCommandLine(new TwitchSubtitlesOptions(e.Settings))}{Environment.NewLine}{(e.Error != null ? $"{e.Error.GetExceptionErrorMessage()}{Environment.NewLine}" : null)}", Encoding.UTF8);
+    };
+
+    twitchSubtitles.Finish += (sender, e) =>
     {
-        returnCode = -1;
+        Console.Clear();
 
-        Console.WriteLine($"{failedOptions.Count} option{(failedOptions.Count == 1 ? string.Empty : "s")} failed");
-        Console.WriteLine();
+        string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
 
-        var parser = GetParser();
-
-        foreach (var (options, ex) in failedOptions)
+        if (failedSettings.IsNullOrEmpty())
         {
-            Console.WriteLine(parser.FormatCommandLine(options));
-            Console.WriteLine();
-            WriteErrorLine(UnhandledException(ex));
-            Console.WriteLine();
-            Console.WriteLine(new string('-', 30));
-            Console.WriteLine();
+            Console.WriteLine($"All {totalCount} settings succeeded.");
+            Console.WriteLine("Process Time: " + processTime);
         }
-    }
+        else
+        {
+            int failedCount = failedSettings.Count;
+            Console.WriteLine($"{totalCount - failedCount} settings succeeded.");
+            WriteErrorLine($"{failedCount} settings failed.");
+            Console.WriteLine("Process Time: " + processTime);
+            Console.WriteLine();
 
-    Console.WriteLine("Process Time: " + processTime.ToString(processTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : processTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff"));
+            foreach (var (settings, error) in failedSettings)
+            {
+                Console.WriteLine(parser.FormatCommandLine(new TwitchSubtitlesOptions(settings)));
+                WriteErrorLine(error.GetExceptionErrorMessage());
+                Console.WriteLine();
+            }
+        }
 
-    return returnCode;
+        DeleteFile(Path.Combine(directory, $"{fileName}.srt"));
+        DeleteFile(Path.Combine(directory, $"{fileName}.ass"));
+        DeleteFile(Path.Combine(directory, $"{fileName}.txt"));
+    };
+
+    twitchSubtitles.TestMultipleSettings(jsonFile, multipleSettings);
+
+    Console.WriteLine("Press any key to continue . . .");
+    Console.ReadKey(true);
+
+    return (failedSettings.IsNullOrEmpty() ? 0 : -1);
 }
 
-static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
+static IEnumerable<TwitchSubtitlesSettings> GetMultipleSettings()
 {
     var boolValues = new bool[] { false, true };
     var subtitlesFontSizeValues = Enum.GetValues<SubtitlesFontSize>().Where(x => x != SubtitlesFontSize.None);
@@ -448,7 +475,6 @@ static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
         from SubtitlesFontSize in subtitlesFontSizeValues
         select new TwitchSubtitlesOptions()
         {
-            JsonFile = JsonFile,
             ASS = ASS,
             RegularSubtitles = true,
             RemoveEmoticonNames = RemoveEmoticonNames,
@@ -466,7 +492,6 @@ static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
         from SubtitlesSpeed in subtitlesSpeedValues
         select new TwitchSubtitlesOptions()
         {
-            JsonFile = JsonFile,
             ASS = ASS,
             RollingChatSubtitles = true,
             RemoveEmoticonNames = RemoveEmoticonNames,
@@ -486,7 +511,6 @@ static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
         from SubtitlesRollingDirection in subtitlesRollingDirectionValues
         select new TwitchSubtitlesOptions()
         {
-            JsonFile = JsonFile,
             ASS = ASS,
             StaticChatSubtitles = true,
             RemoveEmoticonNames = RemoveEmoticonNames,
@@ -500,7 +524,6 @@ static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
         from RemoveEmoticonNames in boolValues
         select new TwitchSubtitlesOptions()
         {
-            JsonFile = JsonFile,
             ChatTextFile = true,
             RemoveEmoticonNames = RemoveEmoticonNames,
             ShowTimestamps = true
@@ -510,11 +533,11 @@ static IEnumerable<TwitchSubtitlesOptions> GetMultipleOptions(string JsonFile)
         regularSubtitlesOptions
         .Concat(rollingChatSubtitlesOptions)
         .Concat(staticChatSubtitlesOptions)
-        .Concat(chatTextFileOptions);
+        .Concat(chatTextFileOptions)
+        .Select(option => option.ToSettings());
 }
 
 #pragma warning restore CS8321 // Local function is declared but never used
-#endif
 
 static void WriteErrorLine(string line = null)
 {
@@ -649,9 +672,7 @@ static int CompareOptions(ComparableOption attr1, ComparableOption attr2)
 
 static string GetVersion()
 {
-    return
-        "TwitchChatToSubtitles, Version" + " " +
-        Assembly.GetExecutingAssembly().GetName().Version.ToString(2);
+    return $"TwitchChatToSubtitles, Version {Assembly.GetExecutingAssembly().GetName().Version.ToString(2)}";
 }
 
 static string HandledArgumentException(Exception ex)
@@ -696,4 +717,13 @@ partial class Program
 {
     [GeneratedRegex(@"^(?<Size>[0-9])XL$")]
     private static partial Regex RegexSubtitlesXLFontSize();
+
+    private static int leftMessages = 0;
+    private static int topMessages = 0;
+    private static int leftSubtitles = 0;
+    private static int topSubtitles = 0;
+    private static int leftFinish = 0;
+    private static int topFinish = 0;
+
+    private static readonly object lockObj = new();
 }

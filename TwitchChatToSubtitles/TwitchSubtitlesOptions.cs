@@ -352,6 +352,29 @@ internal partial class TwitchSubtitlesOptions
     public string TextColor { get; set; }
     public int TimeOffset { get; set; }
 
+    public TwitchSubtitlesOptions()
+    { }
+
+    public TwitchSubtitlesOptions(TwitchSubtitlesSettings settings)
+    {
+        ASS = settings.ASS;
+        RegularSubtitles = settings.RegularSubtitles;
+        RollingChatSubtitles = settings.RollingChatSubtitles;
+        StaticChatSubtitles = settings.StaticChatSubtitles;
+        ChatTextFile = settings.ChatTextFile;
+        ColorUserNames = settings.ColorUserNames;
+        RemoveEmoticonNames = settings.RemoveEmoticonNames;
+        ShowTimestamps = settings.ShowTimestamps;
+        SubtitleShowDuration = settings.SubtitleShowDuration;
+        SubtitlesFontSize = settings.SubtitlesFontSize;
+        SubtitlesLocation = settings.SubtitlesLocation;
+        SubtitlesRollingDirection = settings.SubtitlesRollingDirection;
+        SubtitlesSpeed = settings.SubtitlesSpeed;
+        if (settings.TextColor != null)
+            TextColor = $"#{settings.TextColor.Value.R:X2}{settings.TextColor.Value.G:X2}{settings.TextColor.Value.B:X2}";
+        TimeOffset = settings.TimeOffset;
+    }
+
     public TwitchSubtitlesSettings ToSettings()
     {
         return new TwitchSubtitlesSettings
@@ -380,14 +403,16 @@ internal partial class TwitchSubtitlesOptions
 
     private static Color? StringToColor(string colorStr)
     {
+        if (string.IsNullOrEmpty(colorStr))
+            return null;
+
+        if (RegexColorInHex().IsMatch(colorStr))
+            colorStr = "#" + colorStr;
+
         try
         {
-            if (RegexColorInHex().IsMatch(colorStr))
-                colorStr = "#" + colorStr;
-
-            TypeConverter tc = TypeDescriptor.GetConverter(typeof(Color));
-            var color = tc.ConvertFromString(colorStr) as Color?;
-            return color;
+            var tc = TypeDescriptor.GetConverter(typeof(Color));
+            return tc.ConvertFromString(colorStr) as Color?;
         }
         catch
         {
