@@ -31,6 +31,8 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
     private const int USER_COLORS_CHUNK_SIZE = 500;
     private const int FLUSH_SUBTITLES_COUNT = 1000;
 
+    #region Write Subtitles
+
     public void WriteTwitchSubtitles(string jsonFile)
     {
 #if DEBUG
@@ -39,19 +41,10 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
         long startTime = Stopwatch.GetTimestamp();
 
-        if (string.IsNullOrEmpty(jsonFile))
-            throw new ArgumentException("JSON file not specified.");
-
-        if (string.Compare(Path.GetExtension(jsonFile), ".json", true) != 0)
-            throw new ArgumentException("Not a JSON file '" + jsonFile + "'.");
-
-        if (File.Exists(jsonFile) == false)
-            throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
+        VerifyJsonFile(jsonFile);
 
         if (settings.IsAnySubtitlesTypeSelected == false)
             throw new ArgumentException("Subtitles type was not selected.");
-
-        Exception error = null;
 
         Start.Raise(this, () => EventArgs.Empty);
 
@@ -62,50 +55,16 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             fileName + (settings.ChatTextFile ? ".txt" : (settings.ASS ? ".ass" : ".srt"))
         );
 
-        StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
-        JToken root = LoadJsonFile(jsonFile, ref error);
-        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
-
-        if (error != null)
-        {
-            Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
+        if (GetJsonRoot(jsonFile, srtFile, out JToken root) == false)
             return;
-        }
 
         if (settings.ChatTextFile)
             settings.ColorUserNames = false;
 
-        (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
-        Dictionary<string, UserColor> userColors = null;
+        if (GetPreparations(settings.RemoveEmoticonNames, settings.ColorUserNames, root, srtFile, out (string emoticon, Regex regex)[] regexEmbeddedEmoticons, out Dictionary<string, UserColor> userColors) == false)
+            return;
 
-        if (settings.RemoveEmoticonNames || settings.ColorUserNames)
-        {
-            StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames));
-            WritingPreparations(settings.RemoveEmoticonNames, settings.ColorUserNames, root, ref regexEmbeddedEmoticons, ref userColors, ref error);
-            FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(settings.RemoveEmoticonNames, settings.ColorUserNames, error));
-
-            if (error != null)
-            {
-                Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
-                return;
-            }
-        }
-
-        StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
-
-        {
-            using var srtStream = File.Open(srtFile, FileMode.Create);
-            using var writer = new StreamWriter(srtStream, Encoding.UTF8);
-
-            if (settings.RegularSubtitles)
-                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-            else if (settings.RollingChatSubtitles)
-                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-            else if (settings.StaticChatSubtitles)
-                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-            else if (settings.ChatTextFile)
-                WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, ref error);
-        }
+        WriteSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, srtFile, out Exception error);
 
         TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
 
@@ -120,55 +79,31 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
         long startTime = Stopwatch.GetTimestamp();
 
-        if (string.IsNullOrEmpty(jsonFile))
-            throw new ArgumentException("JSON file not specified.");
-
-        if (string.Compare(Path.GetExtension(jsonFile), ".json", true) != 0)
-            throw new ArgumentException("Not a JSON file '" + jsonFile + "'.");
-
-        if (File.Exists(jsonFile) == false)
-            throw new FileNotFoundException("Could not find file '" + jsonFile + "'.");
-
-        Exception error = null;
+        VerifyJsonFile(jsonFile);
 
         Start.Raise(this, () => EventArgs.Empty);
 
         string fileName = Path.GetFileNameWithoutExtension(jsonFile);
 
-        StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
-        JToken root = LoadJsonFile(jsonFile, ref error);
-        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
-
-        if (error != null)
-        {
-            Finish.Raise(this, () => new FinishEventArgs(null, TimeSpan.Zero, error));
+        if (GetJsonRoot(jsonFile, null, out JToken root) == false)
             return;
-        }
 
-        (string emoticon, Regex regex)[] regexEmbeddedEmoticons = null;
-        Dictionary<string, UserColor> userColors = null;
-
-        StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(true, true));
-        WritingPreparations(true, true, root, ref regexEmbeddedEmoticons, ref userColors, ref error);
-        FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(true, true, error));
-
-        if (error != null)
-        {
-            Finish.Raise(this, () => new FinishEventArgs(null, TimeSpan.Zero, error));
+        if (GetPreparations(true, true, root, null, out (string emoticon, Regex regex)[] regexEmbeddedEmoticons, out Dictionary<string, UserColor> userColors) == false)
             return;
-        }
 
         foreach (var currentSettings in multipleSettings)
         {
+            long testStartTime = Stopwatch.GetTimestamp();
+
             StartTestingSettings.Raise(this, () => new StartTestingSettingsEventArgs(currentSettings));
 
             settings = currentSettings;
-            error = null;
 
             if (settings.IsAnySubtitlesTypeSelected == false)
             {
                 FinishTestingSettings.Raise(this, () => new FinishTestingSettingsEventArgs(
                     currentSettings,
+                    Stopwatch.GetElapsedTime(testStartTime),
                     new ArgumentException("Subtitles type was not selected.")
                 ));
                 continue;
@@ -182,23 +117,11 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             if (settings.ChatTextFile)
                 settings.ColorUserNames = false;
 
-            StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
+            WriteSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, srtFile, out Exception error);
 
-            {
-                using var srtStream = File.Open(srtFile, FileMode.Create);
-                using var writer = new StreamWriter(srtStream, Encoding.UTF8);
+            TimeSpan testProcessTime = Stopwatch.GetElapsedTime(testStartTime);
 
-                if (settings.RegularSubtitles)
-                    WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-                else if (settings.RollingChatSubtitles)
-                    WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-                else if (settings.StaticChatSubtitles)
-                    WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, ref error);
-                else if (settings.ChatTextFile)
-                    WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, ref error);
-            }
-
-            FinishTestingSettings.Raise(this, () => new FinishTestingSettingsEventArgs(currentSettings, error));
+            FinishTestingSettings.Raise(this, () => new FinishTestingSettingsEventArgs(currentSettings, testProcessTime, error));
         }
 
         TimeSpan processTime = Stopwatch.GetElapsedTime(startTime);
@@ -206,9 +129,87 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         Finish.Raise(this, () => new FinishEventArgs(null, processTime, null));
     }
 
+    private static void VerifyJsonFile(string jsonFile)
+    {
+        if (string.IsNullOrEmpty(jsonFile))
+            throw new ArgumentException("JSON file not specified.");
+
+        if (string.Compare(Path.GetExtension(jsonFile), ".json", true) != 0)
+            throw new ArgumentException($"Not a JSON file '{jsonFile}'.");
+
+        if (File.Exists(jsonFile) == false)
+            throw new FileNotFoundException($"Could not find file '{jsonFile}'.");
+    }
+
+    private bool GetJsonRoot(string jsonFile, string srtFile, out JToken root)
+    {
+        StartLoadingJsonFile.Raise(this, () => new StartLoadingJsonFileEventArgs(jsonFile));
+        root = LoadJsonFile(jsonFile, out Exception error);
+        FinishLoadingJsonFile.Raise(this, () => new FinishLoadingJsonFileEventArgs(jsonFile, error));
+
+        if (error != null)
+            Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
+
+        return (error == null);
+    }
+
+    private bool GetPreparations(
+        bool removeEmoticonNames,
+        bool colorUserNames,
+        JToken root,
+        string srtFile,
+        out (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
+        out Dictionary<string, UserColor> userColors)
+    {
+        if (removeEmoticonNames == false && colorUserNames == false)
+        {
+            regexEmbeddedEmoticons = null;
+            userColors = null;
+            return true;
+        }
+
+        StartWritingPreparations.Raise(this, () => new StartWritingPreparationsEventArgs(removeEmoticonNames, colorUserNames));
+        WritingPreparations(removeEmoticonNames, colorUserNames, root, out regexEmbeddedEmoticons, out userColors, out Exception error);
+        FinishWritingPreparations.Raise(this, () => new FinishWritingPreparationsEventArgs(removeEmoticonNames, colorUserNames, error));
+
+        if (error != null)
+            Finish.Raise(this, () => new FinishEventArgs(srtFile, TimeSpan.Zero, error));
+
+        return (error == null);
+    }
+
+    private void WriteSubtitles(
+        JToken root,
+        (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
+        Dictionary<string, UserColor> userColors,
+        string fileName,
+        string srtFile,
+        out Exception error)
+    {
+        StartWritingSubtitles.Raise(this, () => new StartWritingSubtitlesEventArgs(srtFile));
+
+        {
+            using var srtStream = File.Open(srtFile, FileMode.Create);
+            using var writer = new StreamWriter(srtStream, Encoding.UTF8);
+
+            if (settings.RegularSubtitles)
+                WriteRegularSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, out error);
+            else if (settings.RollingChatSubtitles)
+                WriteRollingChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, out error);
+            else if (settings.StaticChatSubtitles)
+                WriteStaticChatSubtitles(root, regexEmbeddedEmoticons, userColors, fileName, writer, out error);
+            else if (settings.ChatTextFile)
+                WriteChatTextFile(root, regexEmbeddedEmoticons, userColors, writer, out error);
+            else
+                error = null;
+        }
+    }
+
+    #endregion
+
     #region Load Json File
 
-    private static JToken LoadJsonFile(string jsonFile, ref Exception error)
+    private static JToken LoadJsonFile(string jsonFile, out Exception error)
     {
         try
         {
@@ -219,6 +220,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
             if (IsTwitchChatJsonFile(root))
             {
+                error = null;
                 return root;
             }
             else
@@ -247,10 +249,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         bool removeEmoticonNames,
         bool colorUserNames,
         JToken root,
-        ref (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
-        ref Dictionary<string, UserColor> userColors,
-        ref Exception error)
+        out (string emoticon, Regex regex)[] regexEmbeddedEmoticons,
+        out Dictionary<string, UserColor> userColors,
+        out Exception error)
     {
+        regexEmbeddedEmoticons = null;
+        userColors = null;
+
         var cts = new CancellationTokenSource();
         var ct = cts.Token;
 
@@ -276,11 +281,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
             if (colorUserNames)
                 userColors = taskColorUserNames.Result;
+
+            error = null;
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
             // swallow the exception
             // and finish gracefully
+            error = null;
         }
         catch (AggregateException aex)
         {
@@ -469,7 +477,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
     #region Regular Subtitles
 
-    private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
+    private void WriteRegularSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, out Exception error)
     {
         TimeSpan subtitleShowDuration = TimeSpan.FromSeconds(settings.SubtitleShowDuration);
 
@@ -498,7 +506,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             ProcessComment,
             PostProcessCommentsChunk,
             PostProcessComments,
-            ref error,
+            out error,
             cts,
             ct
         );
@@ -655,7 +663,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
     #region Rolling Chat Subtitles
 
-    private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
+    private void WriteRollingChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, out Exception error)
     {
         if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.None)
             settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
@@ -700,7 +708,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             ProcessComment,
             PostProcessCommentsChunk,
             PostProcessComments,
-            ref error,
+            out error,
             cts,
             ct
         );
@@ -782,6 +790,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
                     });
                 }
 
+#if RELEASE
+                subtitles = subsInfo.Select(info =>
+                    new Subtitle(info.ShowTime, info.HideTime, info.PosY, pccm.message)
+                    .KeepLinesFromTheBottom(info.KeepCount_Bottom_RollIn)
+                    .ShaveLinesFromTheBottom(info.ShaveCount_Bottom_RollOut)
+                    .KeepLinesFromTheBottom(info.KeepCount_Bottom_RollOut)
+                );
+#elif DEBUG
                 subtitles = subsInfo.Select(info =>
                 {
                     var sub =
@@ -798,6 +814,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
                     return sub;
                 });
+#endif
             }
             else
             {
@@ -848,6 +865,14 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
                     });
                 }
 
+#if RELEASE
+                subtitles = subsInfo.Select(info =>
+                    new Subtitle(info.ShowTime, info.HideTime, info.PosY, pccm.message)
+                    .KeepLinesFromTheTop(info.KeepCount_Top_RollIn)
+                    .ShaveLinesFromTheTop(info.ShaveCount_Top_RollOut)
+                    .KeepLinesFromTheTop(info.KeepCount_Top_RollOut)
+                );
+#elif DEBUG
                 subtitles = subsInfo.Select(info =>
                 {
                     var sub =
@@ -864,6 +889,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
                     return sub;
                 });
+#endif
             }
 
             if (isWriteSubtitles)
@@ -960,6 +986,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         });
     }
 
+#if DEBUG
     private static Exception GetEmptyRollingSubtitleException(
         ChatMessage message,
         SubtitlesRollingDirection subtitlesRollingDirection,
@@ -1004,19 +1031,18 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
     {
         return new Exception(string.Join(Environment.NewLine,
             title,
-            message.ChatLogTimestampAndUser(true)
-#if DEBUG
-            , $"{subtitlesRollingDirection}, {nameof(linesCount)}={linesCount} {(linesCount <= posYCount ? "<=" : ">")} {nameof(posYCount)}={posYCount}",
+            message.ChatLogTimestampAndUser(true),
+            $"{subtitlesRollingDirection}, {nameof(linesCount)}={linesCount} {(linesCount <= posYCount ? "<=" : ">")} {nameof(posYCount)}={posYCount}",
             info.ToString()
-#endif
         ));
     }
+#endif
 
     #endregion
 
     #region Static Chat Subtitles
 
-    private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, ref Exception error)
+    private void WriteStaticChatSubtitles(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, string fileName, StreamWriter writer, out Exception error)
     {
         if (settings.SubtitlesRollingDirection == SubtitlesRollingDirection.None)
             settings.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
@@ -1063,7 +1089,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             ProcessComment,
             PostProcessCommentsChunk,
             PostProcessComments,
-            ref error,
+            out error,
             cts,
             ct
         );
@@ -1312,7 +1338,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
 
     #region Chat Text File
 
-    private void WriteChatTextFile(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, ref Exception error)
+    private void WriteChatTextFile(JToken root, (string emoticon, Regex regex)[] regexEmbeddedEmoticons, Dictionary<string, UserColor> userColors, StreamWriter writer, out Exception error)
     {
         Task<int> lastWritingTask = null;
         var cts = new CancellationTokenSource();
@@ -1334,7 +1360,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
             ProcessComment,
             PostProcessCommentsChunk,
             PostProcessComments,
-            ref error,
+            out error,
             cts,
             ct
         );
@@ -1407,7 +1433,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
         Action<(ProcessedComment, ChatMessage)> ProcessComment,
         Action PostProcessCommentsChunk,
         Action PostProcessComments,
-        ref Exception error,
+        out Exception error,
         CancellationTokenSource cts,
         CancellationToken ct)
     {
@@ -1471,11 +1497,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
             }
 
             PostProcessComments();
+
+            error = null;
         }
         catch (OperationCanceledException ex) when (ex.CancellationToken == ct)
         {
             // swallow the exception
             // and finish the task gracefully
+            error = null;
         }
         catch (AggregateException aex)
         {

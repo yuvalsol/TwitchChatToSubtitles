@@ -407,7 +407,7 @@ internal partial class TwitchSubtitlesOptions
             return null;
 
         if (RegexColorInHex().IsMatch(colorStr))
-            colorStr = "#" + colorStr;
+            colorStr = $"#{colorStr}";
 
         try
         {

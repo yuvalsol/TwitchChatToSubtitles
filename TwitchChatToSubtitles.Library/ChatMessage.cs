@@ -147,7 +147,7 @@ internal partial class ChatMessage(string body) : IMessage
         if (string.IsNullOrEmpty(User))
         {
             if (settings.ASS == false && settings.TextASSAColor != null)
-                return $@"{{\c{settings.TextASSAColor}}}" + Body;
+                return $@"{{\c{settings.TextASSAColor}}}{Body}";
             else
                 return Body;
         }

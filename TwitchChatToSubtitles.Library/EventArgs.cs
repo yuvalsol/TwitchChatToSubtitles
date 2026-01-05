@@ -42,9 +42,10 @@ public sealed class ProgressEventArgs(int messagesCount, int discardedMessagesCo
     public int SubtitlesCount { get; private set; } = subtitlesCount;
 }
 
-public sealed class FinishTestingSettingsEventArgs(TwitchSubtitlesSettings settings, Exception error) : EventArgs
+public sealed class FinishTestingSettingsEventArgs(TwitchSubtitlesSettings settings, TimeSpan processTime, Exception error) : EventArgs
 {
     public TwitchSubtitlesSettings Settings { get; private set; } = settings;
+    public TimeSpan ProcessTime { get; private set; } = processTime;
     public Exception Error { get; private set; } = error;
 }
 

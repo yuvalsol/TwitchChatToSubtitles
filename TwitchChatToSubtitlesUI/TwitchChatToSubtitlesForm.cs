@@ -237,10 +237,7 @@ namespace TwitchChatToSubtitlesUI
 
         private static string ColorToHex(Color color)
         {
-            return "#" +
-                color.R.ToString("X2") +
-                color.G.ToString("X2") +
-                color.B.ToString("X2");
+            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
         }
 
         #endregion
@@ -440,10 +437,7 @@ namespace TwitchChatToSubtitlesUI
             openJsonFileDialog.InitialDirectory = Path.GetDirectoryName(jsonFile);
 
             ResetFormTitle();
-            Text =
-                openJsonFileDialog.FileName +
-                (string.IsNullOrEmpty(streamerName) ? null : " - " + streamerName) +
-                " - " + Text;
+            Text = $"{openJsonFileDialog.FileName}{(string.IsNullOrEmpty(streamerName) ? null : $" - {streamerName}")} - {Text}";
         }
 
         private static bool IsJsonFile(string jsonFile)
@@ -466,7 +460,7 @@ namespace TwitchChatToSubtitlesUI
             {
                 MessageBoxHelper.ShowError(
                     this,
-                    "Not a JSON file." + Environment.NewLine + jsonFile,
+                    $"Not a JSON file.{Environment.NewLine}{jsonFile}",
                     $"File Error - {Program.Version()}"
                 );
 
@@ -534,7 +528,7 @@ namespace TwitchChatToSubtitlesUI
                     WriteLine("JSON file loaded successfully.");
                 else
                     WriteLine("Could not load JSON file.");
-                WriteLine("JSON file: " + e.JsonFile);
+                WriteLine($"JSON file: {e.JsonFile}");
 
                 Application.DoEvents();
             };
@@ -616,12 +610,12 @@ namespace TwitchChatToSubtitlesUI
                     WriteLine("Finished successfully.");
 
                     if (settings.ChatTextFile)
-                        WriteLine("Chat text file: " + e.SrtFile);
+                        WriteLine($"Chat text file: {e.SrtFile}");
                     else
-                        WriteLine("Subtitles file: " + e.SrtFile);
+                        WriteLine($"Subtitles file: {e.SrtFile}");
 
-                    string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "h':'mm':'ss'.'fff" : "m':'ss'.'fff");
-                    WriteLine("Process Time: " + processTime);
+                    string processTime = e.ProcessTime.ToString(e.ProcessTime.Days > 0 ? "d':'hh':'mm':'ss'.'fff" : e.ProcessTime.Hours > 0 ? "hh':'mm':'ss'.'fff" : "mm':'ss'.'fff");
+                    WriteLine($"Process Time: {processTime}");
 
                     if (chkCloseWhenFinishedSuccessfully.Checked)
                     {
@@ -638,12 +632,12 @@ namespace TwitchChatToSubtitlesUI
                         WriteErrorLine("Failed to write chat text file.");
                     else
                         WriteErrorLine("Failed to write subtitles.");
-                    WriteErrorLine("Error: " + e.Error.Message);
+                    WriteErrorLine($"Error: {e.Error.Message}");
 
                     Exception ex = e.Error.InnerException;
                     while (ex != null)
                     {
-                        WriteErrorLine("Error: " + ex.Message);
+                        WriteErrorLine($"Error: {ex.Message}");
                         ex = ex.InnerException;
                     }
 #elif DEBUG
