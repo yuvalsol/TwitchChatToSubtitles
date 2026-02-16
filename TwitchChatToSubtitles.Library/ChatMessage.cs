@@ -159,9 +159,9 @@ internal partial class ChatMessage(string body) : IMessage
                 timestampStr = $@"{{\fs{settings.TimestampFontSize}}}{ToTimestamp(Timestamp)}{{\rfs}} ";
 
             if (settings.RegularSubtitles)
-                return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+                return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{{(settings.BoldText ? null : @"\b1")}\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? $@"{{\c{(settings.BoldText ? null : @"\b0")}}}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
             else
-                return $"{timestampStr}{(IsModerator ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
+                return $"{timestampStr}{(IsModerator ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{{(settings.BoldText ? null : @"\b1")}\c{UserColor}}}" : string.Empty)}{User}{(UserColor != null ? $@"{{\c{(settings.BoldText ? null : @"\b0")}}}" : string.Empty)}{(IsModerator ? @"{\u0}" : string.Empty)}:{(IsBrailleArt ? @"\N" : " ")}{Body}";
         }
         else
         {
@@ -172,10 +172,10 @@ internal partial class ChatMessage(string body) : IMessage
                 if (settings.SubtitlesFontSize != SubtitlesFontSize.None)
                     fontSizeStr = $@"\fs{(int)settings.SubtitlesFontSize}";
 
-                timestampStr = $@"{{\fs{settings.TimestampFontSize}{(settings.TextASSAColor != null ? $@"\c{settings.TextASSAColor}" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(settings.TextASSAColor != null ? @"\c" : string.Empty)}\rfs\fn{Subtitle.FONT_NAME}{fontSizeStr}{Subtitle.FONT_RESET}}} ";
+                timestampStr = $@"{{\fs{settings.TimestampFontSize}{(settings.TextASSAColor != null ? $@"\c{settings.TextASSAColor}" : string.Empty)}}}{ToTimestamp(Timestamp)}{{{(settings.TextASSAColor != null ? @"\c" : string.Empty)}\rfs\fn{Subtitle.FONT_NAME}{fontSizeStr}{(settings.BoldText ? Subtitle.BOLD_FONT_RESET : Subtitle.FONT_RESET)}}} ";
             }
 
-            return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{\b1\c{UserColor}}}" : (settings.TextASSAColor != null ? $@"{{\b1\c{settings.TextASSAColor}}}" : string.Empty))}{User}{(UserColor != null || settings.TextASSAColor != null ? @"{\c\b0}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}{(settings.TextASSAColor != null ? $@"{{\c{settings.TextASSAColor}}}" : string.Empty)}:{(IsBrailleArt ? (settings.IsUsingAssaTags ? @"\N" : Environment.NewLine) : " ")}{Body}";
+            return $"{timestampStr}{(IsModerator && settings.IsUsingAssaTags ? @"{\u1}" : string.Empty)}{(UserColor != null ? $@"{{{(settings.BoldText ? null : @"\b1")}\c{UserColor}}}" : (settings.TextASSAColor != null ? $@"{{{(settings.BoldText ? null : @"\b1")}\c{settings.TextASSAColor}}}" : string.Empty))}{User}{(UserColor != null || settings.TextASSAColor != null ? $@"{{\c{(settings.BoldText ? null : @"\b0")}}}" : string.Empty)}{(IsModerator && settings.IsUsingAssaTags ? @"{\u0}" : string.Empty)}{(settings.TextASSAColor != null ? $@"{{\c{settings.TextASSAColor}}}" : string.Empty)}:{(IsBrailleArt ? (settings.IsUsingAssaTags ? @"\N" : Environment.NewLine) : " ")}{Body}";
         }
     }
 

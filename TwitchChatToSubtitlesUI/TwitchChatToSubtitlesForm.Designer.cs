@@ -33,6 +33,7 @@
             txtConsole = new RichTextBox();
             ddlSubtitlesFontSize = new ComboBox();
             splitContainer1 = new SplitContainer();
+            chkBoldText = new CheckBox();
             chkASS = new CheckBox();
             ddlSubtitlesRollingDirection = new ComboBox();
             lblSubtitlesRollingDirection = new Label();
@@ -86,7 +87,7 @@
             txtConsole.Location = new Point(0, 0);
             txtConsole.Name = "txtConsole";
             txtConsole.ReadOnly = true;
-            txtConsole.Size = new Size(714, 279);
+            txtConsole.Size = new Size(714, 249);
             txtConsole.TabIndex = 1;
             txtConsole.TabStop = false;
             txtConsole.Text = "";
@@ -118,6 +119,7 @@
             // 
             // splitContainer1.Panel2
             // 
+            splitContainer1.Panel2.Controls.Add(chkBoldText);
             splitContainer1.Panel2.Controls.Add(chkASS);
             splitContainer1.Panel2.Controls.Add(ddlSubtitlesRollingDirection);
             splitContainer1.Panel2.Controls.Add(lblSubtitlesRollingDirection);
@@ -148,19 +150,32 @@
             splitContainer1.Panel2.Controls.Add(ddlSubtitlesFontSize);
             splitContainer1.Panel2.RightToLeft = RightToLeft.No;
             splitContainer1.Size = new Size(714, 561);
-            splitContainer1.SplitterDistance = 279;
+            splitContainer1.SplitterDistance = 249;
             splitContainer1.TabIndex = 0;
             splitContainer1.TabStop = false;
+            // 
+            // chkBoldText
+            // 
+            chkBoldText.AutoSize = true;
+            chkBoldText.CheckAlign = ContentAlignment.MiddleRight;
+            chkBoldText.Location = new Point(15, 203);
+            chkBoldText.Name = "chkBoldText";
+            chkBoldText.Size = new Size(90, 24);
+            chkBoldText.TabIndex = 13;
+            chkBoldText.Text = "Bold Text";
+            toolTip.SetToolTip(chkBoldText, "Whether the font of the subtitles text is bold.");
+            chkBoldText.UseVisualStyleBackColor = true;
+            chkBoldText.CheckedChanged += chk_CheckedChanged;
             // 
             // chkASS
             // 
             chkASS.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             chkASS.AutoSize = true;
             chkASS.CheckAlign = ContentAlignment.MiddleRight;
-            chkASS.Location = new Point(185, 239);
+            chkASS.Location = new Point(185, 270);
             chkASS.Name = "chkASS";
             chkASS.Size = new Size(51, 24);
-            chkASS.TabIndex = 16;
+            chkASS.TabIndex = 17;
             chkASS.Text = ".ass";
             toolTip.SetToolTip(chkASS, "Whether to write Advanced Sub Station Alpha (.ass) file.");
             chkASS.UseVisualStyleBackColor = true;
@@ -263,10 +278,10 @@
             btnCommandLine.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnCommandLine.AutoSize = true;
             btnCommandLine.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnCommandLine.Location = new Point(506, 236);
+            btnCommandLine.Location = new Point(506, 267);
             btnCommandLine.Name = "btnCommandLine";
             btnCommandLine.Size = new Size(119, 30);
-            btnCommandLine.TabIndex = 18;
+            btnCommandLine.TabIndex = 19;
             btnCommandLine.Text = "Command Line";
             btnCommandLine.UseVisualStyleBackColor = true;
             btnCommandLine.Click += btnCommandLine_Click;
@@ -290,10 +305,10 @@
             chkCloseWhenFinishedSuccessfully.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             chkCloseWhenFinishedSuccessfully.AutoSize = true;
             chkCloseWhenFinishedSuccessfully.CheckAlign = ContentAlignment.MiddleRight;
-            chkCloseWhenFinishedSuccessfully.Location = new Point(244, 239);
+            chkCloseWhenFinishedSuccessfully.Location = new Point(244, 270);
             chkCloseWhenFinishedSuccessfully.Name = "chkCloseWhenFinishedSuccessfully";
             chkCloseWhenFinishedSuccessfully.Size = new Size(246, 24);
-            chkCloseWhenFinishedSuccessfully.TabIndex = 17;
+            chkCloseWhenFinishedSuccessfully.TabIndex = 18;
             chkCloseWhenFinishedSuccessfully.Text = "Close When Finished Successfully";
             chkCloseWhenFinishedSuccessfully.UseVisualStyleBackColor = true;
             chkCloseWhenFinishedSuccessfully.CheckedChanged += chk_CheckedChanged;
@@ -304,10 +319,10 @@
             btnClose.AutoSize = true;
             btnClose.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             btnClose.DialogResult = DialogResult.Cancel;
-            btnClose.Location = new Point(635, 236);
+            btnClose.Location = new Point(635, 267);
             btnClose.Name = "btnClose";
             btnClose.Size = new Size(55, 30);
-            btnClose.TabIndex = 19;
+            btnClose.TabIndex = 20;
             btnClose.Text = "Close";
             btnClose.UseVisualStyleBackColor = true;
             btnClose.Click += btnClose_Click;
@@ -317,10 +332,10 @@
             btnWriteTwitchSubtitles.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnWriteTwitchSubtitles.AutoSize = true;
             btnWriteTwitchSubtitles.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnWriteTwitchSubtitles.Location = new Point(15, 236);
+            btnWriteTwitchSubtitles.Location = new Point(15, 267);
             btnWriteTwitchSubtitles.Name = "btnWriteTwitchSubtitles";
             btnWriteTwitchSubtitles.Size = new Size(162, 30);
-            btnWriteTwitchSubtitles.TabIndex = 15;
+            btnWriteTwitchSubtitles.TabIndex = 16;
             btnWriteTwitchSubtitles.Text = "Write Twitch Subtitles";
             btnWriteTwitchSubtitles.UseVisualStyleBackColor = true;
             btnWriteTwitchSubtitles.Click += btnWriteTwitchSubtitles_Click;
@@ -328,20 +343,20 @@
             // txtJsonFile
             // 
             txtJsonFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            txtJsonFile.Location = new Point(97, 202);
+            txtJsonFile.Location = new Point(97, 234);
             txtJsonFile.Name = "txtJsonFile";
             txtJsonFile.Size = new Size(594, 27);
-            txtJsonFile.TabIndex = 14;
+            txtJsonFile.TabIndex = 15;
             txtJsonFile.TextChanged += txtJsonFile_TextChanged;
             // 
             // btnJsonFile
             // 
             btnJsonFile.AutoSize = true;
             btnJsonFile.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            btnJsonFile.Location = new Point(15, 200);
+            btnJsonFile.Location = new Point(15, 232);
             btnJsonFile.Name = "btnJsonFile";
             btnJsonFile.Size = new Size(74, 30);
-            btnJsonFile.TabIndex = 13;
+            btnJsonFile.TabIndex = 14;
             btnJsonFile.Text = "Json File";
             btnJsonFile.UseVisualStyleBackColor = true;
             btnJsonFile.Click += btnJsonFile_Click;
@@ -580,5 +595,6 @@
         private Label lblSubtitlesRollingDirection;
         private ComboBox ddlSubtitlesRollingDirection;
         private CheckBox chkASS;
+        private CheckBox chkBoldText;
     }
 }

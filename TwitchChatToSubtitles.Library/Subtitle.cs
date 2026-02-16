@@ -4,6 +4,7 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
 {
     internal const string FONT_NAME = "Calibri";
     internal const string FONT_RESET = @"\b0\bord0\shad0";
+    internal const string BOLD_FONT_RESET = @"\b1\bord0\shad0";
     internal const int POS_X_LOCATION_LEFT = 3;
 
     public readonly TimeSpan ShowTime = showTime;
@@ -259,13 +260,13 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
                     fontSizeStr = $@"\fs{(int)settings.SubtitlesFontSize}";
 
                 if (HasPosY)
-                    sb.Append($@"{{\a5\an7\pos({(settings.SubtitlesLocation.IsRight() ? (HasBrailleArtMessage ? settings.BraillePosXLocationRight : settings.TextPosXLocationRight) : POS_X_LOCATION_LEFT)},{PosY})\fn{FONT_NAME}{fontSizeStr}{FONT_RESET}}}");
+                    sb.Append($@"{{\a5\an7\pos({(settings.SubtitlesLocation.IsRight() ? (HasBrailleArtMessage ? settings.BraillePosXLocationRight : settings.TextPosXLocationRight) : POS_X_LOCATION_LEFT)},{PosY})\fn{FONT_NAME}{fontSizeStr}{(settings.BoldText ? BOLD_FONT_RESET : FONT_RESET)}}}");
                 else if (settings.SubtitlesFontSize != SubtitlesFontSize.None)
-                    sb.Append($@"{{\fn{FONT_NAME}{fontSizeStr}{FONT_RESET}}}");
+                    sb.Append($@"{{\fn{FONT_NAME}{fontSizeStr}{(settings.BoldText ? BOLD_FONT_RESET : FONT_RESET)}}}");
             }
             else if (settings.IsUsingAssaTags)
             {
-                sb.Append($@"{{{FONT_RESET}}}");
+                sb.Append($@"{{{(settings.BoldText ? BOLD_FONT_RESET : FONT_RESET)}}}");
             }
 
             foreach (var message in Messages)

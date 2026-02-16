@@ -35,6 +35,7 @@ Chat messages will appear at the center-bottom of the screen.
 TwitchChatToSubtitles --RegularSubtitles
                       --JsonFile <file>
                       [--ass]
+                      [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
                       [--ShowTimestamps]
@@ -77,6 +78,7 @@ Chat messages will roll vertically across the screen and then disappear. Past ch
 TwitchChatToSubtitles --RollingChatSubtitles
                       --JsonFile <file>
                       [--ass]
+                      [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
                       [--ShowTimestamps]
@@ -115,6 +117,7 @@ Chat messages are added to the previous chat messages and remain there. Similar 
 TwitchChatToSubtitles --StaticChatSubtitles
                       --JsonFile <file>
                       [--ass]
+                      [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
                       [--ShowTimestamps]
@@ -189,6 +192,12 @@ Write .ass subtitles file instead of .srt subtitles file.
 
 ```console
 --ass                   Whether to write Advanced Sub Station Alpha (.ass) file.
+```
+
+This option displays the subtitles text in bold font.
+
+```console
+--BoldText              Whether the font of the subtitles text is bold.
 ```
 
 Users, who post in Twitch chat, have an assigned color to their name. This option colors the name of the users across all subtitles, both the title and the body of chat messages. If a user doesn't have an assigned color, it will be colored with Twitch's purple color.

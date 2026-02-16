@@ -23,6 +23,7 @@ public class TwitchSubtitlesSettings
         }
     }
 
+    public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -84,6 +85,7 @@ public class TwitchSubtitlesSettings
                     ASS ||
                     RollingChatSubtitles ||
                     StaticChatSubtitles ||
+                    BoldText ||
                     ColorUserNames ||
                     ShowTimestamps ||
                     SubtitlesFontSize != SubtitlesFontSize.None ||

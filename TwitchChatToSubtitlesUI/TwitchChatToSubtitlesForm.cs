@@ -303,6 +303,7 @@ namespace TwitchChatToSubtitlesUI
 
             btnWriteTwitchSubtitles.Text = (subtitlesType == SubtitlesType.ChatTextFile ? "Write Chat Text File" : "Write Twitch Subtitles");
 
+            chkBoldText.Enabled =
             chkColorUserNames.Enabled =
             lblSubtitlesFontSize.Enabled =
             ddlSubtitlesFontSize.Enabled =
@@ -472,6 +473,8 @@ namespace TwitchChatToSubtitlesUI
                 SubtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue
             };
 
+            if (chkBoldText.Enabled)
+                settings.BoldText = chkBoldText.Checked;
             if (chkColorUserNames.Enabled)
                 settings.ColorUserNames = chkColorUserNames.Checked;
             if (chkRemoveEmoticonNames.Enabled)
@@ -734,22 +737,34 @@ namespace TwitchChatToSubtitlesUI
             if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
                 sb.Append($" --JsonFile \"{txtJsonFile.Text}\"");
 
+            if (chkASS.Enabled)
+            {
+                if (chkASS.Checked)
+                    sb.Append(" --ass");
+            }
+
+            if (chkBoldText.Enabled)
+            {
+                if (chkBoldText.Checked)
+                    sb.Append(" --BoldText");
+            }
+
             if (chkColorUserNames.Enabled)
             {
                 if (chkColorUserNames.Checked)
-                    sb.Append($" --ColorUserNames");
+                    sb.Append(" --ColorUserNames");
             }
 
             if (chkRemoveEmoticonNames.Enabled)
             {
                 if (chkRemoveEmoticonNames.Checked)
-                    sb.Append($" --RemoveEmoticonNames");
+                    sb.Append(" --RemoveEmoticonNames");
             }
 
             if (chkShowTimestamps.Enabled)
             {
                 if (chkShowTimestamps.Checked)
-                    sb.Append($" --ShowTimestamps");
+                    sb.Append(" --ShowTimestamps");
             }
 
             if (ddlSubtitlesLocation.Enabled)
@@ -805,12 +820,6 @@ namespace TwitchChatToSubtitlesUI
                 }
             }
 
-            if (chkASS.Enabled)
-            {
-                if (chkASS.Checked)
-                    sb.Append($" --ass");
-            }
-
             MessageBoxHelper.ShowCommandLine(this, sb.ToString(), "Command Line");
         }
 
@@ -864,6 +873,7 @@ namespace TwitchChatToSubtitlesUI
             }
 
             settings.SubtitlesType = (SubtitlesType)(ddlSubtitlesType.SelectedValue ?? SubtitlesType.RegularSubtitles);
+            settings.BoldText = chkBoldText.Checked;
             settings.ColorUserNames = chkColorUserNames.Checked;
             settings.RemoveEmoticonNames = chkRemoveEmoticonNames.Checked;
             settings.ShowTimestamps = chkShowTimestamps.Checked;
@@ -888,6 +898,7 @@ namespace TwitchChatToSubtitlesUI
 
             SetComboBox(ddlSubtitlesType, ddlSubtitlesType_SelectedIndexChanged, settings.SubtitlesType);
             SubtitlesTypeChanged();
+            SetCheckBox(chkBoldText, chk_CheckedChanged, settings.BoldText);
             SetCheckBox(chkColorUserNames, chk_CheckedChanged, settings.ColorUserNames);
             SetCheckBox(chkRemoveEmoticonNames, chk_CheckedChanged, settings.RemoveEmoticonNames);
             SetCheckBox(chkShowTimestamps, chk_CheckedChanged, settings.ShowTimestamps);

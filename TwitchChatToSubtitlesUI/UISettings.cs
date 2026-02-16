@@ -7,6 +7,7 @@ internal class UISettings
 {
     public string SubtitlesTypeName { get { return TwitchChatToSubtitlesForm.GetEnumName(SubtitlesType); } }
     public SubtitlesType SubtitlesType { get; set; }
+    public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }

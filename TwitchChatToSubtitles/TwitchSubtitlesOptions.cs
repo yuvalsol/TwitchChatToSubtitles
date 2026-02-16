@@ -14,6 +14,9 @@ internal interface IAllSubtitleTypesOptions
     [Option("ass", Required = false, HelpText = "Whether to write Advanced Sub Station Alpha (.ass) file.")]
     bool ASS { get; set; }
 
+    [Option("BoldText", Required = false, HelpText = "Whether the font of the subtitles text is bold.")]
+    bool BoldText { get; set; }
+
     [Option("ColorUserNames", Required = false, HelpText = "Whether to color user names.")]
     bool ColorUserNames { get; set; }
 
@@ -274,6 +277,7 @@ internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
 {
     public string JsonFile { get; set; }
     public bool ASS { get; set; }
+    public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -341,6 +345,7 @@ internal partial class TwitchSubtitlesOptions
         currentValue = value;
     }
 
+    public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
     public bool ShowTimestamps { get; set; }
@@ -362,6 +367,7 @@ internal partial class TwitchSubtitlesOptions
         RollingChatSubtitles = settings.RollingChatSubtitles;
         StaticChatSubtitles = settings.StaticChatSubtitles;
         ChatTextFile = settings.ChatTextFile;
+        BoldText = settings.BoldText;
         ColorUserNames = settings.ColorUserNames;
         RemoveEmoticonNames = settings.RemoveEmoticonNames;
         ShowTimestamps = settings.ShowTimestamps;
@@ -385,6 +391,7 @@ internal partial class TwitchSubtitlesOptions
                 (RollingChatSubtitles ? SubtitlesType.RollingChatSubtitles :
                 (StaticChatSubtitles ? SubtitlesType.StaticChatSubtitles :
                 (ChatTextFile ? SubtitlesType.ChatTextFile : 0)))),
+            BoldText = BoldText,
             ColorUserNames = ColorUserNames,
             RemoveEmoticonNames = RemoveEmoticonNames,
             ShowTimestamps = ShowTimestamps,

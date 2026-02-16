@@ -305,39 +305,38 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.JsonFile = @"";
     //options.ASS = false;
 
-    //options.ChatTextFile = true;
     //options.RegularSubtitles = true;
     //options.RollingChatSubtitles = true;
     //options.StaticChatSubtitles = true;
+    //options.ChatTextFile = true;
 
     //options.ColorUserNames = true;
     //options.RemoveEmoticonNames = true;
     //options.ShowTimestamps = true;
 
+    //options.BoldText = true;
     //options.TextColor = "#FFFF80";
-    //options.TextColor = null;
 
     //options.TimeOffset = 5;
-    //options.TimeOffset = 0;
 
-    //options.SubtitlesFontSize = SubtitlesFontSize.X5L;
-    //options.SubtitlesFontSize = SubtitlesFontSize.X4L;
-    //options.SubtitlesFontSize = SubtitlesFontSize.X3L;
-    //options.SubtitlesFontSize = SubtitlesFontSize.X2L;
-    //options.SubtitlesFontSize = SubtitlesFontSize.XL;
-    //options.SubtitlesFontSize = SubtitlesFontSize.Large;
-    //options.SubtitlesFontSize = SubtitlesFontSize.Medium;
     //options.SubtitlesFontSize = SubtitlesFontSize.Regular;
+    //options.SubtitlesFontSize = SubtitlesFontSize.Medium;
+    //options.SubtitlesFontSize = SubtitlesFontSize.Large;
+    //options.SubtitlesFontSize = SubtitlesFontSize.XL;
+    //options.SubtitlesFontSize = SubtitlesFontSize.X2L;
+    //options.SubtitlesFontSize = SubtitlesFontSize.X3L;
+    //options.SubtitlesFontSize = SubtitlesFontSize.X4L;
+    //options.SubtitlesFontSize = SubtitlesFontSize.X5L;
 
-    //options.SubtitlesLocation = SubtitlesLocation.Right;
     //options.SubtitlesLocation = SubtitlesLocation.Left;
+    //options.SubtitlesLocation = SubtitlesLocation.Right;
 
-    //options.SubtitlesRollingDirection = SubtitlesRollingDirection.TopToBottom;
     //options.SubtitlesRollingDirection = SubtitlesRollingDirection.BottomToTop;
+    //options.SubtitlesRollingDirection = SubtitlesRollingDirection.TopToBottom;
 
-    //options.SubtitlesSpeed = SubtitlesSpeed.Speed3;
-    //options.SubtitlesSpeed = SubtitlesSpeed.Speed2;
     //options.SubtitlesSpeed = SubtitlesSpeed.Speed1;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Speed2;
+    //options.SubtitlesSpeed = SubtitlesSpeed.Speed3;
 }
 #endif
 
