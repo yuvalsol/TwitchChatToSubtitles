@@ -14,6 +14,8 @@ The program uses [ASSA override tags](https://www.nikse.dk/subtitleedit/formats/
 
 ASSA override tags are not part of the SubRip specification but some media players can read ASSA override tags from a SubRip file. The program was tested successfully with MPC-HC. On the other hand, VLC ignores ASSA override tags in a SubRip file. In that case, you can write [Subtitles Without ASSA Override Tags](#subtitles-without-assa-override-tags "Subtitles Without ASSA Override Tags"), or simply write Advanced Sub Station Alpha .ass file.
 
+If MPC-HC doesn't display properly subtitles from an Advanced Sub Station Alpha .ass subtitles file, for example semi-transparent backgrounds are not displayed, enable `Use libass for SSA/ASS` in MPC-HC. This option is located at View -> Options -> Subtitles -> Default Style -> Use libass for SSA/ASS.
+
 The program is provided both as Command Line (**TwitchChatToSubtitles**) and as UI (**TwitchChatToSubtitlesUI**).
 
 Twitch Chat To Subtitles requires .NET 8 Runtime.
@@ -38,6 +40,8 @@ TwitchChatToSubtitles --RegularSubtitles
                       [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
+                      [--SemiTransparentDarkBackground]
+                      [--SemiTransparentLightBackground]
                       [--ShowTimestamps]
                       [--SubtitleShowDuration <seconds>]
                       [--SubtitlesFontSize <font size>]
@@ -66,6 +70,7 @@ TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA override tags:
+
 ```console
 TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
@@ -81,6 +86,8 @@ TwitchChatToSubtitles --RollingChatSubtitles
                       [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
+                      [--SemiTransparentDarkBackground]
+                      [--SemiTransparentLightBackground]
                       [--ShowTimestamps]
                       [--SubtitlesFontSize <font size>]
                       [--SubtitlesLocation <location>]
@@ -99,6 +106,7 @@ TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
+
 ```console
 TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
@@ -120,6 +128,8 @@ TwitchChatToSubtitles --StaticChatSubtitles
                       [--BoldText]
                       [--ColorUserNames]
                       [--RemoveEmoticonNames]
+                      [--SemiTransparentDarkBackground]
+                      [--SemiTransparentLightBackground]
                       [--ShowTimestamps]
                       [--SubtitlesFontSize <font size>]
                       [--SubtitlesLocation <location>]
@@ -137,6 +147,7 @@ TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.j
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
+
 ```console
 TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
 ```
@@ -167,6 +178,7 @@ TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Remove emoticon names, show chat message timestamps:
+
 ```console
 TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --RemoveEmoticonNames --ShowTimestamps
 ```
@@ -212,6 +224,15 @@ If you are downloading chat JSON file using [Twitch Downloader](https://github.c
 
 ```console
 --RemoveEmoticonNames   Remove emoticon and badge names.
+```
+
+These options display the subtitles text with a semi-transparent background. These options are applicable only when `ass` is enabled.
+
+```console
+--SemiTransparentDarkBackground      Whether to overlay a semi-transparent dark
+                                     background around the subtitles text.
+--SemiTransparentLightBackground     Whether to overlay a semi-transparent light
+                                     background around the subtitles text.
 ```
 
 This option displays the timestamp of when the chat message was posted in chat.

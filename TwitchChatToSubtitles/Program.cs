@@ -303,7 +303,7 @@ static void OnTracepoint(object sender, TracepointEventArgs e)
 static void Debug(TwitchSubtitlesOptions options)
 {
     //options.JsonFile = @"";
-    //options.ASS = false;
+    //options.ASS = true;
 
     //options.RegularSubtitles = true;
     //options.RollingChatSubtitles = true;
@@ -315,6 +315,8 @@ static void Debug(TwitchSubtitlesOptions options)
     //options.ShowTimestamps = true;
 
     //options.BoldText = true;
+    //options.SemiTransparentDarkBackground = true;
+    //options.SemiTransparentLightBackground = true;
     //options.TextColor = "#FFFF80";
 
     //options.TimeOffset = 5;

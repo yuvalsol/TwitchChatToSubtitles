@@ -26,6 +26,8 @@ public class TwitchSubtitlesSettings
     public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
+    public bool SemiTransparentDarkBackground { get; set; }
+    public bool SemiTransparentLightBackground { get; set; }
     public bool ShowTimestamps { get; set; }
     public int SubtitleShowDuration { get; set; } = 5;
 
@@ -87,6 +89,8 @@ public class TwitchSubtitlesSettings
                     StaticChatSubtitles ||
                     BoldText ||
                     ColorUserNames ||
+                    SemiTransparentDarkBackground ||
+                    SemiTransparentLightBackground ||
                     ShowTimestamps ||
                     SubtitlesFontSize != SubtitlesFontSize.None ||
                     TextColor != null

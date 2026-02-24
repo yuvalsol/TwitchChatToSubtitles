@@ -922,6 +922,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
             int countBefore = Subtitles.Count;
             Subtitles.AddRange(subtitles);
+            ConsolidateConsecutiveRollingChatSubtitles(Subtitles, fontSize);
             subtitlesCount += Subtitles.Count - countBefore;
 
             if (Subtitles.Count >= FLUSH_SUBTITLES_COUNT)
@@ -952,6 +953,33 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
 
             FinishWritingSubtitles.Raise(this, () => new ProgressEventArgs(messagesCount, discardedMessagesCount, totalMessages, subtitlesCount));
         }
+    }
+
+    private static void ConsolidateConsecutiveRollingChatSubtitles(List<Subtitle> Subtitles, int fontSize)
+    {
+        List<Subtitle> subtitlesToRemove = [];
+
+        var groups = Subtitles
+            .GroupBy(subtitle => subtitle.ShowTime)
+            .Where(g => g.HasMoreThanOne())
+            .Select(g => g.OrderBy(x => x.PosY));
+
+        foreach (var subtitles in groups)
+        {
+            var pairs = subtitles
+                .Zip(subtitles.Skip(1))
+                .Where(pair => pair.Second.PosY == pair.First.PosY + (pair.First.LinesCount * fontSize))
+                .OrderByDescending(pair => pair.First.PosY);
+
+            foreach (var (First, Second) in pairs)
+            {
+                First.AddMessages(Second);
+                subtitlesToRemove.Add(Second);
+            }
+        }
+
+        foreach (var subtitleToRemove in subtitlesToRemove)
+            Subtitles.Remove(subtitleToRemove);
     }
 
     private static void SortRollingChatSubtitles(List<Subtitle> Subtitles, SubtitlesRollingDirection subtitlesRollingDirection)
@@ -1247,10 +1275,13 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         WriteASSScriptInfo(fileName, writer);
 
         int fontSize = (settings.SubtitlesFontSize == SubtitlesFontSize.None ? 20 : (int)settings.SubtitlesFontSize);
-        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+        var primaryColour = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
         int bold = (settings.BoldText ? 1 : 0);
+        var backColour = (settings.SemiTransparentDarkBackground ? ASSAColor.SemiTransparentDarkBackground : (settings.SemiTransparentLightBackground ? ASSAColor.SemiTransparentLightBackground : ASSAColor.Black)).ToString()[..^1];
+        int borderStyle = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 4 : 1);
+        double shadow = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 1 : 0);
 
-        writer.WriteLine($"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,2,10,10,10,1");
+        writer.WriteLine($"Style: Default,{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},2,10,10,10,1");
 
         WriteASSEvents(writer);
         writer.Flush();
@@ -1261,22 +1292,25 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         WriteASSScriptInfo(fileName, writer);
 
         int fontSize = (int)settings.SubtitlesFontSize;
-        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+        var primaryColour = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
         int bold = (settings.BoldText ? 1 : 0);
+        var backColour = (settings.SemiTransparentDarkBackground ? ASSAColor.SemiTransparentDarkBackground : (settings.SemiTransparentLightBackground ? ASSAColor.SemiTransparentLightBackground : ASSAColor.Black)).ToString()[..^1];
+        int borderStyle = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 4 : 1);
+        double shadow = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 1 : 0);
 
         if (settings.SubtitlesLocation.IsRight())
         {
             int posY = topPosY;
             while (posY <= bottomPosY)
             {
-                writer.WriteLine($@"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{settings.TextPosXLocationRight},0,{posY},1");
+                writer.WriteLine($"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{settings.TextPosXLocationRight},0,{posY},1");
                 posY += fontSize;
             }
 
             posY = topPosY;
             while (posY <= bottomPosY)
             {
-                writer.WriteLine($@"Style: BrailleV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{settings.BraillePosXLocationRight},0,{posY},1");
+                writer.WriteLine($"Style: BrailleV{posY},{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{settings.BraillePosXLocationRight},0,{posY},1");
                 posY += fontSize;
             }
         }
@@ -1285,7 +1319,7 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
             int posY = topPosY;
             while (posY <= bottomPosY)
             {
-                writer.WriteLine($@"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{Subtitle.POS_X_LOCATION_LEFT},0,{posY},1");
+                writer.WriteLine($"Style: TextV{posY},{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{Subtitle.POS_X_LOCATION_LEFT},0,{posY},1");
                 posY += fontSize;
             }
         }
@@ -1299,17 +1333,20 @@ public partial class TwitchSubtitles(TwitchSubtitlesSettings settings = null)
         WriteASSScriptInfo(fileName, writer);
 
         int fontSize = (int)settings.SubtitlesFontSize;
-        var color = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
+        var primaryColour = (settings.TextASSAColor ?? ASSAColor.White).ToString()[..^1];
         int bold = (settings.BoldText ? 1 : 0);
+        var backColour = (settings.SemiTransparentDarkBackground ? ASSAColor.SemiTransparentDarkBackground : (settings.SemiTransparentLightBackground ? ASSAColor.SemiTransparentLightBackground : ASSAColor.Black)).ToString()[..^1];
+        int borderStyle = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 4 : 1);
+        double shadow = (settings.SemiTransparentDarkBackground || settings.SemiTransparentLightBackground ? 1 : 0);
 
         if (settings.SubtitlesLocation.IsRight())
         {
-            writer.WriteLine($@"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{settings.TextPosXLocationRight},0,{topPosY},1");
-            writer.WriteLine($@"Style: Braille,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{settings.BraillePosXLocationRight},0,{topPosY},1");
+            writer.WriteLine($"Style: Default,{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{settings.TextPosXLocationRight},0,{topPosY},1");
+            writer.WriteLine($"Style: Braille,{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{settings.BraillePosXLocationRight},0,{topPosY},1");
         }
         else
         {
-            writer.WriteLine($@"Style: Default,{Subtitle.FONT_NAME},{fontSize},{color},{color},&H00000000,&H00000000,{bold},0,0,0,100,100,0,0,1,0,0,7,{Subtitle.POS_X_LOCATION_LEFT},0,{topPosY},1");
+            writer.WriteLine($"Style: Default,{Subtitle.FONT_NAME},{fontSize},{primaryColour},&H0000FFFF,&H00000000,{backColour},{bold},0,0,0,100,100,0,0,{borderStyle},0,{shadow},7,{Subtitle.POS_X_LOCATION_LEFT},0,{topPosY},1");
         }
 
         WriteASSEvents(writer);
@@ -1333,7 +1370,7 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 
     private static void WriteASSEvents(StreamWriter writer)
     {
-        writer.WriteLine($@"
+        writer.WriteLine(@"
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text");
     }

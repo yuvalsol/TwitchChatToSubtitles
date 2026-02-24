@@ -23,6 +23,12 @@ internal interface IAllSubtitleTypesOptions
     [Option("RemoveEmoticonNames", Required = false, HelpText = "Remove emoticon and badge names.")]
     bool RemoveEmoticonNames { get; set; }
 
+    [Option("SemiTransparentDarkBackground", Required = false, HelpText = "Whether to overlay a semi-transparent dark background around the subtitles text. Applicable only when `ass` is enabled.")]
+    bool SemiTransparentDarkBackground { get; set; }
+
+    [Option("SemiTransparentLightBackground", Required = false, HelpText = "Whether to overlay a semi-transparent light background around the subtitles text. Applicable only when `ass` is enabled.")]
+    bool SemiTransparentLightBackground { get; set; }
+
     [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
     bool ShowTimestamps { get; set; }
 
@@ -280,6 +286,8 @@ internal class AllSubtitleTypesOptions : IAllSubtitleTypesOptions
     public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
+    public bool SemiTransparentDarkBackground { get; set; }
+    public bool SemiTransparentLightBackground { get; set; }
     public bool ShowTimestamps { get; set; }
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
     public string TextColor { get; set; }
@@ -348,6 +356,8 @@ internal partial class TwitchSubtitlesOptions
     public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
+    public bool SemiTransparentDarkBackground { get; set; }
+    public bool SemiTransparentLightBackground { get; set; }
     public bool ShowTimestamps { get; set; }
     public int SubtitleShowDuration { get; set; }
     public SubtitlesFontSize SubtitlesFontSize { get; set; }
@@ -370,6 +380,8 @@ internal partial class TwitchSubtitlesOptions
         BoldText = settings.BoldText;
         ColorUserNames = settings.ColorUserNames;
         RemoveEmoticonNames = settings.RemoveEmoticonNames;
+        SemiTransparentDarkBackground = settings.SemiTransparentDarkBackground;
+        SemiTransparentLightBackground = settings.SemiTransparentLightBackground;
         ShowTimestamps = settings.ShowTimestamps;
         SubtitleShowDuration = settings.SubtitleShowDuration;
         SubtitlesFontSize = settings.SubtitlesFontSize;
@@ -394,6 +406,8 @@ internal partial class TwitchSubtitlesOptions
             BoldText = BoldText,
             ColorUserNames = ColorUserNames,
             RemoveEmoticonNames = RemoveEmoticonNames,
+            SemiTransparentDarkBackground = SemiTransparentDarkBackground,
+            SemiTransparentLightBackground = SemiTransparentLightBackground,
             ShowTimestamps = ShowTimestamps,
             SubtitleShowDuration = SubtitleShowDuration,
             SubtitlesFontSize = SubtitlesFontSize,

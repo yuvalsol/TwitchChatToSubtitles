@@ -314,6 +314,8 @@ namespace TwitchChatToSubtitlesUI
             lblTextColor.Enabled =
             chkASS.Enabled = (subtitlesType != SubtitlesType.ChatTextFile);
 
+            EnableSemiTransparentBackgroundCheckBoxes();
+
             lblSubtitlesLocation.Enabled =
             ddlSubtitlesLocation.Enabled = false;
 
@@ -364,6 +366,33 @@ namespace TwitchChatToSubtitlesUI
 
         private void nud_ValueChanged(object sender, EventArgs e)
         {
+            SetUISettings();
+        }
+
+        private void chkASS_CheckedChanged(object sender, EventArgs e)
+        {
+            EnableSemiTransparentBackgroundCheckBoxes();
+        }
+
+        private void EnableSemiTransparentBackgroundCheckBoxes()
+        {
+            chkSemiTransparentDarkBackground.Enabled =
+            chkSemiTransparentLightBackground.Enabled = (chkASS.Enabled && chkASS.Checked);
+        }
+
+        private void chkSemiTransparentDarkBackground_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkSemiTransparentDarkBackground.Checked && chkSemiTransparentLightBackground.Checked)
+                SetCheckBox(chkSemiTransparentLightBackground, chkSemiTransparentLightBackground_CheckedChanged, false);
+
+            SetUISettings();
+        }
+
+        private void chkSemiTransparentLightBackground_CheckedChanged(object sender, EventArgs e)
+        {
+            if (chkSemiTransparentDarkBackground.Checked && chkSemiTransparentLightBackground.Checked)
+                SetCheckBox(chkSemiTransparentDarkBackground, chkSemiTransparentDarkBackground_CheckedChanged, false);
+
             SetUISettings();
         }
 
@@ -479,6 +508,10 @@ namespace TwitchChatToSubtitlesUI
                 settings.ColorUserNames = chkColorUserNames.Checked;
             if (chkRemoveEmoticonNames.Enabled)
                 settings.RemoveEmoticonNames = chkRemoveEmoticonNames.Checked;
+            if (chkSemiTransparentDarkBackground.Enabled)
+                settings.SemiTransparentDarkBackground = chkSemiTransparentDarkBackground.Checked;
+            if (chkSemiTransparentLightBackground.Enabled)
+                settings.SemiTransparentLightBackground = chkSemiTransparentLightBackground.Checked;
             if (chkShowTimestamps.Enabled)
                 settings.ShowTimestamps = chkShowTimestamps.Checked;
             if (nudSubtitleShowDuration.Enabled)
@@ -737,35 +770,26 @@ namespace TwitchChatToSubtitlesUI
             if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
                 sb.Append($" --JsonFile \"{txtJsonFile.Text}\"");
 
-            if (chkASS.Enabled)
-            {
-                if (chkASS.Checked)
-                    sb.Append(" --ass");
-            }
+            if (chkASS.Enabled && chkASS.Checked)
+                sb.Append(" --ass");
 
-            if (chkBoldText.Enabled)
-            {
-                if (chkBoldText.Checked)
-                    sb.Append(" --BoldText");
-            }
+            if (chkBoldText.Enabled && chkBoldText.Checked)
+                sb.Append(" --BoldText");
 
-            if (chkColorUserNames.Enabled)
-            {
-                if (chkColorUserNames.Checked)
-                    sb.Append(" --ColorUserNames");
-            }
+            if (chkColorUserNames.Enabled && chkColorUserNames.Checked)
+                sb.Append(" --ColorUserNames");
 
-            if (chkRemoveEmoticonNames.Enabled)
-            {
-                if (chkRemoveEmoticonNames.Checked)
-                    sb.Append(" --RemoveEmoticonNames");
-            }
+            if (chkRemoveEmoticonNames.Enabled && chkRemoveEmoticonNames.Checked)
+                sb.Append(" --RemoveEmoticonNames");
 
-            if (chkShowTimestamps.Enabled)
-            {
-                if (chkShowTimestamps.Checked)
-                    sb.Append(" --ShowTimestamps");
-            }
+            if (chkSemiTransparentDarkBackground.Enabled && chkSemiTransparentDarkBackground.Checked)
+                sb.Append(" --SemiTransparentDarkBackground");
+
+            if (chkSemiTransparentLightBackground.Enabled && chkSemiTransparentLightBackground.Checked)
+                sb.Append(" --SemiTransparentLightBackground");
+
+            if (chkShowTimestamps.Enabled && chkShowTimestamps.Checked)
+                sb.Append(" --ShowTimestamps");
 
             if (ddlSubtitlesLocation.Enabled)
             {
@@ -876,6 +900,8 @@ namespace TwitchChatToSubtitlesUI
             settings.BoldText = chkBoldText.Checked;
             settings.ColorUserNames = chkColorUserNames.Checked;
             settings.RemoveEmoticonNames = chkRemoveEmoticonNames.Checked;
+            settings.SemiTransparentDarkBackground = chkSemiTransparentDarkBackground.Checked;
+            settings.SemiTransparentLightBackground = chkSemiTransparentLightBackground.Checked;
             settings.ShowTimestamps = chkShowTimestamps.Checked;
             settings.SubtitlesLocation = (SubtitlesLocation)(ddlSubtitlesLocation.SelectedValue ?? SubtitlesLocation.None);
             settings.SubtitlesFontSize = (SubtitlesFontSize)(ddlSubtitlesFontSize.SelectedValue ?? SubtitlesFontSize.None);
@@ -901,6 +927,8 @@ namespace TwitchChatToSubtitlesUI
             SetCheckBox(chkBoldText, chk_CheckedChanged, settings.BoldText);
             SetCheckBox(chkColorUserNames, chk_CheckedChanged, settings.ColorUserNames);
             SetCheckBox(chkRemoveEmoticonNames, chk_CheckedChanged, settings.RemoveEmoticonNames);
+            SetCheckBox(chkSemiTransparentDarkBackground, chkSemiTransparentDarkBackground_CheckedChanged, settings.SemiTransparentDarkBackground);
+            SetCheckBox(chkSemiTransparentLightBackground, chkSemiTransparentLightBackground_CheckedChanged, settings.SemiTransparentLightBackground);
             SetCheckBox(chkShowTimestamps, chk_CheckedChanged, settings.ShowTimestamps);
             SetComboBox(ddlSubtitlesLocation, ddl_SelectedIndexChanged, settings.SubtitlesLocation);
             SetComboBox(ddlSubtitlesFontSize, ddl_SelectedIndexChanged, settings.SubtitlesFontSize);
@@ -908,8 +936,10 @@ namespace TwitchChatToSubtitlesUI
             SetComboBox(ddlSubtitlesSpeed, ddl_SelectedIndexChanged, settings.SubtitlesSpeed);
             SetNumericUpDown(nudTimeOffset, nud_ValueChanged, settings.TimeOffset);
             SetNumericUpDown(nudSubtitleShowDuration, nud_ValueChanged, settings.SubtitleShowDuration);
-            SetCheckBox(chkASS, chk_CheckedChanged, settings.ASS);
+            SetCheckBox(chkASS, chkASS_CheckedChanged, settings.ASS);
             SetCheckBox(chkCloseWhenFinishedSuccessfully, chk_CheckedChanged, settings.CloseWhenFinishedSuccessfully);
+
+            EnableSemiTransparentBackgroundCheckBoxes();
 
             if (string.IsNullOrEmpty(settings.TextColor) == false)
             {

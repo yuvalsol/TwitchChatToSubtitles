@@ -241,7 +241,7 @@ internal class Subtitle(TimeSpan showTime, TimeSpan hideTime) : IMessage
         if (settings.ASS)
         {
             if (settings.RollingChatSubtitles)
-                sb.Append($@"Dialogue: {messageIndex % 2},{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},{(settings.SubtitlesLocation.IsRight() && HasBrailleArtMessage ? "BrailleV" : "TextV")}{PosY},,0,0,0,,");
+                sb.Append($@"Dialogue: 0,{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},{(settings.SubtitlesLocation.IsRight() && HasBrailleArtMessage ? "BrailleV" : "TextV")}{PosY},,0,0,0,,");
             else if (settings.StaticChatSubtitles)
                 sb.Append($@"Dialogue: 0,{(ShowTime.Days * 24) + ShowTime.Hours:0}{ShowTime:\:mm\:ss\.ff},{(HideTime.Days * 24) + HideTime.Hours:0}{HideTime:\:mm\:ss\.ff},{(settings.SubtitlesLocation.IsRight() && HasBrailleArtMessage ? "Braille" : "Default")},,0,0,0,,");
             else

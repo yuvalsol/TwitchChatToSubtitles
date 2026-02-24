@@ -10,6 +10,8 @@ internal class UISettings
     public bool BoldText { get; set; }
     public bool ColorUserNames { get; set; }
     public bool RemoveEmoticonNames { get; set; }
+    public bool SemiTransparentDarkBackground { get; set; }
+    public bool SemiTransparentLightBackground { get; set; }
     public bool ShowTimestamps { get; set; }
     public string SubtitlesLocationName { get { return TwitchChatToSubtitlesForm.GetEnumName(SubtitlesLocation); } }
     public SubtitlesLocation SubtitlesLocation { get; set; }
