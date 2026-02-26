@@ -1776,7 +1776,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
             }
         }
 
-        body.Replace("\uDB40\uDC00", " ").Replace('\uFFFC', ' ');
+        body.Replace("\uDB40\uDC00", " ") // High Surrogate + Low Surrogate
+            .Replace('\uFFFC', ' ') // Object Replacement Character
+            .Replace('\u034F', ' '); // Combining Grapheme Joiner
         RegexDoubleSpaces().Replace(body, " ");
         RegexBodyTrim().Replace(body, string.Empty);
 
