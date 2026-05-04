@@ -1,4 +1,6 @@
-﻿namespace System.Text.RegularExpressions;
+﻿#pragma warning disable IDE0130 // Namespace does not match folder structure
+namespace System.Text.RegularExpressions;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static partial class RegexExtensions
 {

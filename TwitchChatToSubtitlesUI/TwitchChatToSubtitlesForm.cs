@@ -703,6 +703,11 @@ namespace TwitchChatToSubtitlesUI
             txtConsole.AppendText(Environment.NewLine);
         }
 
+        private void WriteErrorLine(StringBuilder sb)
+        {
+            WriteErrorLine(sb.ToString());
+        }
+
         private void WriteErrorLine(string text)
         {
             int selectionStart = txtConsole.SelectionStart;

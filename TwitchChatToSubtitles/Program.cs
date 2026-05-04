@@ -30,9 +30,7 @@ static int Run(string[] args)
 
         var parser = GetParser();
 
-        var parserResult = parser.ParseArguments<TwitchSubtitlesOptions>(args);
-
-        parserResult
+        parser.ParseArguments<TwitchSubtitlesOptions>(args)
             .WithParsed(WriteTwitchSubtitles)
             .WithNotParsed(errors =>
             {
@@ -69,17 +67,17 @@ static int Run(string[] args)
     catch (ArgumentException ex)
     {
         returnCode = -1;
-        WriteErrorLine(HandledArgumentException(ex));
+        WriteErrorLineStringBuilder(HandledArgumentException(ex));
     }
     catch (FileNotFoundException ex)
     {
         returnCode = -1;
-        WriteErrorLine(HandledArgumentException(ex));
+        WriteErrorLineStringBuilder(HandledArgumentException(ex));
     }
     catch (Exception ex)
     {
         returnCode = -1;
-        WriteErrorLine(UnhandledException(ex));
+        WriteErrorLineStringBuilder(UnhandledException(ex));
     }
 
     return returnCode;
@@ -282,9 +280,9 @@ static void OnFinish(object sender, FinishEventArgs e)
         }
 #elif DEBUG
         if (twitchSubtitles.ChatTextFile)
-            WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
+            WriteErrorLineStringBuilder(e.Error.GetExceptionErrorMessage("Failed to write chat text file."));
         else
-            WriteErrorLine(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
+            WriteErrorLineStringBuilder(e.Error.GetExceptionErrorMessage("Failed to write subtitles."));
 #endif
     }
 }
@@ -456,7 +454,7 @@ static int TestMultipleSettings(
             foreach (var (settings, error) in failedSettings)
             {
                 Console.WriteLine(parser.FormatCommandLine(new TwitchSubtitlesOptions(settings)));
-                WriteErrorLine(error.GetExceptionErrorMessage());
+                WriteErrorLineStringBuilder(error.GetExceptionErrorMessage());
                 Console.WriteLine();
             }
         }
@@ -574,6 +572,14 @@ static void WriteErrorLine(string line = null)
     Console.ForegroundColor = foregroundColor;
 }
 
+static void WriteErrorLineStringBuilder(StringBuilder sb)
+{
+    ConsoleColor foregroundColor = Console.ForegroundColor;
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.Error.WriteLine(sb);
+    Console.ForegroundColor = foregroundColor;
+}
+
 static void DeleteFile(string path)
 {
     if (string.IsNullOrEmpty(path))
@@ -614,7 +620,7 @@ static Parser GetParser()
     });
 }
 
-static string GetHelp()
+static StringBuilder GetHelp()
 {
     return GetHelpMessage(
         GetParser(),
@@ -622,15 +628,14 @@ static string GetHelp()
     );
 }
 
-static string GetHelpMessage(Parser parser, string[] args)
+static StringBuilder GetHelpMessage(Parser parser, string[] args)
 {
-    var sb = new StringBuilder();
-    sb.AppendLine(GetHelpText<AllSubtitleTypesOptions>(parser, args, GetVersion()));
-    sb.AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, args, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."));
-    sb.AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll vertically across the screen and then disappear.", "Past chat messages won't clutter the screen."));
-    sb.AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, args, "Static Chat Subtitles", "Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does."));
-    sb.AppendLine(GetHelpText<ChatTextFileOptions>(parser, args, "Chat Text File", "Save Twitch chat to a text file."));
-    return sb.ToString();
+    return new StringBuilder()
+        .AppendLine(GetHelpText<AllSubtitleTypesOptions>(parser, args, GetVersion()))
+        .AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, args, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."))
+        .AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll vertically across the screen and then disappear.", "Past chat messages won't clutter the screen."))
+        .AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, args, "Static Chat Subtitles", "Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does."))
+        .AppendLine(GetHelpText<ChatTextFileOptions>(parser, args, "Chat Text File", "Save Twitch chat to a text file."));
 }
 
 static string GetHelpText<T>(Parser parser, string[] args, string heading, params string[] descriptionLines)
@@ -702,42 +707,42 @@ static string GetVersion()
     return $"TwitchChatToSubtitles, Version {Assembly.GetExecutingAssembly().GetName().Version.ToString(2)}";
 }
 
-static string HandledArgumentException(Exception ex)
+static StringBuilder HandledArgumentException(Exception ex)
 {
-    var errorMessage = new StringBuilder();
-
     var assemblyName = Assembly.GetExecutingAssembly().GetName();
-    errorMessage.AppendLine($"Error - {assemblyName.Name} {assemblyName.Version.ToString(2)}");
-    errorMessage.AppendLine();
-    errorMessage.AppendLine(ex.Message);
 
-    return errorMessage.ToString();
+    return new StringBuilder()
+        .AppendLine($"Error - {assemblyName.Name} {assemblyName.Version.ToString(2)}")
+        .AppendLine()
+        .AppendLine(ex.Message);
 }
 
-static string UnhandledException(Exception ex)
+static StringBuilder UnhandledException(Exception ex)
 {
-    var errorMessage = new StringBuilder();
-
     var assemblyName = Assembly.GetExecutingAssembly().GetName();
-    errorMessage.AppendLine($"Unhandled Error - {assemblyName.Name} {assemblyName.Version.ToString(2)}");
+
+    var errorMessage = new StringBuilder()
+        .AppendLine($"Unhandled Error - {assemblyName.Name} {assemblyName.Version.ToString(2)}");
 
     try
     {
-        errorMessage.AppendLine(ex.GetUnhandledExceptionErrorMessage());
+        errorMessage.Append(ex.GetUnhandledExceptionErrorMessage()).AppendLine();
     }
     catch
     {
         while (ex != null)
         {
-            errorMessage.AppendLine();
-            errorMessage.AppendLine($"ERROR TYPE: {ex.GetType()}");
-            errorMessage.AppendLine($"ERROR: {ex.Message}");
+            errorMessage.AppendLine().Append("ERROR: ").AppendLine(ex.Message);
+
+#if DEBUG
+            errorMessage.Append("ERROR TYPE: ").AppendLine(ex.GetType().ToString());
+#endif
 
             ex = ex.InnerException;
         }
     }
 
-    return errorMessage.ToString();
+    return errorMessage;
 }
 
 partial class Program

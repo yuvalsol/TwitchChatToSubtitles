@@ -47,20 +47,22 @@ namespace TwitchChatToSubtitlesUI
 
         private static string GetUnhandledExceptionMessage(Exception ex)
         {
-            var errorMessage = new StringBuilder();
-            errorMessage.AppendLine($"Unhandled Error - {Version()}");
+            var errorMessage = new StringBuilder()
+                .AppendLine($"Unhandled Error - {Version()}");
 
             try
             {
-                errorMessage.AppendLine(ex.GetUnhandledExceptionErrorWithApplicationTerminationMessage());
+                errorMessage.Append(ex.GetUnhandledExceptionErrorWithApplicationTerminationMessage()).AppendLine();
             }
             catch
             {
                 while (ex != null)
                 {
-                    errorMessage.AppendLine();
-                    errorMessage.AppendLine($"ERROR TYPE: {ex.GetType()}");
-                    errorMessage.AppendLine($"ERROR: {ex.Message}");
+                    errorMessage.AppendLine().Append("ERROR: ").AppendLine(ex.Message);
+
+#if DEBUG
+                    errorMessage.Append("ERROR TYPE: ").AppendLine(ex.GetType().ToString());
+#endif
 
                     ex = ex.InnerException;
                 }
