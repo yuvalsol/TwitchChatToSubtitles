@@ -1,17 +1,17 @@
 @echo off
 
-set publishDir="Output\net8.0"
+set configuration="Release"
+set publishDir="Publish"
+set net10="net10.0"
+set net10Win="net10.0-windows"
 set win64="win-x64"
 set linux64="linux-x64"
-set arguments="--configuration Release --self-contained false -p:PublishSingleFile=true -p:PublishReadyToRun=false -p:DebugType=None -p:DebugSymbols=false --verbosity normal"
+set arguments="--self-contained false -p:PublishSingleFile=true -p:PublishReadyToRun=false -p:DebugType=None -p:DebugSymbols=false"
+set verbosity="normal"
 
-:TwitchChatToSubtitles
-call :Publish "TwitchChatToSubtitles", %publishDir%, %win64%, "net8.0", %arguments%
-call :Publish "TwitchChatToSubtitles", %publishDir%, %linux64%, "net8.0", %arguments%
-
-:TwitchChatToSubtitlesUI
-call :Publish "TwitchChatToSubtitlesUI", %publishDir%, %win64%, "net8.0-windows", %arguments%
-call :Publish "TwitchChatToSubtitlesUI", %publishDir%, %linux64%, "net8.0-windows", %arguments%
+call :Publish "TwitchChatToSubtitles", %configuration%, %publishDir%, %net10%, %win64%, %arguments%, %verbosity%
+call :Publish "TwitchChatToSubtitles", %configuration%, %publishDir%, %net10%, %linux64%, %arguments%, %verbosity%
+call :Publish "TwitchChatToSubtitlesUI", %configuration%, %publishDir%, %net10Win%, %win64%, %arguments%, %verbosity%
 
 :exit
 :: pause
@@ -20,21 +20,19 @@ exit /b 0
 ::----------------------------------------------------------------------
 
 :Publish
-:: Publish(project, publishDir, runtime, framework, arguments)
+:: Publish(project, configuration, publishDir, framework, runtime, arguments, verbosity)
 setlocal
 set "project=%~1"
-set "publishDir=%~2"
-set "runtime=%~3"
+set "configuration=%~2"
+set "publishDir=%~3"
 set "framework=%~4"
-set "arguments=%~5"
+set "runtime=%~5"
+set "arguments=%~6"
+set "verbosity=%~7"
 
-echo %project% %runtime% %framework%
+echo publish %project% %framework% %runtime%
 echo.
-:: echo dotnet publish %project% --output "%publishDir%\%runtime%" --runtime %runtime% --framework %framework% %arguments%
-:: echo.
-call dotnet publish %project% --output "%publishDir%\%runtime%" --runtime %runtime% --framework %framework% %arguments%
+call dotnet publish %project% --configuration %configuration% --output "%publishDir%\%framework%\%runtime%" --framework %framework% --runtime %runtime% %arguments% --verbosity %verbosity%
 echo.
-
 endlocal
-
 goto :eof

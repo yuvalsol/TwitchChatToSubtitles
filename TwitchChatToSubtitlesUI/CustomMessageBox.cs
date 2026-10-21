@@ -2,6 +2,7 @@
 {
     public partial class CustomMessageBox : Form
     {
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool Quiet { get; set; }
 
         private CustomMessageBox() : base()

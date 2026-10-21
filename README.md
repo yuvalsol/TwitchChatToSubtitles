@@ -5,6 +5,7 @@
 Twitch Chat To Subtitles converts a Twitch chat JSON file to SubRip .srt subtitles file or Advanced Sub Station Alpha .ass subtitles file.
 
 The program provides 3 types of subtitles and one text file:
+
 1. **Regular Subtitles**. Chat messages will appear at the center-bottom of the screen.
 2. **Rolling Chat Subtitles**. Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
 3. **Static Chat Subtitles**. Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
@@ -18,7 +19,7 @@ If MPC-HC doesn't display properly subtitles from an Advanced Sub Station Alpha 
 
 The program is provided both as Command Line (**TwitchChatToSubtitles**) and as UI (**TwitchChatToSubtitlesUI**).
 
-Twitch Chat To Subtitles requires .NET 8 Runtime.
+Twitch Chat To Subtitles requires .NET 10 Runtime.
 
 ## Download Twitch Chat
 
