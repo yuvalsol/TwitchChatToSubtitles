@@ -2087,7 +2087,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
                         continue;
 
                     FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
-                    var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
+                    var measurements = fi.GetCustomAttribute<SubtitlesFontSizeMeasurementsAttribute>();
 
                     string line = null;
                     if (isBrailleArt)

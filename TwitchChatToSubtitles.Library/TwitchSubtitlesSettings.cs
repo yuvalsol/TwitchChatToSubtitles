@@ -43,7 +43,7 @@ public class TwitchSubtitlesSettings
                 subtitlesFontSize = value;
 
                 FieldInfo fi = typeof(SubtitlesFontSize).GetField(subtitlesFontSize.ToString());
-                var measurements = (SubtitlesFontSizeMeasurementsAttribute)fi.GetCustomAttribute(typeof(SubtitlesFontSizeMeasurementsAttribute));
+                var measurements = fi.GetCustomAttribute<SubtitlesFontSizeMeasurementsAttribute>();
                 LineLength = measurements.LineLength;
                 TextPosXLocationRight = measurements.TextPosXLocationRight;
                 BraillePosXLocationRight = measurements.BraillePosXLocationRight;

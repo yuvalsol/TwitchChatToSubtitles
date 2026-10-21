@@ -118,7 +118,7 @@ public static partial class MethodInfoExtensions
                     sigBuilder.Append("ref ");
             }
 
-            bool isParamArray = param.GetCustomAttribute(typeof(ParamArrayAttribute), true) != null;
+            bool isParamArray = param.GetCustomAttribute<ParamArrayAttribute>(true) != null;
             if (isParamArray)
                 sigBuilder.Append("params ");
 
