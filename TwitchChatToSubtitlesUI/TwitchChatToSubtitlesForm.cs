@@ -607,7 +607,7 @@ namespace TwitchChatToSubtitlesUI
                 Application.DoEvents();
             };
 
-            var lockObj = new object();
+            Lock lockObj = new();
 
             void PrintProgress(object sender, ProgressEventArgs e)
             {

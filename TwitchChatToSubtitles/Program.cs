@@ -757,5 +757,5 @@ partial class Program
     private static int leftFinish = 0;
     private static int topFinish = 0;
 
-    private static readonly object lockObj = new();
+    private static readonly Lock lockObj = new();
 }
