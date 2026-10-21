@@ -36,6 +36,17 @@ public static partial class ExceptionExtensions
         );
     }
 
+    public static StringBuilder GetExceptionErrorMessage(this Exception ex, StringBuilder errorMessage, bool withoutDebuggingInfo = false, bool callable = false)
+    {
+        if (ex == null)
+            return errorMessage;
+
+        return GetExceptionErrorMessage(
+            errorMessage ?? new StringBuilder(),
+            ex, withoutDebuggingInfo, callable
+        );
+    }
+
     private static StringBuilder GetExceptionErrorMessage(StringBuilder errorMessage, Exception ex, bool withoutDebuggingInfo, bool callable)
     {
         AppendToExceptionErrorMessage(errorMessage, ex, withoutDebuggingInfo, callable);
