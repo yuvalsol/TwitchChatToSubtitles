@@ -39,12 +39,12 @@ public static partial class CollectionExtensions
 
     public static bool IsNullOrEmpty<TSource>(this Span<TSource> source)
     {
-        return source == null || source.Length == 0;
+        return source.Length == 0;
     }
 
     public static bool IsNullOrEmpty<TSource>(this ReadOnlySpan<TSource> source)
     {
-        return source == null || source.Length == 0;
+        return source.Length == 0;
     }
 
     #endregion
@@ -68,12 +68,12 @@ public static partial class CollectionExtensions
 
     public static bool HasAny<TSource>(this Span<TSource> source)
     {
-        return source != null && source.Length > 0;
+        return source.Length > 0;
     }
 
     public static bool HasAny<TSource>(this ReadOnlySpan<TSource> source)
     {
-        return source != null && source.Length > 0;
+        return source.Length > 0;
     }
 
     #endregion
@@ -97,12 +97,12 @@ public static partial class CollectionExtensions
 
     public static bool HasSingle<TSource>(this Span<TSource> source)
     {
-        return source != null && source.Length == 1;
+        return source.Length == 1;
     }
 
     public static bool HasSingle<TSource>(this ReadOnlySpan<TSource> source)
     {
-        return source != null && source.Length == 1;
+        return source.Length == 1;
     }
 
     #endregion
@@ -126,12 +126,12 @@ public static partial class CollectionExtensions
 
     public static bool HasMoreThanOne<TSource>(this Span<TSource> source)
     {
-        return source != null && source.Length > 1;
+        return source.Length > 1;
     }
 
     public static bool HasMoreThanOne<TSource>(this ReadOnlySpan<TSource> source)
     {
-        return source != null && source.Length > 1;
+        return source.Length > 1;
     }
 
     #endregion
@@ -256,7 +256,7 @@ public static partial class CollectionExtensions
         Func<int, int, bool> inLoopComparison,
         bool inLoopComparisonResult)
     {
-        if (source == null || numItems < 0)
+        if (source.Length == 0 || numItems < 0)
             return false;
 
         int itemsCount = 0;
