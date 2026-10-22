@@ -8,76 +8,76 @@ namespace TwitchChatToSubtitles;
 
 internal interface IAllSubtitleTypesOptions
 {
-    [Option("JsonFile", Required = false, HelpText = "Path to Twitch chat JSON file.")]
+    [Option("json-file", MetaValue = "PATH", HelpText = "Path to Twitch chat JSON file.")]
     string JsonFile { get; set; }
 
-    [Option("ass", Required = false, HelpText = "Whether to write Advanced Sub Station Alpha (.ass) file.")]
+    [Option("ass", HelpText = "Whether to write Advanced Sub Station Alpha (.ass) file.")]
     bool ASS { get; set; }
 
-    [Option("BoldText", Required = false, HelpText = "Whether the font of the subtitles text is bold.")]
+    [Option("bold-text", HelpText = "Whether the font of the subtitles text is bold.")]
     bool BoldText { get; set; }
 
-    [Option("ColorUserNames", Required = false, HelpText = "Whether to color user names.")]
+    [Option("color-user-names", HelpText = "Whether to color user names.")]
     bool ColorUserNames { get; set; }
 
-    [Option("RemoveEmoticonNames", Required = false, HelpText = "Remove emoticon and badge names.")]
+    [Option("remove-emoticon-names", HelpText = "Remove emoticon and badge names.")]
     bool RemoveEmoticonNames { get; set; }
 
-    [Option("SemiTransparentDarkBackground", Required = false, HelpText = "Whether to overlay a semi-transparent dark background around the subtitles text. Applicable only when `ass` is enabled.")]
+    [Option("semi-transparent-dark-background", HelpText = "Whether to overlay a semi-transparent dark background around the subtitles text. Applicable only when '--ass' is enabled.")]
     bool SemiTransparentDarkBackground { get; set; }
 
-    [Option("SemiTransparentLightBackground", Required = false, HelpText = "Whether to overlay a semi-transparent light background around the subtitles text. Applicable only when `ass` is enabled.")]
+    [Option("semi-transparent-light-background", HelpText = "Whether to overlay a semi-transparent light background around the subtitles text. Applicable only when '--ass' is enabled.")]
     bool SemiTransparentLightBackground { get; set; }
 
-    [Option("ShowTimestamps", Required = false, HelpText = "Whether to show chat message timestamps.")]
+    [Option("show-timestamps", HelpText = "Whether to show chat message timestamps.")]
     bool ShowTimestamps { get; set; }
 
-    [Option("SubtitlesFontSize", Required = false, HelpText = "The font size of the subtitles. Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.")]
+    [Option("subtitles-font-size", MetaValue = "SIZE", HelpText = "The font size of the subtitles. Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.")]
     SubtitlesFontSize SubtitlesFontSize { get; set; }
 
-    [Option("TextColor", Required = false, HelpText = "The color of the subtitles text.")]
+    [Option("text-color", MetaValue = "COLOR", HelpText = "The color of the subtitles text.")]
     string TextColor { get; set; }
 
-    [Option("TimeOffset", Required = false, HelpText = "Time offset for all subtitles, in seconds.")]
+    [Option("time-offset", MetaValue = "SECONDS", HelpText = "Time offset for all subtitles, in seconds.")]
     int TimeOffset { get; set; }
 }
 
 internal interface IRegularSubtitlesOptions
 {
-    [Option("RegularSubtitles", Required = false, HelpText = "Convert Twitch chat to regular subtitles.")]
+    [Option("regular-subtitles", HelpText = "Convert Twitch chat to regular subtitles.")]
     bool RegularSubtitles { get; set; }
 
-    [Option("SubtitleShowDuration", Default = 5, Required = false, HelpText = "For how long a subtitle is visible on the screen, in seconds.")]
+    [Option("subtitle-show-duration", MetaValue = "SECONDS", Default = 5, HelpText = "For how long a subtitle is visible on the screen, in seconds.")]
     int SubtitleShowDuration { get; set; }
 }
 
 internal interface IRollingChatSubtitlesOptions
 {
-    [Option("RollingChatSubtitles", Required = false, HelpText = "Convert Twitch chat to rolling chat subtitles.")]
+    [Option("rolling-chat-subtitles", HelpText = "Convert Twitch chat to rolling chat subtitles.")]
     bool RollingChatSubtitles { get; set; }
 
-    [Option("SubtitlesSpeed", Required = false, HelpText = "How fast the subtitles roll. Valid values: Speed1, Speed2, Speed3, Speed4, Speed5, Speed6, Speed7. Speed1 is 1 second. Speed2 is 0.5 second. Speed6 is 100 milliseconds. Speed7 is 50 milliseconds.")]
+    [Option("subtitles-speed", MetaValue = "SPEED", HelpText = "How fast the subtitles roll. Valid values: Speed1, Speed2, Speed3, Speed4, Speed5, Speed6, Speed7. Speed1 is 1 second. Speed2 is 0.5 second. Speed6 is 100 milliseconds. Speed7 is 50 milliseconds.")]
     SubtitlesSpeed SubtitlesSpeed { get; set; }
 }
 
 internal interface IStaticChatSubtitlesOptions
 {
-    [Option("StaticChatSubtitles", Required = false, HelpText = "Convert Twitch chat to static chat subtitles.")]
+    [Option("static-chat-subtitles", HelpText = "Convert Twitch chat to static chat subtitles.")]
     bool StaticChatSubtitles { get; set; }
 }
 
 internal interface IChatSubtitlesOptions
 {
-    [Option("SubtitlesLocation", Required = false, HelpText = "The location of the subtitles on the screen. Valid values: Left, LeftTopHalf, LeftBottomHalf, LeftTopTwoThirds, LeftBottomTwoThirds, Right, RightTopHalf, RightBottomHalf, RightTopTwoThirds, RightBottomTwoThirds.")]
+    [Option("subtitles-location", MetaValue = "LOCATION", HelpText = "The location of the subtitles on the screen. Valid values: Left, LeftTopHalf, LeftBottomHalf, LeftTopTwoThirds, LeftBottomTwoThirds, Right, RightTopHalf, RightBottomHalf, RightTopTwoThirds, RightBottomTwoThirds.")]
     SubtitlesLocation SubtitlesLocation { get; set; }
 
-    [Option("SubtitlesRollingDirection", Required = false, HelpText = "The direction that the subtitles roll. Valid values: BottomToTop, TopToBottom.")]
+    [Option("subtitles-rolling-direction", MetaValue = "DIRECTION", HelpText = "The direction that the subtitles roll. Valid values: BottomToTop, TopToBottom.")]
     SubtitlesRollingDirection SubtitlesRollingDirection { get; set; }
 }
 
 internal interface IChatTextFileOptions
 {
-    [Option("ChatTextFile", Required = false, HelpText = "Save Twitch chat to a text file.")]
+    [Option("chat-text-file", HelpText = "Save Twitch chat to a text file.")]
     bool ChatTextFile { get; set; }
 }
 
@@ -111,7 +111,7 @@ internal class RegularSubtitlesOptions : IRegularSubtitlesOptions
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA tags",
+                "2. Color user names, remove emoticon names, font size 'Medium', subtitles will use ASSA tags",
                 new TwitchSubtitlesOptions
                 {
                     RegularSubtitles = true,
@@ -165,7 +165,7 @@ internal class RollingChatSubtitlesOptions : IRollingChatSubtitlesOptions, IChat
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen",
+                "2. Color user names, remove emoticon names, font size 'Medium', subtitles location will default to whole 'Left' side of the screen",
                 new TwitchSubtitlesOptions
                 {
                     RollingChatSubtitles = true,
@@ -217,7 +217,7 @@ internal class StaticChatSubtitlesOptions : IStaticChatSubtitlesOptions, IChatSu
             );
 
             yield return new Example(
-                "2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen",
+                "2. Color user names, remove emoticon names, font size 'Medium', subtitles location will default to whole 'Left' side of the screen",
                 new TwitchSubtitlesOptions
                 {
                     StaticChatSubtitles = true,

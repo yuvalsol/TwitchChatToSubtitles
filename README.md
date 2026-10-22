@@ -35,19 +35,19 @@ Twitch Chat To Subtitles doesn't download the JSON file itself, the JSON file mu
 Chat messages will appear at the center-bottom of the screen.
 
 ```console
-TwitchChatToSubtitles --RegularSubtitles
-                      --JsonFile <file>
-                      [--ass]
-                      [--BoldText]
-                      [--ColorUserNames]
-                      [--RemoveEmoticonNames]
-                      [--SemiTransparentDarkBackground]
-                      [--SemiTransparentLightBackground]
-                      [--ShowTimestamps]
-                      [--SubtitleShowDuration <seconds>]
-                      [--SubtitlesFontSize <font size>]
-                      [--TextColor <color>]
-                      [--TimeOffset <seconds>]
+TwitchChatToSubtitles --regular-subtitles
+    --json-file PATH
+    [--ass]
+    [--bold-text]
+    [--color-user-names]
+    [--remove-emoticon-names]
+    [--semi-transparent-dark-background]
+    [--semi-transparent-light-background]
+    [--show-timestamps]
+    [--subtitle-show-duration SECONDS]
+    [--subtitles-font-size SIZE]
+    [--text-color COLOR]
+    [--time-offset SECONDS]
 ```
 
 ### Subtitles Without ASSA Override Tags
@@ -55,11 +55,11 @@ TwitchChatToSubtitles --RegularSubtitles
 The following subset of options create a subtitles file without any ASSA override tags.
 
 ```console
-TwitchChatToSubtitles --RegularSubtitles
-                      --JsonFile <file>
-                      [--RemoveEmoticonNames]
-                      [--SubtitleShowDuration <seconds>]
-                      [--TimeOffset <seconds>]
+TwitchChatToSubtitles --regular-subtitles
+    --json-file PATH
+    [--remove-emoticon-names]
+    [--subtitle-show-duration SECONDS]
+    [--time-offset SECONDS]
 ```
 
 ### Usage
@@ -67,13 +67,13 @@ TwitchChatToSubtitles --RegularSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --regular-subtitles --json-file "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles will use ASSA override tags:
 
 ```console
-TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --regular-subtitles --json-file "C:\Path\To\Twitch Chat.json" --color-user-names --remove-emoticon-names --subtitles-font-size Medium
 ```
 
 ## Rolling Chat Subtitles
@@ -81,21 +81,21 @@ TwitchChatToSubtitles --RegularSubtitles --JsonFile "C:\Path\To\Twitch Chat.json
 Chat messages will roll vertically across the screen and then disappear. Past chat messages won't clutter the screen.
 
 ```console
-TwitchChatToSubtitles --RollingChatSubtitles
-                      --JsonFile <file>
-                      [--ass]
-                      [--BoldText]
-                      [--ColorUserNames]
-                      [--RemoveEmoticonNames]
-                      [--SemiTransparentDarkBackground]
-                      [--SemiTransparentLightBackground]
-                      [--ShowTimestamps]
-                      [--SubtitlesFontSize <font size>]
-                      [--SubtitlesLocation <location>]
-                      [--SubtitlesRollingDirection <rolling direction>]
-                      [--SubtitlesSpeed <speed>]
-                      [--TextColor <color>]
-                      [--TimeOffset <seconds>]
+TwitchChatToSubtitles --rolling-chat-subtitles
+    --json-file PATH
+    [--ass]
+    [--bold-text]
+    [--color-user-names]
+    [--remove-emoticon-names]
+    [--semi-transparent-dark-background]
+    [--semi-transparent-light-background]
+    [--show-timestamps]
+    [--subtitles-font-size SIZE]
+    [--subtitles-location LOCATION]
+    [--subtitles-rolling-direction DIRECTION]
+    [--subtitles-speed SPEED]
+    [--text-color COLOR]
+    [--time-offset SECONDS]
 ```
 
 ### Usage
@@ -103,19 +103,19 @@ TwitchChatToSubtitles --RollingChatSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --rolling-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 
 ```console
-TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --rolling-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json" --color-user-names --remove-emoticon-names --subtitles-font-size Medium
 ```
 
 3. Subtitles will roll faster than regular speed and will appear on the right side and top half of the screen:
 
 ```console
-TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation RightTopHalf --SubtitlesSpeed Speed2
+TwitchChatToSubtitles --rolling-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json" --subtitles-location RightTopHalf --subtitles-speed Speed2
 ```
 
 ## Static Chat Subtitles
@@ -123,20 +123,20 @@ TwitchChatToSubtitles --RollingChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.
 Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does.
 
 ```console
-TwitchChatToSubtitles --StaticChatSubtitles
-                      --JsonFile <file>
-                      [--ass]
-                      [--BoldText]
-                      [--ColorUserNames]
-                      [--RemoveEmoticonNames]
-                      [--SemiTransparentDarkBackground]
-                      [--SemiTransparentLightBackground]
-                      [--ShowTimestamps]
-                      [--SubtitlesFontSize <font size>]
-                      [--SubtitlesLocation <location>]
-                      [--SubtitlesRollingDirection <rolling direction>]
-                      [--TextColor <color>]
-                      [--TimeOffset <seconds>]
+TwitchChatToSubtitles --static-chat-subtitles
+    --json-file PATH
+    [--ass]
+    [--bold-text]
+    [--color-user-names]
+    [--remove-emoticon-names]
+    [--semi-transparent-dark-background]
+    [--semi-transparent-light-background]
+    [--show-timestamps]
+    [--subtitles-font-size SIZE]
+    [--subtitles-location LOCATION]
+    [--subtitles-rolling-direction DIRECTION]
+    [--text-color COLOR]
+    [--time-offset SECONDS]
 ```
 
 ### Usage
@@ -144,19 +144,19 @@ TwitchChatToSubtitles --StaticChatSubtitles
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --static-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Color user names, remove emoticon names, font size `Medium`, subtitles location will default to whole `Left` side of the screen:
 
 ```console
-TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --ColorUserNames --RemoveEmoticonNames --SubtitlesFontSize Medium
+TwitchChatToSubtitles --static-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json" --color-user-names --remove-emoticon-names --subtitles-font-size Medium
 ```
 
 3. Subtitles will appear on the left side and top two-thirds of the screen:
 
 ```console
-TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.json" --SubtitlesLocation LeftTopTwoThirds
+TwitchChatToSubtitles --static-chat-subtitles --json-file "C:\Path\To\Twitch Chat.json" --subtitles-location LeftTopTwoThirds
 ```
 
 ## Chat Text File
@@ -164,10 +164,10 @@ TwitchChatToSubtitles --StaticChatSubtitles --JsonFile "C:\Path\To\Twitch Chat.j
 Save Twitch chat to a text file. In the text file, "[M]" before the user name indicates a moderator.
 
 ```console
-TwitchChatToSubtitles --ChatTextFile
-                      --JsonFile <file>
-                      [--RemoveEmoticonNames]
-                      [--ShowTimestamps]
+TwitchChatToSubtitles --chat-text-file
+    --json-file PATH
+    [--remove-emoticon-names]
+    [--show-timestamps]
 ```
 
 ### Usage
@@ -175,13 +175,13 @@ TwitchChatToSubtitles --ChatTextFile
 1. Default usage:
 
 ```console
-TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json"
+TwitchChatToSubtitles --chat-text-file --json-file "C:\Path\To\Twitch Chat.json"
 ```
 
 2. Remove emoticon names, show chat message timestamps:
 
 ```console
-TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --RemoveEmoticonNames --ShowTimestamps
+TwitchChatToSubtitles --chat-text-file --json-file "C:\Path\To\Twitch Chat.json" --remove-emoticon-names --show-timestamps
 ```
 
 ## Command Line Options
@@ -189,34 +189,34 @@ TwitchChatToSubtitles --ChatTextFile --JsonFile "C:\Path\To\Twitch Chat.json" --
 These options select which subtitles type to convert the Twitch chat JSON file to.
 
 ```console
---RegularSubtitles      Convert Twitch chat to regular subtitles.
---RollingChatSubtitles  Convert Twitch chat to rolling chat subtitles.
---StaticChatSubtitles   Convert Twitch chat to static chat subtitles.
---ChatTextFile          Save Twitch chat to a text file.
+--regular-subtitles         Convert Twitch chat to regular subtitles.
+--rolling-chat-subtitles    Convert Twitch chat to rolling chat subtitles.
+--static-chat-subtitles     Convert Twitch chat to static chat subtitles.
+--chat-text-file            Save Twitch chat to a text file.
 ```
 
 The full path to the Twitch chat JSON file. The name of the subtitles file is the same as the name of the JSON file with .srt extension.
 
 ```console
---JsonFile              Path to Twitch chat JSON file.
+--json-file PATH            Path to Twitch chat JSON file.
 ```
 
 Write .ass subtitles file instead of .srt subtitles file.
 
 ```console
---ass                   Whether to write Advanced Sub Station Alpha (.ass) file.
+--ass                       Whether to write Advanced Sub Station Alpha (.ass) file.
 ```
 
 This option displays the subtitles text in bold font.
 
 ```console
---BoldText              Whether the font of the subtitles text is bold.
+--bold-text                 Whether the font of the subtitles text is bold.
 ```
 
 Users, who post in Twitch chat, have an assigned color to their name. This option colors the name of the users across all subtitles, both the title and the body of chat messages. If a user doesn't have an assigned color, it will be colored with Twitch's purple color.
 
 ```console
---ColorUserNames        Whether to color user names.
+--color-user-names          Whether to color user names.
 ```
 
 SubRip specification doesn't support displaying images. As a result of that, emoticons are written by their name in the chat message. This option removes the emoticon and badge names from chat messages.
@@ -224,55 +224,55 @@ SubRip specification doesn't support displaying images. As a result of that, emo
 If you are downloading chat JSON file using [Twitch Downloader](https://github.com/lay295/TwitchDownloader "Twitch Downloader"), I suggest to check the boxes "Embed Images" and all the "3rd Party Emotes" boxes. Twitch Chat To Subtitles retrieves the names of the emoticon and badge names from the list of embed emoticons in the JSON file.
 
 ```console
---RemoveEmoticonNames   Remove emoticon and badge names.
+--remove-emoticon-names     Remove emoticon and badge names.
 ```
 
 These options display the subtitles text with a semi-transparent background. These options are applicable only when `ass` is enabled.
 
 ```console
---SemiTransparentDarkBackground      Whether to overlay a semi-transparent dark
-                                     background around the subtitles text.
---SemiTransparentLightBackground     Whether to overlay a semi-transparent light
-                                     background around the subtitles text.
+--semi-transparent-dark-background     Whether to overlay a semi-transparent dark
+                                       background around the subtitles text.
+--semi-transparent-light-background    Whether to overlay a semi-transparent light
+                                       background around the subtitles text.
 ```
 
 This option displays the timestamp of when the chat message was posted in chat.
 
 ```console
---ShowTimestamps        Whether to show chat message timestamps.
+--show-timestamps           Whether to show chat message timestamps.
 ```
 
-This option is applicable only for `RegularSubtitles`. A chat message has a timestamp of when it was posted in chat. This timestamp determines when it is going to be shown as a regular subtitle and this option determines how long the subtitle will be visible on screen. The default is 5 seconds.
+This option is applicable only for `--regular-subtitles`. A chat message has a timestamp of when it was posted in chat. This timestamp determines when it is going to be shown as a regular subtitle and this option determines how long the subtitle will be visible on screen. The default is 5 seconds.
 
 ```console
---SubtitleShowDuration  (Default: 5) For how long a subtitle is visible
-                        on the screen, in seconds.
+--subtitle-show-duration SECONDS    (Default: 5) For how long a subtitle is visible
+                                    on the screen, in seconds.
 ```
 
-The font size of the subtitles. If the options is not specified, `RollingChatSubtitles` and `StaticChatSubtitles` will default to `Regular` font size and for `RegularSubtitles`, the font size will be determined by the media player. The larger font sizes are suitable for viewing on a TV screen rather than a computer screen.
+The font size of the subtitles. If the options is not specified, `--rolling-chat-subtitles` and `--static-chat-subtitles` will default to `Regular` font size and for `--regular-subtitles`, the font size will be determined by the media player. The larger font sizes are suitable for viewing on a TV screen rather than a computer screen.
 
 ```console
---SubtitlesFontSize     The font size of the subtitles.
-                        Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.
+--subtitles-font-size SIZE    The font size of the subtitles.
+                              Valid values: Regular, Medium, Large, XL, 2XL, 3XL, 4XL, 5XL.
 ```
 
-This option determines where the subtitles are displayed on the screen. This option is applicable only for `RollingChatSubtitles` and `StaticChatSubtitles`.
+This option determines where the subtitles are displayed on the screen. This option is applicable only for `--rolling-chat-subtitles` and `--static-chat-subtitles`.
 
 ```console
---SubtitlesLocation     The location of the subtitles on the screen.
-                        Valid values: Left, LeftTopHalf, LeftBottomHalf,
-                        LeftTopTwoThirds,LeftBottomTwoThirds, Right, RightTopHalf,
-                        RightBottomHalf,RightTopTwoThirds, RightBottomTwoThirds.
+--subtitles-location LOCATION    The location of the subtitles on the screen.
+                                 Valid values: Left, LeftTopHalf, LeftBottomHalf,
+                                 LeftTopTwoThirds,LeftBottomTwoThirds, Right, RightTopHalf,
+                                 RightBottomHalf,RightTopTwoThirds, RightBottomTwoThirds.
 ```
 
-This option determines the direction that the subtitles roll from the bottom to the top of the screen or from the top to the bottom of the screen. This option is applicable for `RollingChatSubtitles` and `StaticChatSubtitles`. If not specified, it will default to `BottomToTop` direction.
+This option determines the direction that the subtitles roll from the bottom to the top of the screen or from the top to the bottom of the screen. This option is applicable for `--rolling-chat-subtitles` and `--static-chat-subtitles`. If not specified, it will default to `BottomToTop` direction.
 
 ```console
---SubtitlesRollingDirection     The direction that the subtitles roll.
-                                Valid values: BottomToTop, TopToBottom.
+--subtitles-rolling-direction DIRECTION    The direction that the subtitles roll.
+                                           Valid values: BottomToTop, TopToBottom.
 ```
 
-This option determines the speed of the subtitles rolling vertically across the screen, in milliseconds. This option is applicable only for `RollingChatSubtitles`. If not specified, it will default to `Speed1`. When the chat is blasted with messages by viewers, the higher speeds are more suitable for showing the messages at the right time. Slower speeds will cause a time drift where the messages will appear later than their actual posted time in chat. The higher the speed number, the faster the speed:
+This option determines the speed of the subtitles rolling vertically across the screen, in milliseconds. This option is applicable only for `--rolling-chat-subtitles`. If not specified, it will default to `Speed1`. When the chat is blasted with messages by viewers, the higher speeds are more suitable for showing the messages at the right time. Slower speeds will cause a time drift where the messages will appear later than their actual posted time in chat. The higher the speed number, the faster the speed:
 
 - Speed1 = 1 second
 - Speed2 = 0.5 second
@@ -283,21 +283,21 @@ This option determines the speed of the subtitles rolling vertically across the 
 - Speed7 = 50 ms
 
 ```console
---SubtitlesSpeed        How fast the subtitles roll.
-                        Valid values: Speed1, Speed2, Speed3, Speed4, Speed5,
-                        Speed6, Speed7.
+--subtitles-speed SPEED     How fast the subtitles roll.
+                            Valid values: Speed1, Speed2, Speed3, Speed4,
+                            Speed5, Speed6, Speed7.
 ```
 
 This option determines the color of the subtitles text. If not specified, the color will be determined by the media player's default text color. Valid color values are hex format (`#000000`) or known names (`Black`).
 
 ```console
---TextColor             The color of the subtitles text.
+--text-color COLOR          The color of the subtitles text.
 ```
 
-This option shifts the timing of all the subtitles. This option is applicable for all subtitles types but very useful for `RegularSubtitles`. For `RegularSubtitles`, the subtitles are visible only for a few seconds and then disappear. A Twitch streamer is more likely to interact with a chat message as it passes around the mid point of the chat, not when it first appears at the bottom of the chat. By adding a few seconds (3-7 seconds), the subtitles will appear **closer in time** to when the Twitch streamer has read and responded to it.
+This option shifts the timing of all the subtitles. This option is applicable for all subtitles types but very useful for `--regular-subtitles`. For `--regular-subtitles`, the subtitles are visible only for a few seconds and then disappear. A Twitch streamer is more likely to interact with a chat message as it passes around the mid point of the chat, not when it first appears at the bottom of the chat. By adding a few seconds (3-7 seconds), the subtitles will appear **closer in time** to when the Twitch streamer has read and responded to it.
 
 ```console
---TimeOffset            Time offset for all subtitles, in seconds.
+--time-offset SECONDS       Time offset for all subtitles, in seconds.
 ```
 
 ## Acknowledgments

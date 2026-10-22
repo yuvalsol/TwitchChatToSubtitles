@@ -622,26 +622,19 @@ static Parser GetParser()
 
 static StringBuilder GetHelp()
 {
-    return GetHelpMessage(
-        GetParser(),
-        ["--help"]
-    );
-}
-
-static StringBuilder GetHelpMessage(Parser parser, string[] args)
-{
+    Parser parser = GetParser();
     return new StringBuilder()
-        .AppendLine(GetHelpText<AllSubtitleTypesOptions>(parser, args, GetVersion()))
-        .AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, args, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."))
-        .AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, args, "Rolling Chat Subtitles", "Chat messages will roll vertically across the screen and then disappear.", "Past chat messages won't clutter the screen."))
-        .AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, args, "Static Chat Subtitles", "Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does."))
-        .AppendLine(GetHelpText<ChatTextFileOptions>(parser, args, "Chat Text File", "Save Twitch chat to a text file."));
+        .AppendLine(GetHelpText<AllSubtitleTypesOptions>(parser, GetVersion()))
+        .AppendLine(GetHelpText<RegularSubtitlesOptions>(parser, "Regular Subtitles", "Chat messages will appear at the center-bottom of the screen."))
+        .AppendLine(GetHelpText<RollingChatSubtitlesOptions>(parser, "Rolling Chat Subtitles", "Chat messages will roll vertically across the screen and then disappear.", "Past chat messages won't clutter the screen."))
+        .AppendLine(GetHelpText<StaticChatSubtitlesOptions>(parser, "Static Chat Subtitles", "Chat messages are added to the previous chat messages and remain there. Similar to what Twitch chat does."))
+        .AppendLine(GetHelpText<ChatTextFileOptions>(parser, "Chat Text File", "Save Twitch chat to a text file."));
 }
 
-static string GetHelpText<T>(Parser parser, string[] args, string heading, params string[] descriptionLines)
+static HelpText GetHelpText<T>(Parser parser, string heading, params string[] descriptionLines)
 {
     return HelpText.AutoBuild(
-        parser.ParseArguments<T>(args),
+        parser.ParseArguments<T>(["--help"]),
         h =>
         {
             bool addUnderline = false;
@@ -666,8 +659,7 @@ static string GetHelpText<T>(Parser parser, string[] args, string heading, param
             h.AutoVersion = false;
             h.OptionComparison = CompareOptions;
             return h;
-        },
-        e => e
+        }
     );
 }
 
@@ -684,19 +676,19 @@ static int CompareOptions(ComparableOption attr1, ComparableOption attr2)
 
     int value = 0;
 
-    if ((value = OrderOptions("RegularSubtitles")) != 0)
+    if ((value = OrderOptions("regular-subtitles")) != 0)
         return value;
 
-    if ((value = OrderOptions("RollingChatSubtitles")) != 0)
+    if ((value = OrderOptions("rolling-chat-subtitles")) != 0)
         return value;
 
-    if ((value = OrderOptions("StaticChatSubtitles")) != 0)
+    if ((value = OrderOptions("static-chat-subtitles")) != 0)
         return value;
 
-    if ((value = OrderOptions("ChatTextFile")) != 0)
+    if ((value = OrderOptions("chat-text-file")) != 0)
         return value;
 
-    if ((value = OrderOptions("JsonFile")) != 0)
+    if ((value = OrderOptions("json-file")) != 0)
         return value;
 
     return attr1.LongName.CompareTo(attr2.LongName);

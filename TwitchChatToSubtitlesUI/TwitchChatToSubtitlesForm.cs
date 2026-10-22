@@ -757,6 +757,9 @@ namespace TwitchChatToSubtitlesUI
             ShowCommandLine();
         }
 
+        [GeneratedRegex(@"([a-z0-9])([A-Z])")]
+        private static partial Regex RegexCamelToWords();
+
         private void ShowCommandLine()
         {
             var sb = new StringBuilder();
@@ -770,72 +773,72 @@ namespace TwitchChatToSubtitlesUI
 #endif
 
             var subtitlesType = (SubtitlesType)ddlSubtitlesType.SelectedValue;
-            sb.Append($" --{subtitlesType}");
+            sb.Append($" --{RegexCamelToWords().Replace(subtitlesType.ToString(), "$1-$2").ToLower()}");
 
             if (string.IsNullOrEmpty(txtJsonFile.Text) == false)
-                sb.Append($" --JsonFile \"{txtJsonFile.Text}\"");
+                sb.Append($" --json-file {FormatValue(txtJsonFile.Text)}");
 
             if (chkASS.Enabled && chkASS.Checked)
                 sb.Append(" --ass");
 
             if (chkBoldText.Enabled && chkBoldText.Checked)
-                sb.Append(" --BoldText");
+                sb.Append(" --bold-text");
 
             if (chkColorUserNames.Enabled && chkColorUserNames.Checked)
-                sb.Append(" --ColorUserNames");
+                sb.Append(" --color-user-names");
 
             if (chkRemoveEmoticonNames.Enabled && chkRemoveEmoticonNames.Checked)
-                sb.Append(" --RemoveEmoticonNames");
+                sb.Append(" --remove-emoticon-names");
 
             if (chkSemiTransparentDarkBackground.Enabled && chkSemiTransparentDarkBackground.Checked)
-                sb.Append(" --SemiTransparentDarkBackground");
+                sb.Append(" --semi-transparent-dark-background");
 
             if (chkSemiTransparentLightBackground.Enabled && chkSemiTransparentLightBackground.Checked)
-                sb.Append(" --SemiTransparentLightBackground");
+                sb.Append(" --semi-transparent-light-background");
 
             if (chkShowTimestamps.Enabled && chkShowTimestamps.Checked)
-                sb.Append(" --ShowTimestamps");
+                sb.Append(" --show-timestamps");
 
             if (ddlSubtitlesLocation.Enabled)
             {
                 var subtitlesLocation = (SubtitlesLocation)ddlSubtitlesLocation.SelectedValue;
                 if (subtitlesLocation != SubtitlesLocation.None)
-                    sb.Append($" --SubtitlesLocation {subtitlesLocation}");
+                    sb.Append($" --subtitles-location {subtitlesLocation}");
             }
 
             if (ddlSubtitlesFontSize.Enabled)
             {
                 var subtitlesFontSize = (SubtitlesFontSize)ddlSubtitlesFontSize.SelectedValue;
                 if (subtitlesFontSize != SubtitlesFontSize.None)
-                    sb.Append($" --SubtitlesFontSize {RegexSubtitlesXLFontSize().Replace(subtitlesFontSize.ToString(), "$1XL")}");
+                    sb.Append($" --subtitles-font-size {RegexSubtitlesXLFontSize().Replace(subtitlesFontSize.ToString(), "$1XL")}");
             }
 
             if (ddlSubtitlesRollingDirection.Enabled)
             {
                 var subtitlesRollingDirection = (SubtitlesRollingDirection)ddlSubtitlesRollingDirection.SelectedValue;
                 if (subtitlesRollingDirection != SubtitlesRollingDirection.None)
-                    sb.Append($" --SubtitlesRollingDirection {subtitlesRollingDirection}");
+                    sb.Append($" --subtitles-rolling-direction {subtitlesRollingDirection}");
             }
 
             if (ddlSubtitlesSpeed.Enabled)
             {
                 var subtitlesSpeed = (SubtitlesSpeed)ddlSubtitlesSpeed.SelectedValue;
                 if (subtitlesSpeed != SubtitlesSpeed.None)
-                    sb.Append($" --SubtitlesSpeed {subtitlesSpeed}");
+                    sb.Append($" --subtitles-speed {subtitlesSpeed}");
             }
 
             if (nudTimeOffset.Enabled)
             {
                 int timeOffset = Convert.ToInt32(nudTimeOffset.Value);
                 if (timeOffset != 0)
-                    sb.Append($" --TimeOffset {timeOffset}");
+                    sb.Append($" --time-offset {timeOffset}");
             }
 
             if (nudSubtitleShowDuration.Enabled)
             {
                 int subtitleShowDuration = Convert.ToInt32(nudSubtitleShowDuration.Value);
                 if (subtitleShowDuration > 0 && subtitleShowDuration != 5)
-                    sb.Append($" --SubtitleShowDuration {subtitleShowDuration}");
+                    sb.Append($" --subtitle-show-duration {subtitleShowDuration}");
             }
 
             if (btnTextColor.Enabled)
@@ -845,11 +848,25 @@ namespace TwitchChatToSubtitlesUI
                     string color = ColorToHex(textColor.Value);
                     if (textColor.Value.IsNamedColor)
                         color = textColor.Value.Name;
-                    sb.Append($" --TextColor \"{color}\"");
+                    sb.Append($" --text-color {FormatValue(color)}");
                 }
             }
 
             MessageBoxHelper.ShowCommandLine(this, sb.ToString(), "Command Line");
+        }
+
+        private static string FormatValue(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            if (value.Contains(' ') && value.Contains('"') == false)
+                return $@"""{value}""";
+
+            if (value.Contains(' ') || value.Contains('"'))
+                return $@"""{value.Replace(@"""", @"\""")}""";
+
+            return value;
         }
 
         #endregion
