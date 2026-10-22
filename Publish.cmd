@@ -10,9 +10,11 @@ set verbosity="normal"
 set project="TwitchChatToSubtitles"
 call :Publish %project%, %configuration%, %publishDir%, %net10%, "linux-arm64", %arguments%, %verbosity%
 call :Publish %project%, %configuration%, %publishDir%, %net10%, "linux-x64", %arguments%, %verbosity%
+call :Publish %project%, %configuration%, %publishDir%, %net10%, "win-arm64", %arguments%, %verbosity%
 call :Publish %project%, %configuration%, %publishDir%, %net10%, "win-x64", %arguments%, %verbosity%
 
 set project="TwitchChatToSubtitlesUI"
+call :Publish %project%, %configuration%, %publishDir%, %net10Win%, "win-arm64", %arguments%, %verbosity%
 call :Publish %project%, %configuration%, %publishDir%, %net10Win%, "win-x64", %arguments%, %verbosity%
 
 :exit

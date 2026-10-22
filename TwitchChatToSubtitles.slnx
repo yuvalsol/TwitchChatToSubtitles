@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Publish.cmd" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/Icons/">
+    <File Path="Solution Items/Icons/Icon Link.txt" />
+    <File Path="Solution Items/Icons/TwitchChatToSubtitles.ico" />
+    <File Path="Solution Items/Icons/TwitchChatToSubtitles.png" />
+  </Folder>
+  <Folder Name="/Solution Items/Images/">
+    <File Path="Solution Items/Images/TwitchChatToSubtitlesUI.jpg" />
+  </Folder>
+  <Project Path="Extensions/Extensions.csproj" />
+  <Project Path="TwitchChatToSubtitles.Library/TwitchChatToSubtitles.Library.csproj" />
+  <Project Path="TwitchChatToSubtitles/TwitchChatToSubtitles.csproj" />
+  <Project Path="TwitchChatToSubtitlesUI/TwitchChatToSubtitlesUI.csproj" />
+</Solution>
